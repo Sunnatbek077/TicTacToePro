@@ -82,13 +82,19 @@ struct GameBoardView: View {
     }
     
     private var gameOverAlertTitle: String {
-        guard ticTacToe.winner != .empty else { return "Draw" }
+        guard ticTacToe.winner != .empty else { return TieMessages.messages.randomElement() ?? "It's a tie! 🤝" }
         
         if gameTypeIsPVP {
             let winnerMark = ticTacToe.winner == .x ? "X" : "O"
-            return "\(winnerMark) won!"
+            return "\(winnerMark) won! 🎉"
         } else {
-            return ticTacToe.winner == ticTacToe.aiPlays ? "AI won!" : "You won!"
+            // AI yutgan bo'lsa
+            if ticTacToe.winner == ticTacToe.aiPlays {
+                return AIWinMessages.messages.randomElement() ?? "AI won! 😎"
+            } else {
+                // Foydalanuvchi yutgan bo'lsa
+                return AILossMessages.messages.randomElement() ?? "You won! 🎉"
+            }
         }
     }
     
@@ -554,3 +560,4 @@ private struct SquareButtonView: View {
         )
     }
 }
+
