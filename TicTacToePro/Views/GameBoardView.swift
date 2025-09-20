@@ -6,13 +6,551 @@
 //
 
 import SwiftUI
+import UIKit
+import Combine
+import Foundation
+
+// MARK: - Haptic Feedback Manager
+// Haptic feedback logikasi View'dan ajratib olindi.
+// Bu mas'uliyatlarni ajratish (Separation of Concerns) uchun yaxshi amaliyotdir.
+
 
 struct GameBoardView: View {
+    // MARK: - Properties
+    
+    var onExit: () -> Void
+    @Environment(\.colorScheme) var colorScheme
+    @Environment(\.horizontalSizeClass) private var hSizeClass
+    @Environment(\.verticalSizeClass) private var vSizeClass
+    
+    @ObservedObject var viewModel: ViewModel
+    @ObservedObject var ticTacToe: GameViewModel
+    
+    // Configuration
+    let gameTypeIsPVP: Bool
+    let difficulty: AIDifficulty
+    let startingPlayerIsO: Bool
+    
+    @State private var vibro: Bool = false
+    
+    // MARK: - Computed Properties for UI Logic
+    
+    private var currentPlayer: String {
+        ticTacToe.playerToMove == .x ? "X" : "O"
+    }
+    
+    private var headerTitle: String { "Tic Tac Toe" }
+    
+    private var headerSubtitle: String {
+        if gameTypeIsPVP {
+            return "\(currentPlayer)’s move"
+        } else {
+            return ticTacToe.playerToMove == ticTacToe.aiPlays ? "AI is thinking…" : "Your move"
+        }
+    }
+    
+    private var modeBadgeText: String {
+        if gameTypeIsPVP {
+            return "PvP"
+        } else {
+            let aiSide = ticTacToe.aiPlays == .x ? "X" : "O"
+            let diff: String = {
+                switch difficulty {
+                case .easy: return "Easy"
+                case .medium: return "Medium"
+                case .hard: return "Hard"
+                }
+            }()
+            return "AI: \(aiSide) • \(diff)"
+        }
+    }
+    
+    private var isCompactHeight: Bool {
+#if os(iOS)
+        return vSizeClass == .compact || UIScreen.main.bounds.height <= 667 // iPhone SE 2/3 height
+#else
+        return false
+#endif
+    }
+    
+    private var isWide: Bool {
+#if os(macOS) || os(visionOS)
+        return true
+#else
+        return hSizeClass == .regular
+#endif
+    }
+    
+    private var gameOverAlertTitle: String {
+        guard ticTacToe.winner != .empty else { return "Draw" }
+        
+        if gameTypeIsPVP {
+            let winnerMark = ticTacToe.winner == .x ? "X" : "O"
+            return "\(winnerMark) won!"
+        } else {
+            return ticTacToe.winner == ticTacToe.aiPlays ? "AI won!" : "You won!"
+        }
+    }
+    
+    // MARK: - Body
+    
     var body: some View {
-        Text(/*@START_MENU_TOKEN@*/"Hello, World!"/*@END_MENU_TOKEN@*/)
+        content
+            .background(background)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar { toolbarContent }
+            .onAppear(perform: setupGame)
+            .alert(Text(gameOverAlertTitle), isPresented: $ticTacToe.gameOver) {
+                Button("Play Again", action: resetForNextRound)
+            }
+    }
+    
+    // MARK: - Adaptive Content Layout
+    
+    @ViewBuilder
+    private var content: some View {
+        if isWide {
+            HStack(spacing: 24) {
+                leftPanel
+                    .frame(minWidth: 260, maxWidth: 360)
+                board
+                rightPanel
+                    .frame(minWidth: 220, maxWidth: 320)
+            }
+            .padding(.horizontal, 24)
+            .padding(.vertical, 16)
+        } else {
+            VStack(spacing: isCompactHeight ? 8 : 16) {
+                header
+                    .padding(.top, isCompactHeight ? 2 : 0)
+                board
+                    .padding(.horizontal, isCompactHeight ? 8 : 16)
+                footer
+                    .padding(.bottom, isCompactHeight ? 6 : 12)
+            }
+            .padding(.top, isCompactHeight ? 4 : 12)
+        }
     }
 }
 
+// MARK: - UI Components
+private extension GameBoardView {
+    
+    var background: some View {
+        Group {
+#if os(visionOS)
+            Color.clear
+#else
+            if colorScheme == .dark {
+                Color.black.opacity(0.95)
+            } else {
+                Color(UIColor.systemGroupedBackground)
+            }
+#endif
+        }
+        .ignoresSafeArea()
+    }
+    
+    // MARK: Panels for wide layouts
+    
+    var leftPanel: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            header
+            Spacer(minLength: 0)
+        }
+        .frame(maxHeight: .infinity, alignment: .top)
+    }
+    
+    var rightPanel: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            statusCard
+            footerButtonsOnly
+            Spacer(minLength: 0)
+        }
+        .frame(maxHeight: .infinity, alignment: .top)
+    }
+    
+    var statusCard: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Status")
+                .font(.headline)
+            Text(headerSubtitle)
+                .font(.title3.weight(.semibold))
+                .foregroundStyle(.secondary)
+            
+            Divider()
+            
+            Text("Mode")
+                .font(.headline)
+            Text(modeBadgeText)
+                .font(.footnote.weight(.semibold))
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .background(.thinMaterial, in: Capsule())
+                .foregroundStyle(.primary)
+        }
+        .padding(16)
+        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .strokeBorder(Color.secondary.opacity(0.15), lineWidth: 1)
+        )
+    }
+    
+    // MARK: Header
+    
+    var header: some View {
+        VStack(spacing: isCompactHeight ? 4 : 8) {
+            Text(headerTitle)
+                .font(isCompactHeight ? .system(.title, design: .rounded).weight(.bold)
+                      : .system(.largeTitle, design: .rounded).weight(.bold))
+                .foregroundStyle(.primary)
+                .accessibilityAddTraits(.isHeader)
+            
+            Text(headerSubtitle)
+                .font(isCompactHeight ? .headline : .title3.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .accessibilityLabel(headerSubtitle)
+            
+            Text(modeBadgeText)
+                .font(.footnote.weight(.semibold))
+                .padding(.horizontal, isCompactHeight ? 8 : 10)
+                .padding(.vertical, isCompactHeight ? 4 : 6)
+                .background(.thinMaterial, in: Capsule())
+                .foregroundStyle(.primary)
+                .accessibilityHidden(false)
+        }
+        .padding(.horizontal)
+    }
+    
+    // MARK: Board
+    
+    var board: some View {
+        GeometryReader { proxy in
+            let maxSide = min(proxy.size.width, proxy.size.height)
+            let side = min(maxSide, preferredBoardSide(for: proxy.size))
+            let spacing: CGFloat = isCompactHeight ? max(6, side * 0.015) : max(8, side * 0.02)
+            let cellSize = (side - spacing * 2) / 3
+            
+            VStack(spacing: spacing) {
+                ForEach(0..<3, id: \.self) { row in
+                    HStack(spacing: spacing) {
+                        ForEach(0..<3, id: \.self) { column in
+                            let index = row * 3 + column
+                            if ticTacToe.squares.indices.contains(index) {
+                                SquareButtonView(
+                                    dataSource: ticTacToe.squares[index],
+                                    size: cellSize,
+                                    action: { self.makeMove(at: index) }
+                                )
+#if os(iOS) || os(visionOS)
+                                .hoverEffect(.lift)
+#endif
+                            } else {
+                                Color.clear.frame(width: cellSize, height: cellSize)
+                            }
+                        }
+                    }
+                }
+            }
+            .frame(width: side, height: side, alignment: .center)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: isWide ? .center : .top)
+            .padding(isWide ? 12 : (isCompactHeight ? 4 : 8))
+        }
+        .frame(minHeight: isCompactHeight ? 360 : 420)
+        .accessibilityElement(children: .contain)
+    }
+    
+    // MARK: Footer
+    
+    var footer: some View {
+        HStack(spacing: isCompactHeight ? 8 : 12) {
+            Button(action: resetForNextRound) {
+                Label("Restart", systemImage: "arrow.counterclockwise.circle.fill")
+                    .font(isCompactHeight ? .subheadline : .headline)
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(.accentColor)
+            .accessibilityLabel("Restart game")
+            
+            Spacer(minLength: isCompactHeight ? 8 : 12)
+            
+            Button(role: .destructive, action: exitToMenu) {
+                Label("Exit", systemImage: "xmark.circle.fill")
+                    .font(isCompactHeight ? .subheadline : .headline)
+            }
+            .buttonStyle(.bordered)
+            .accessibilityLabel("Exit to menu")
+        }
+        .padding(.horizontal, isCompactHeight ? 12 : 16)
+        .padding(.top, isCompactHeight ? 2 : 6)
+    }
+    
+    var footerButtonsOnly: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Button(action: resetForNextRound) {
+                Label("Restart", systemImage: "arrow.counterclockwise.circle.fill")
+                    .font(.headline)
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(.accentColor)
+            
+            Button(role: .destructive, action: exitToMenu) {
+                Label("Exit", systemImage: "xmark.circle.fill")
+                    .font(.headline)
+            }
+            .buttonStyle(.bordered)
+        }
+        .padding(.top, 8)
+    }
+    
+    // MARK: Toolbar
+    
+    @ToolbarContentBuilder
+    var toolbarContent: some ToolbarContent {
+#if os(macOS)
+        ToolbarItem(placement: .primaryAction) {
+            Button(action: resetForNextRound) {
+                Label("Restart", systemImage: "arrow.counterclockwise.circle")
+            }
+            .help("Restart game")
+            .keyboardShortcut("r", modifiers: [.command])
+        }
+        ToolbarItem(placement: .cancellationAction) {
+            Button(role: .cancel, action: exitToMenu) {
+                Label("Exit", systemImage: "xmark.circle")
+            }
+            .help("Exit to menu")
+            .keyboardShortcut(.escape, modifiers: [])
+        }
+#else
+        ToolbarItem(placement: .topBarLeading) {
+            Button(role: .cancel, action: exitToMenu) {
+                Label("Exit", systemImage: "xmark.circle.fill")
+                    .labelStyle(.iconOnly)
+                    .imageScale(.large)
+                    .foregroundStyle(.secondary)
+                    .accessibilityLabel("Exit to menu")
+            }
+        }
+        ToolbarItem(placement: .topBarTrailing) {
+            Button(action: resetForNextRound) {
+                Label("Restart", systemImage: "arrow.counterclockwise.circle")
+            }
+            .accessibilityLabel("Restart game")
+        }
+#endif
+    }
+}
+
+// MARK: - Actions & Game Logic
+private extension GameBoardView {
+    
+    func setupGame() {
+        // O'yin birinchi marta ochilganda sozlash
+        if ticTacToe.squares.allSatisfy({ $0.squareStatus == .empty }) {
+            ticTacToe.playerToMove = startingPlayerIsO ? .o : .x
+            performInitialAIMoveIfNeeded()
+        }
+    }
+    
+    func makeMove(at index: Int) {
+        withAnimation(.spring(response: 0.28, dampingFraction: 0.85)) {
+            _ = ticTacToe.makeMove(index: index, gameTypeIsPVP: gameTypeIsPVP, difficulty: difficulty)
+        }
+        HapticManager.trigger(style: .medium)
+    }
+    
+    func resetForNextRound() {
+        resetGameState()
+        performInitialAIMoveIfNeeded()
+    }
+    
+    func exitToMenu() {
+        resetGameState()
+        onExit()
+    }
+    
+    func resetGameState() {
+        ticTacToe.resetGame()
+        ticTacToe.playerToMove = startingPlayerIsO ? .o : .x
+        viewModel.gameOver = false
+        viewModel.winner = .empty
+    }
+    
+    /// Agar o'yin AI rejimida bo'lsa va AI birinchi yurishi kerak bo'lsa, uning yurishini amalga oshiradi.
+    func performInitialAIMoveIfNeeded() {
+        guard !gameTypeIsPVP,
+              ticTacToe.aiPlays == .x,
+              ticTacToe.playerToMove == .x,
+              ticTacToe.squares.allSatisfy({ $0.squareStatus == .empty })
+        else { return }
+        
+        // AI'ning o'ylashi uchun kichik pauza
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+            let boardMoves = ticTacToe.boardArray
+            let testBoard = Board(position: boardMoves, turn: .x)
+            let answer = testBoard.bestMove(difficulty: difficulty)
+            if answer >= 0 {
+                _ = ticTacToe.makeMove(index: answer, gameTypeIsPVP: false, difficulty: difficulty)
+            }
+        }
+    }
+    
+    // MARK: Sizing
+    func preferredBoardSide(for size: CGSize) -> CGFloat {
+#if os(macOS)
+        return min(640, max(420, min(size.width, size.height) * 0.8))
+#elseif os(visionOS)
+        return min(720, max(480, min(size.width, size.height) * 0.85))
+#else
+        if hSizeClass == .regular { // iPad or landscape
+            return min(600, max(420, min(size.width, size.height) * 0.9))
+        } else { // iPhone portrait
+            if isCompactHeight {
+                return min(420, max(340, min(size.width, size.height) * 0.98))
+            } else {
+                return min(440, max(360, min(size.width, size.height) * 0.95))
+            }
+        }
+#endif
+    }
+}
+
+
+// MARK: - Square Button View
+private struct SquareButtonView: View {
+    @Environment(\.colorScheme) var colorScheme
+    @ObservedObject var dataSource: Square
+    let size: CGFloat
+    var action: () -> Void
+    
+    @State private var isPressed: Bool = false
+#if os(macOS)
+    @State private var isHovering: Bool = false
+#endif
+    
+    var body: some View {
+        Button(action: handleTap) {
+            ZStack {
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .fill(backgroundFill)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                            .strokeBorder(borderColor, lineWidth: 1)
+                    )
+                    .shadow(color: shadowColor.opacity(0.12), radius: 6, x: 0, y: 3)
+                    .scaleEffect(scaleEffectValue)
+                
+                Text(symbol)
+                    .font(.system(size: size * 0.52, weight: .heavy, design: .rounded))
+                    .foregroundStyle(symbolColor)
+                    .minimumScaleFactor(0.5)
+                    .lineLimit(1)
+                    .contentTransition(.opacity)
+            }
+            .animation(.spring(response: 0.25, dampingFraction: 0.85), value: dataSource.squareStatus)
+            .animation(.easeOut(duration: 0.12), value: isPressed)
+#if os(macOS)
+            .animation(.easeOut(duration: 0.12), value: isHovering)
+#endif
+            .frame(width: size, height: size)
+        }
+        .buttonStyle(.plain)
+        .simultaneousGesture(DragGesture(minimumDistance: 0)
+            .onChanged { _ in isPressed = true }
+            .onEnded { _ in isPressed = false }
+        )
+#if os(macOS)
+        .onHover { hovering in isHovering = hovering }
+#endif
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Board square")
+        .accessibilityValue(accessibilityValue)
+        .accessibilityHint(dataSource.squareStatus == .empty ? "Double-tap to place your mark" : "")
+    }
+    
+    private func handleTap() {
+        guard dataSource.squareStatus == .empty else { return }
+        action()
+    }
+    
+    // MARK: Computed UI Properties
+    
+    private var symbol: String {
+        switch dataSource.squareStatus {
+        case .x, .xw: return "X"
+        case .o, .ow: return "O"
+        case .empty: return ""
+        }
+    }
+    
+    private var symbolColor: Color {
+        switch dataSource.squareStatus {
+        case .xw, .ow: return .green
+        default: return .primary
+        }
+    }
+    
+    private var backgroundFill: some ShapeStyle {
+        if case .empty = dataSource.squareStatus {
+#if os(iOS)
+            return AnyShapeStyle(Color.secondary.opacity(0.08))
+#else
+            return AnyShapeStyle(.thinMaterial)
+#endif
+        } else {
+            return AnyShapeStyle(colorScheme == .dark ? Color(UIColor.secondarySystemBackground) : Color(UIColor.systemBackground))
+        }
+    }
+    
+    private var borderColor: Color {
+        switch dataSource.squareStatus {
+        case .xw, .ow: return .green.opacity(0.9)
+        default: return Color.secondary.opacity(0.25)
+        }
+    }
+    
+    private var shadowColor: Color {
+        colorScheme == .dark ? .black : .gray
+    }
+    
+    private var cornerRadius: CGFloat {
+        max(10, size * 0.08)
+    }
+    
+    private var scaleEffectValue: CGFloat {
+#if os(macOS)
+        return isPressed ? 0.97 : (isHovering ? 1.02 : 1.0)
+#else
+        return isPressed ? 0.97 : 1.0
+#endif
+    }
+    
+    // MARK: Accessibility
+    
+    private var accessibilityValue: String {
+        switch dataSource.squareStatus {
+        case .x, .xw: return "X"
+        case .o, .ow: return "O"
+        case .empty: return "Empty"
+        }
+    }
+}
+
+
+// MARK: - Preview
 #Preview {
-    GameBoardView()
+    let viewModel = ViewModel()
+    let model = GameViewModel()
+    NavigationStack {
+        GameBoardView(
+            onExit: {},
+            viewModel: viewModel,
+            ticTacToe: model,
+            gameTypeIsPVP: false,
+            difficulty: .hard,
+            startingPlayerIsO: false
+        )
+    }
 }
