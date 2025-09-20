@@ -16,7 +16,6 @@ struct ContentView: View {
     @State private var selectedDifficulty: DifficultyOption = .easy
     @State private var selectedGameMode: GameMode = .ai
     @State private var showGame: Bool = false
-    @State private var showAboutDevs: Bool = false
     
     @StateObject private var viewModel = ViewModel()
     @StateObject private var ticTacToeModel = GameViewModel()
@@ -82,21 +81,6 @@ struct ContentView: View {
                         StartButton(isCompactHeightPhone: isCompactHeightPhone) {
                             startGame()
                         }
-                        
-                        Button {
-                            showAboutDevs = true
-                        } label: {
-                            HStack(spacing: 10) {
-                                Image(systemName: "person.circle.fill").imageScale(.large)
-                                Text("About Developer").font(.headline)
-                            }
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, isCompactHeightPhone ? 10 : 14)
-                            .padding(.horizontal, 12)
-                            
-                            .shadow(color: Color.accentColor.opacity(0.35), radius: 10, x: 0, y: 6)
-                        }
-                        .buttonStyle(.glass)
                     }
                     .padding(.horizontal, isCompactHeightPhone ? 12 : 16)
                     .padding(.vertical, isCompactHeightPhone ? 16 : 24)

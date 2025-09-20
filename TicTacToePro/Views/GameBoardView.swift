@@ -101,14 +101,26 @@ struct GameBoardView: View {
     // MARK: - Body
     
     var body: some View {
-        content
-            .background(background)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar { toolbarContent }
-            .onAppear(perform: setupGame)
-            .alert(Text(gameOverAlertTitle), isPresented: $ticTacToe.gameOver) {
-                Button("Play Again", action: resetForNextRound)
-            }
+        
+        TabView {
+            content
+                .background(background)
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar { toolbarContent }
+                .onAppear(perform: setupGame)
+                .alert(Text(gameOverAlertTitle), isPresented: $ticTacToe.gameOver) {
+                    Button("Play Again", action: resetForNextRound)
+                }
+                .tabItem {
+                    Image(systemName: "square.grid.3x3")
+                    Text("Home")
+                }
+            SettingsView()
+                .tabItem {
+                    Image(systemName: "gear")
+                    Text("Settings")
+                }
+        }
     }
     
     // MARK: - Adaptive Content Layout
