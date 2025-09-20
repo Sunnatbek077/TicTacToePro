@@ -157,23 +157,55 @@ extension Board {
     }
     
     private func mediumMove() -> Int {
-        // 1️⃣ Try to win
+        // Medium should feel beatable: allow some mistakes, but still take immediate wins
+        // Tunable probabilities
+        let blockProbability: Int = 70   // % chance to block an imminent loss
+        let randomOverrideProbability: Int = 30 // % chance to just play random early
+        let suboptimalHeuristicProbability: Int = 35 // % chance to pick a worse square in heuristic stage
+        
+        // 0️⃣ Occasionally play random right away to feel human-like
+        if Int.random(in: 0..<100) < randomOverrideProbability {
+            return easyMove()
+        }
+        
+        // 1️⃣ Always take a winning move if available
         for candidate in legalMoves {
             let newBoard = self.move(candidate)
             if newBoard.isWin { return candidate }
         }
-        // 2️⃣ Block opponent
-        for candidate in legalMoves {
-            let opponentBoard = Board(position: self.pos, turn: self.opposite).move(candidate)
-            if opponentBoard.isWin { return candidate }
+        
+        // 2️⃣ Block opponent with some probability (not always)
+        if Int.random(in: 0..<100) < blockProbability {
+            for candidate in legalMoves {
+                // simulate opponent taking this square next
+                let opponentBoard = Board(position: self.pos, turn: self.opposite).move(candidate)
+                if opponentBoard.isWin { return candidate }
+            }
         }
-        // 3️⃣ Heuristics: center > corners > edges
-        if legalMoves.contains(4) { return 4 }
+        
+        // 3️⃣ Heuristics with occasional suboptimal choices
+        // Prefer center > corners > edges, but sometimes pick a suboptimal bucket
+        let center = [4].filter { legalMoves.contains($0) }
         let corners = [0, 2, 6, 8].filter { legalMoves.contains($0) }
-        if let corner = corners.randomElement() { return corner }
         let edges = [1, 3, 5, 7].filter { legalMoves.contains($0) }
-        if let edge = edges.randomElement() { return edge }
-        // 4️⃣ Otherwise random (shouldn't reach here)
+        
+        // Helper to pick from a bucket
+        func pick(_ arr: [Int]) -> Int? { arr.randomElement() }
+        
+        let roll = Int.random(in: 0..<100)
+        if roll < suboptimalHeuristicProbability {
+            // Suboptimal branch: try edges first, then corners, then center
+            if let e = pick(edges) { return e }
+            if let c = pick(corners) { return c }
+            if let ce = pick(center) { return ce }
+        } else {
+            // Normal heuristic: center > corners > edges
+            if let ce = pick(center) { return ce }
+            if let c = pick(corners) { return c }
+            if let e = pick(edges) { return e }
+        }
+        
+        // 4️⃣ Fallback to random
         return easyMove()
     }
 }
@@ -206,3 +238,4 @@ extension Board {
         return 0
     }
 }
+
