@@ -9,37 +9,34 @@ import SwiftUI
 import Combine
 import Foundation
 
-// MARK: - Haptic Feedback Manager
-// Haptic feedback logikasi View'dan ajratib olindi.
-// Bu mas'uliyatlarni ajratish (Separation of Concerns) uchun yaxshi amaliyotdir.
+// NOTE: This file assumes the existence of:
+// - ViewModel, GameViewModel, Board, AIDifficulty, HapticManager, TieMessages, AIWinMessages, AILossMessages
+// - Square: ObservableObject with @Published var squareStatus: SquareStatus
+// If any of those types/values are different in your project, adapt accordingly.
 
+// MARK: - GameBoardView
 
 struct GameBoardView: View {
-    // MARK: - Properties
-    
     var onExit: () -> Void
+
     @Environment(\.colorScheme) var colorScheme
     @Environment(\.horizontalSizeClass) private var hSizeClass
     @Environment(\.verticalSizeClass) private var vSizeClass
-    
+
     @ObservedObject var viewModel: ViewModel
     @ObservedObject var ticTacToe: GameViewModel
-    
-    // Configuration
+
     let gameTypeIsPVP: Bool
     let difficulty: AIDifficulty
     let startingPlayerIsO: Bool
-    
+
+    // Small local state for subtle vibro toggle (if you want to expose)
     @State private var vibro: Bool = false
-    
-    // MARK: - Computed Properties for UI Logic
-    
-    private var currentPlayer: String {
-        ticTacToe.playerToMove == .x ? "X" : "O"
-    }
-    
+
+    // MARK: - Computed helpers
+
+    private var currentPlayer: String { ticTacToe.playerToMove == .x ? "X" : "O" }
     private var headerTitle: String { "Tic Tac Toe" }
-    
     private var headerSubtitle: String {
         if gameTypeIsPVP {
             return "\(currentPlayer)’s move"
@@ -47,7 +44,7 @@ struct GameBoardView: View {
             return ticTacToe.playerToMove == ticTacToe.aiPlays ? "AI is thinking…" : "Your move"
         }
     }
-    
+
     private var modeBadgeText: String {
         if gameTypeIsPVP {
             return "PvP"
@@ -63,15 +60,15 @@ struct GameBoardView: View {
             return "AI: \(aiSide) • \(diff)"
         }
     }
-    
+
     private var isCompactHeight: Bool {
 #if os(iOS)
-        return vSizeClass == .compact || UIScreen.main.bounds.height <= 667 // iPhone SE 2/3 height
+        return vSizeClass == .compact || UIScreen.main.bounds.height <= 667
 #else
         return false
 #endif
     }
-    
+
     private var isWide: Bool {
 #if os(macOS) || os(visionOS)
         return true
@@ -79,26 +76,23 @@ struct GameBoardView: View {
         return hSizeClass == .regular
 #endif
     }
-    
+
     private var gameOverAlertTitle: String {
         guard ticTacToe.winner != .empty else { return TieMessages.messages.randomElement() ?? "It's a tie! 🤝" }
-        
         if gameTypeIsPVP {
             let winnerMark = ticTacToe.winner == .x ? "X" : "O"
             return "\(winnerMark) won! 🎉"
         } else {
-            // AI yutgan bo'lsa
             if ticTacToe.winner == ticTacToe.aiPlays {
                 return AIWinMessages.messages.randomElement() ?? "AI won! 😎"
             } else {
-                // Foydalanuvchi yutgan bo'lsa
                 return AILossMessages.messages.randomElement() ?? "You won! 🎉"
             }
         }
     }
-    
+
     // MARK: - Body
-    
+
     var body: some View {
         content
             .background(background)
@@ -107,11 +101,12 @@ struct GameBoardView: View {
             .onAppear(perform: setupGame)
             .alert(Text(gameOverAlertTitle), isPresented: $ticTacToe.gameOver) {
                 Button("Play Again", action: resetForNextRound)
+                Button("Leave", action: exitToMenu)
             }
     }
-    
-    // MARK: - Adaptive Content Layout
-    
+
+    // MARK: - Layout
+
     @ViewBuilder
     private var content: some View {
         if isWide {
@@ -139,25 +134,20 @@ struct GameBoardView: View {
 }
 
 // MARK: - UI Components
+
 private extension GameBoardView {
-    
+
     var background: some View {
-        Group {
-#if os(visionOS)
-            Color.clear
-#else
-            if colorScheme == .dark {
-                Color.black.opacity(0.95)
-            } else {
-                Color(UIColor.systemGroupedBackground)
-            }
-#endif
-        }
+        LinearGradient(
+            colors: colorScheme == .dark
+                ? [Color(.black), Color.purple.opacity(0.28), Color.blue.opacity(0.22)]
+                : [Color(.systemBackground), Color.blue.opacity(0.06), Color.purple.opacity(0.04)],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
         .ignoresSafeArea()
     }
-    
-    // MARK: Panels for wide layouts
-    
+
     var leftPanel: some View {
         VStack(alignment: .leading, spacing: 12) {
             header
@@ -165,7 +155,7 @@ private extension GameBoardView {
         }
         .frame(maxHeight: .infinity, alignment: .top)
     }
-    
+
     var rightPanel: some View {
         VStack(alignment: .leading, spacing: 12) {
             statusCard
@@ -174,19 +164,17 @@ private extension GameBoardView {
         }
         .frame(maxHeight: .infinity, alignment: .top)
     }
-    
+
     var statusCard: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Status")
-                .font(.headline)
+            Text("Status").font(.headline)
             Text(headerSubtitle)
                 .font(.title3.weight(.semibold))
                 .foregroundStyle(.secondary)
-            
+
             Divider()
-            
-            Text("Mode")
-                .font(.headline)
+
+            Text("Mode").font(.headline)
             Text(modeBadgeText)
                 .font(.footnote.weight(.semibold))
                 .padding(.horizontal, 10)
@@ -201,9 +189,7 @@ private extension GameBoardView {
                 .strokeBorder(Color.secondary.opacity(0.15), lineWidth: 1)
         )
     }
-    
-    // MARK: Header
-    
+
     var header: some View {
         VStack(spacing: isCompactHeight ? 4 : 8) {
             Text(headerTitle)
@@ -211,32 +197,28 @@ private extension GameBoardView {
                       : .system(.largeTitle, design: .rounded).weight(.bold))
                 .foregroundStyle(.primary)
                 .accessibilityAddTraits(.isHeader)
-            
+
             Text(headerSubtitle)
                 .font(isCompactHeight ? .headline : .title3.weight(.semibold))
                 .foregroundStyle(.secondary)
-                .accessibilityLabel(headerSubtitle)
-            
+
             Text(modeBadgeText)
                 .font(.footnote.weight(.semibold))
                 .padding(.horizontal, isCompactHeight ? 8 : 10)
                 .padding(.vertical, isCompactHeight ? 4 : 6)
                 .background(.thinMaterial, in: Capsule())
                 .foregroundStyle(.primary)
-                .accessibilityHidden(false)
         }
         .padding(.horizontal)
     }
-    
-    // MARK: Board
-    
+
     var board: some View {
         GeometryReader { proxy in
             let maxSide = min(proxy.size.width, proxy.size.height)
             let side = min(maxSide, preferredBoardSide(for: proxy.size))
             let spacing: CGFloat = isCompactHeight ? max(6, side * 0.015) : max(8, side * 0.02)
             let cellSize = (side - spacing * 2) / 3
-            
+
             VStack(spacing: spacing) {
                 ForEach(0..<3, id: \.self) { row in
                     HStack(spacing: spacing) {
@@ -245,9 +227,13 @@ private extension GameBoardView {
                             if ticTacToe.squares.indices.contains(index) {
                                 SquareButtonView(
                                     dataSource: ticTacToe.squares[index],
-                                    size: cellSize,
-                                    action: { self.makeMove(at: index) }
-                                )
+                                    size: cellSize
+                                ) {
+                                    self.makeMove(at: index)
+                                }
+                                // subtle outer shadow for tile separation
+                                .shadow(color: Color.black.opacity(colorScheme == .dark ? 0.25 : 0.12),
+                                        radius: 6, x: 2, y: 3)
 #if os(iOS) || os(visionOS)
                                 .hoverEffect(.lift)
 #endif
@@ -258,16 +244,24 @@ private extension GameBoardView {
                     }
                 }
             }
-            .frame(width: side, height: side, alignment: .center)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: isWide ? .center : .top)
-            .padding(isWide ? 12 : (isCompactHeight ? 4 : 8))
+            .padding(spacing)
+            .frame(width: side, height: side)
+            // Board container: lightweight glass card
+            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 28, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 28, style: .continuous)
+                    .strokeBorder(LinearGradient(
+                        colors: [Color.white.opacity(0.36), Color.white.opacity(0.05)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing), lineWidth: 1.6)
+            )
+            .shadow(color: Color.black.opacity(0.18), radius: 20, x: 0, y: 8)
+            .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
         }
         .frame(minHeight: isCompactHeight ? 360 : 420)
         .accessibilityElement(children: .contain)
     }
-    
-    // MARK: Footer
-    
+
     var footer: some View {
         HStack(spacing: isCompactHeight ? 8 : 12) {
             Button(action: resetForNextRound) {
@@ -275,11 +269,11 @@ private extension GameBoardView {
                     .font(isCompactHeight ? .subheadline : .headline)
             }
             .buttonStyle(.borderedProminent)
-            .tint(.accentColor)
+            .tint(LinearGradient(colors: [.pink, .purple], startPoint: .topLeading, endPoint: .bottomTrailing))
             .accessibilityLabel("Restart game")
-            
+
             Spacer(minLength: isCompactHeight ? 8 : 12)
-            
+
             Button(role: .destructive, action: exitToMenu) {
                 Label("Exit", systemImage: "xmark.circle.fill")
                     .font(isCompactHeight ? .subheadline : .headline)
@@ -290,7 +284,7 @@ private extension GameBoardView {
         .padding(.horizontal, isCompactHeight ? 12 : 16)
         .padding(.top, isCompactHeight ? 2 : 6)
     }
-    
+
     var footerButtonsOnly: some View {
         VStack(alignment: .leading, spacing: 12) {
             Button(action: resetForNextRound) {
@@ -299,7 +293,7 @@ private extension GameBoardView {
             }
             .buttonStyle(.borderedProminent)
             .tint(.accentColor)
-            
+
             Button(role: .destructive, action: exitToMenu) {
                 Label("Exit", systemImage: "xmark.circle.fill")
                     .font(.headline)
@@ -308,9 +302,8 @@ private extension GameBoardView {
         }
         .padding(.top, 8)
     }
-    
-    // MARK: Toolbar
-    
+
+    // Toolbar
     @ToolbarContentBuilder
     var toolbarContent: some ToolbarContent {
 #if os(macOS)
@@ -348,50 +341,50 @@ private extension GameBoardView {
     }
 }
 
-// MARK: - Actions & Game Logic
+// MARK: - Actions & Logic
+
 private extension GameBoardView {
-    
+
     func setupGame() {
-        // O'yin birinchi marta ochilganda sozlash
         if ticTacToe.squares.allSatisfy({ $0.squareStatus == .empty }) {
             ticTacToe.playerToMove = startingPlayerIsO ? .o : .x
             performInitialAIMoveIfNeeded()
         }
     }
-    
+
     func makeMove(at index: Int) {
-        withAnimation(.spring(response: 0.28, dampingFraction: 0.85)) {
+        guard ticTacToe.squares.indices.contains(index) else { return }
+        // animation localized to view model changes
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.82)) {
             _ = ticTacToe.makeMove(index: index, gameTypeIsPVP: gameTypeIsPVP, difficulty: difficulty)
         }
         HapticManager.trigger(style: .medium)
     }
-    
+
     func resetForNextRound() {
         resetGameState()
         performInitialAIMoveIfNeeded()
     }
-    
+
     func exitToMenu() {
         resetGameState()
         onExit()
     }
-    
+
     func resetGameState() {
         ticTacToe.resetGame()
         ticTacToe.playerToMove = startingPlayerIsO ? .o : .x
         viewModel.gameOver = false
         viewModel.winner = .empty
     }
-    
-    /// Agar o'yin AI rejimida bo'lsa va AI birinchi yurishi kerak bo'lsa, uning yurishini amalga oshiradi.
+
     func performInitialAIMoveIfNeeded() {
         guard !gameTypeIsPVP,
               ticTacToe.aiPlays == .x,
               ticTacToe.playerToMove == .x,
               ticTacToe.squares.allSatisfy({ $0.squareStatus == .empty })
         else { return }
-        
-        // AI'ning o'ylashi uchun kichik pauza
+
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
             let boardMoves = ticTacToe.boardArray
             let testBoard = Board(position: boardMoves, turn: .x)
@@ -401,17 +394,16 @@ private extension GameBoardView {
             }
         }
     }
-    
-    // MARK: Sizing
+
     func preferredBoardSide(for size: CGSize) -> CGFloat {
 #if os(macOS)
         return min(640, max(420, min(size.width, size.height) * 0.8))
 #elseif os(visionOS)
         return min(720, max(480, min(size.width, size.height) * 0.85))
 #else
-        if hSizeClass == .regular { // iPad or landscape
+        if hSizeClass == .regular {
             return min(600, max(420, min(size.width, size.height) * 0.9))
-        } else { // iPhone portrait
+        } else {
             if isCompactHeight {
                 return min(420, max(340, min(size.width, size.height) * 0.98))
             } else {
@@ -422,66 +414,90 @@ private extension GameBoardView {
     }
 }
 
+// MARK: - Optimized Premium SquareButtonView
 
-// MARK: - Square Button View
 private struct SquareButtonView: View {
     @Environment(\.colorScheme) var colorScheme
     @ObservedObject var dataSource: Square
     let size: CGFloat
     var action: () -> Void
-    
+
     @State private var isPressed: Bool = false
 #if os(macOS)
     @State private var isHovering: Bool = false
 #endif
-    
+
     var body: some View {
         Button(action: handleTap) {
             ZStack {
+                // Tile background: lightweight gradient + single material
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .fill(backgroundFill)
+                    .fill(backgroundGradient)
+                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
                     .overlay(
                         RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                            .strokeBorder(borderColor, lineWidth: 1)
+                            .strokeBorder(borderGradient, lineWidth: borderWidth)
                     )
-                    .shadow(color: shadowColor.opacity(0.12), radius: 6, x: 0, y: 3)
-                    .scaleEffect(scaleEffectValue)
-                
+                    // subtle light and dark emboss
+                    .shadow(color: Color.black.opacity(colorScheme == .dark ? 0.25 : 0.10), radius: 6, x: 2, y: 3)
+                    .overlay(
+                        // conditional glow for winning highlight - inexpensive (no blur)
+                        RoundedRectangle(cornerRadius: cornerRadius)
+                            .fill(backgroundGradient)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: cornerRadius)
+                                    .strokeBorder(Color.primary.opacity(0.15), lineWidth: 1)
+                            )
+                            .scaleEffect(tileScale)
+                            .animation(.easeOut(duration: 0.15), value: dataSource.squareStatus)
+                    )
+                    .scaleEffect(tileScale)
+                    .animation(.interactiveSpring(response: 0.2, dampingFraction: 0.8), value: dataSource.squareStatus)
+
+                // Symbol
                 Text(symbol)
-                    .font(.system(size: size * 0.52, weight: .heavy, design: .rounded))
-                    .foregroundStyle(symbolColor)
+                    .font(.system(size: size * 0.55, weight: .black, design: .rounded))
+                    .foregroundStyle(symbolGradient)
+                    .shadow(color: Color.black.opacity(0.22), radius: 6, x: 2, y: 2)
                     .minimumScaleFactor(0.5)
                     .lineLimit(1)
-                    .contentTransition(.opacity)
+                    .padding(.zero)
+                    .contentShape(Rectangle())
             }
-            .animation(.spring(response: 0.25, dampingFraction: 0.85), value: dataSource.squareStatus)
-            .animation(.easeOut(duration: 0.12), value: isPressed)
-#if os(macOS)
-            .animation(.easeOut(duration: 0.12), value: isHovering)
-#endif
             .frame(width: size, height: size)
+            .contentShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
         }
         .buttonStyle(.plain)
+        // simple gesture to provide quick pressed feedback without heavy animations
         .simultaneousGesture(DragGesture(minimumDistance: 0)
-            .onChanged { _ in isPressed = true }
-            .onEnded { _ in isPressed = false }
+            .onChanged { _ in
+                if !isPressed {
+                    withAnimation(.easeOut(duration: 0.12)) { isPressed = true }
+                }
+            }
+            .onEnded { _ in
+                withAnimation(.easeOut(duration: 0.12)) { isPressed = false }
+            }
         )
 #if os(macOS)
-        .onHover { hovering in isHovering = hovering }
+        .onHover { hovering in
+            withAnimation(.easeOut(duration: 0.12)) { isHovering = hovering }
+        }
 #endif
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Board square")
         .accessibilityValue(accessibilityValue)
         .accessibilityHint(dataSource.squareStatus == .empty ? "Double-tap to place your mark" : "")
     }
-    
+
     private func handleTap() {
         guard dataSource.squareStatus == .empty else { return }
         action()
     }
-    
-    // MARK: Computed UI Properties
-    
+
+    // MARK: - Visual helpers
+
     private var symbol: String {
         switch dataSource.squareStatus {
         case .x, .xw: return "X"
@@ -489,51 +505,61 @@ private struct SquareButtonView: View {
         case .empty: return ""
         }
     }
-    
-    private var symbolColor: Color {
+
+    private var symbolGradient: LinearGradient {
+        switch dataSource.squareStatus {
+        case .xw, .ow:
+            return LinearGradient(colors: [.green, .teal], startPoint: .topLeading, endPoint: .bottomTrailing)
+        case .x:
+            return LinearGradient(colors: [.pink, .purple], startPoint: .topLeading, endPoint: .bottomTrailing)
+        case .o:
+            return LinearGradient(colors: [.cyan, .blue], startPoint: .topLeading, endPoint: .bottomTrailing)
+        default:
+            return LinearGradient(colors: [.gray.opacity(0.5), .gray.opacity(0.2)], startPoint: .topLeading, endPoint: .bottomTrailing)
+        }
+    }
+
+    private var backgroundGradient: LinearGradient {
+        LinearGradient(
+            colors: colorScheme == .dark
+                ? [Color.white.opacity(0.03), Color.gray.opacity(0.06)]
+                : [Color.white.opacity(0.8), Color.gray.opacity(0.02)],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+    }
+
+    private var borderGradient: LinearGradient {
+        LinearGradient(
+            colors: colorScheme == .dark
+                ? [Color.white.opacity(0.22), Color.white.opacity(0.02)]
+                : [Color.white.opacity(0.6), Color.white.opacity(0.04)],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+    }
+
+    private var winningGlowColor: Color {
         switch dataSource.squareStatus {
         case .xw, .ow: return .green
-        default: return .primary
+        default: return .clear
         }
     }
-    
-    private var backgroundFill: some ShapeStyle {
-        if case .empty = dataSource.squareStatus {
-#if os(iOS)
-            return AnyShapeStyle(Color.secondary.opacity(0.08))
-#else
-            return AnyShapeStyle(.thinMaterial)
-#endif
-        } else {
-            return AnyShapeStyle(colorScheme == .dark ? Color(UIColor.secondarySystemBackground) : Color(UIColor.systemBackground))
-        }
-    }
-    
-    private var borderColor: Color {
-        switch dataSource.squareStatus {
-        case .xw, .ow: return .green.opacity(0.9)
-        default: return Color.secondary.opacity(0.25)
-        }
-    }
-    
-    private var shadowColor: Color {
-        colorScheme == .dark ? .black : .gray
-    }
-    
-    private var cornerRadius: CGFloat {
-        max(10, size * 0.08)
-    }
-    
-    private var scaleEffectValue: CGFloat {
+
+    private var borderWidth: CGFloat { 1.2 }
+
+    private var cornerRadius: CGFloat { max(10, size * 0.08) }
+
+    private var tileScale: CGFloat {
 #if os(macOS)
-        return isPressed ? 0.97 : (isHovering ? 1.02 : 1.0)
+        return isPressed ? 0.98 : (isHovering ? 1.02 : 1.0)
 #else
-        return isPressed ? 0.97 : 1.0
+        return isPressed ? 0.96 : 1.0
 #endif
     }
-    
-    // MARK: Accessibility
-    
+
+    // MARK: - Accessibility
+
     private var accessibilityValue: String {
         switch dataSource.squareStatus {
         case .x, .xw: return "X"
@@ -543,8 +569,8 @@ private struct SquareButtonView: View {
     }
 }
 
-
 // MARK: - Preview
+
 #Preview {
     let viewModel = ViewModel()
     let model = GameViewModel()
@@ -559,4 +585,3 @@ private struct SquareButtonView: View {
         )
     }
 }
-
