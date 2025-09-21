@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import UIKit
 import Combine
 import Foundation
 
@@ -101,26 +100,14 @@ struct GameBoardView: View {
     // MARK: - Body
     
     var body: some View {
-        
-        TabView {
-            content
-                .background(background)
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar { toolbarContent }
-                .onAppear(perform: setupGame)
-                .alert(Text(gameOverAlertTitle), isPresented: $ticTacToe.gameOver) {
-                    Button("Play Again", action: resetForNextRound)
-                }
-                .tabItem {
-                    Image(systemName: "square.grid.3x3")
-                    Text("Home")
-                }
-            SettingsView()
-                .tabItem {
-                    Image(systemName: "gear")
-                    Text("Settings")
-                }
-        }
+        content
+            .background(background)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar { toolbarContent }
+            .onAppear(perform: setupGame)
+            .alert(Text(gameOverAlertTitle), isPresented: $ticTacToe.gameOver) {
+                Button("Play Again", action: resetForNextRound)
+            }
     }
     
     // MARK: - Adaptive Content Layout
