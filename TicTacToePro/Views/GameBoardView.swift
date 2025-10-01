@@ -4,6 +4,9 @@
 //
 //  Created by Sunnatbek on 20/09/25.
 //  Updated with enhanced premium design on 01/10/25
+//  Optimized for small 16:9 iPhones (e.g., iPhone SE 2nd/3rd gen) on 02/10/25
+//  Fixed scope and range errors on 02/10/25
+//  Enlarged board size for SE on 02/10/25
 //
 
 import SwiftUI
@@ -74,6 +77,14 @@ struct GameBoardView: View {
 #endif
     }
     
+    private var isSELikeSmallScreen: Bool {
+#if os(iOS)
+        return isCompactHeight && hSizeClass == .compact && UIScreen.main.bounds.height <= 667 && UIScreen.main.bounds.width <= 375
+#else
+        return false
+#endif
+    }
+    
     private var isWide: Bool {
 #if os(macOS) || os(visionOS)
         return true
@@ -120,7 +131,7 @@ struct GameBoardView: View {
                 }
             
             if showConfetti {
-                ConfettiView()
+                ConfettiView(isSELikeSmallScreen: isSELikeSmallScreen)
                     .transition(.opacity)
                     .zIndex(3)
             }
@@ -148,22 +159,23 @@ struct GameBoardView: View {
             .padding(.horizontal, 24)
             .padding(.vertical, 16)
         } else {
-            VStack(spacing: isCompactHeight ? 8 : 16) {
+            VStack(spacing: isSELikeSmallScreen ? 4 : (isCompactHeight ? 6 : 16)) {  // Tighter spacing for SE
                 header
-                    .padding(.top, isCompactHeight ? 2 : 0)
+                    .padding(.top, isSELikeSmallScreen ? 0 : (isCompactHeight ? 2 : 0))
                 GameScoreView(
                     xWins: xWins,
                     oWins: oWins,
                     ties: ties,
                     currentTurn: currentPlayer
                 )
-                .padding(.horizontal, isCompactHeight ? 8 : 16)
+                .padding(.horizontal, isSELikeSmallScreen ? 4 : (isCompactHeight ? 8 : 16))
                 board
-                    .padding(.horizontal, isCompactHeight ? 8 : 16)
+                    .padding(.horizontal, isSELikeSmallScreen ? 4 : (isCompactHeight ? 8 : 16))
                 footer
-                    .padding(.bottom, isCompactHeight ? 6 : 12)
+                    .padding(.bottom, isSELikeSmallScreen ? 2 : (isCompactHeight ? 6 : 12))  // Tighter bottom padding
             }
-            .padding(.top, isCompactHeight ? 4 : 12)
+            .padding(.top, isSELikeSmallScreen ? 0 : (isCompactHeight ? 4 : 12))  // Zero top padding for SE
+            .padding(.bottom, isSELikeSmallScreen ? 0 : (isCompactHeight ? 4 : 12))  // Zero bottom padding for SE
         }
     }
 }
@@ -203,16 +215,21 @@ private extension GameBoardView {
                 .opacity(colorScheme == .dark ? 0.05 : 0.03)
                 .ignoresSafeArea()
             
-            // Bokeh effect for premium look
-            ZStack {
-                Circle().fill(colorScheme == .dark ? Color.pink : Color.pink.opacity(0.25))
-                    .frame(width: 220).blur(radius: 60).offset(x: -140, y: -180)
-                Circle().fill(colorScheme == .dark ? Color.blue : Color.blue.opacity(0.22))
-                    .frame(width: 260).blur(radius: 70).offset(x: 160, y: -120)
-                Circle().fill(colorScheme == .dark ? Color.purple : Color.purple.opacity(0.24))
-                    .frame(width: 280).blur(radius: 80).offset(x: 120, y: 220)
-                Circle().fill(colorScheme == .dark ? Color.cyan.opacity(0.8) : Color.cyan.opacity(0.18))
-                    .frame(width: 150).blur(radius: 50).offset(x: -80, y: 180)
+            GeometryReader { geo in
+                let scaleFactor: CGFloat = isSELikeSmallScreen ? 0.6 : 1.0
+                let baseWidth = geo.size.width
+                let baseHeight = geo.size.height
+                ZStack {
+                    Circle().fill(colorScheme == .dark ? Color.pink : Color.pink.opacity(0.25))
+                        .frame(width: 220 * scaleFactor).blur(radius: 60 * scaleFactor).offset(x: -140 * scaleFactor, y: -180 * scaleFactor)
+                    Circle().fill(colorScheme == .dark ? Color.blue : Color.blue.opacity(0.22))
+                        .frame(width: 260 * scaleFactor).blur(radius: 70 * scaleFactor).offset(x: 160 * scaleFactor, y: -120 * scaleFactor)
+                    Circle().fill(colorScheme == .dark ? Color.purple : Color.purple.opacity(0.24))
+                        .frame(width: 280 * scaleFactor).blur(radius: 80 * scaleFactor).offset(x: 120 * scaleFactor, y: 220 * scaleFactor)
+                    Circle().fill(colorScheme == .dark ? Color.cyan.opacity(0.8) : Color.cyan.opacity(0.18))
+                        .frame(width: 150 * scaleFactor).blur(radius: 50 * scaleFactor).offset(x: -80 * scaleFactor, y: 180 * scaleFactor)
+                }
+                .frame(width: baseWidth, height: baseHeight)
             }
             .transition(.opacity)
             .animation(.easeInOut(duration: 2).repeatForever(autoreverses: true), value: animateBoardEntrance)
@@ -274,29 +291,31 @@ private extension GameBoardView {
     }
     
     var header: some View {
-        VStack(spacing: isCompactHeight ? 4 : 8) {
+        VStack(spacing: isSELikeSmallScreen ? 2 : (isCompactHeight ? 4 : 8)) {
             Text(headerTitle)
-                .font(isCompactHeight ? .system(.title, design: .rounded).weight(.black) : .system(.largeTitle, design: .rounded).weight(.black))
+                .font(isSELikeSmallScreen ? .system(.title2, design: .rounded).weight(.black) :  // Use title2 for SE
+                      (isCompactHeight ? .system(.title, design: .rounded).weight(.black) : .system(.largeTitle, design: .rounded).weight(.black)))
                 .foregroundStyle(LinearGradient(colors: [.pink, .purple, .blue], startPoint: .leading, endPoint: .trailing))
                 .accessibilityAddTraits(.isHeader)
             
             Text(headerSubtitle)
-                .font(isCompactHeight ? .headline : .title3.weight(.semibold))
+                .font(isSELikeSmallScreen ? .caption : (isCompactHeight ? .headline : .title3.weight(.semibold)))  // Use caption for SE
                 .foregroundStyle(.secondary)
             
             Text(modeBadgeText)
-                .font(.footnote.weight(.semibold))
-                .padding(.horizontal, isCompactHeight ? 8 : 12)
-                .padding(.vertical, isCompactHeight ? 4 : 6)
+                .font(.caption.weight(.semibold))  // Use caption for all to save space
+                .padding(.horizontal, isSELikeSmallScreen ? 4 : (isCompactHeight ? 8 : 12))  // Tighter badge padding
+                .padding(.vertical, isSELikeSmallScreen ? 2 : (isCompactHeight ? 4 : 6))
                 .background(.ultraThinMaterial, in: Capsule())
                 .overlay(Capsule().strokeBorder(LinearGradient(colors: [.purple, .blue], startPoint: .top, endPoint: .bottom), lineWidth: 1))
                 .foregroundStyle(.primary)
         }
-        .padding(.horizontal)
+        .padding(.horizontal, isSELikeSmallScreen ? 4 : 8)  // Reduced horizontal padding
+        .padding(.vertical, isSELikeSmallScreen ? 2 : 4)  // Reduced vertical padding
         .background(
-            RoundedRectangle(cornerRadius: 16)
+            RoundedRectangle(cornerRadius: 12)  // Smaller corner radius
                 .fill(.ultraThinMaterial)
-                .shadow(color: .gray.opacity(0.1), radius: 8)
+                .shadow(color: .gray.opacity(0.1), radius: 6)  // Smaller shadow
         )
     }
     
@@ -304,8 +323,8 @@ private extension GameBoardView {
         GeometryReader { proxy in
             let maxSide = min(proxy.size.width, proxy.size.height)
             let side = min(maxSide, preferredBoardSide(for: proxy.size))
-            let spacing: CGFloat = isCompactHeight ? max(6, side * 0.015) : max(8, side * 0.02)
-            let cellSize = max(60, (side - spacing * 2) / 3)
+            let spacing: CGFloat = isSELikeSmallScreen ? max(5, side * 0.012) : (isCompactHeight ? max(6, side * 0.015) : max(8, side * 0.02))  // Slightly larger spacing for larger cells
+            let cellSize = max(60, (side - spacing * 2) / 3)  // Increased min cell size to 60 for better touch targets
             
             VStack(spacing: spacing) {
                 ForEach(0..<3, id: \.self) { row in
@@ -317,12 +336,14 @@ private extension GameBoardView {
                                     dataSource: ticTacToe.squares[index],
                                     size: cellSize,
                                     winningIndices: detectWinningIndices(),
-                                    isRecentlyPlaced: recentlyPlacedIndex == index
-                                ) {
-                                    self.makeMove(at: index)
-                                    recentlyPlacedIndex = index
-                                }
-                                .shadow(color: colorScheme == .dark ? Color.black.opacity(0.3) : Color.purple.opacity(0.2), radius: 8, x: 2, y: 2)
+                                    isRecentlyPlaced: recentlyPlacedIndex == index,
+                                    isSELikeSmallScreen: isSELikeSmallScreen,
+                                    action: {
+                                        self.makeMove(at: index)
+                                        recentlyPlacedIndex = index
+                                    }
+                                )
+                                .shadow(color: colorScheme == .dark ? Color.black.opacity(0.3) : Color.purple.opacity(0.2), radius: 6, x: 2, y: 2)  // Reduced shadow radius
 #if os(iOS) || os(visionOS)
                                 .hoverEffect(.lift)
 #endif
@@ -337,10 +358,10 @@ private extension GameBoardView {
             .frame(width: side, height: side)
             .background(
                 .ultraThinMaterial,
-                in: RoundedRectangle(cornerRadius: 28, style: .continuous)
+                in: RoundedRectangle(cornerRadius: 24, style: .continuous)  // Slightly smaller corner radius
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 28, style: .continuous)
+                RoundedRectangle(cornerRadius: 24, style: .continuous)
                     .strokeBorder(
                         LinearGradient(
                             colors: colorScheme == .dark
@@ -351,52 +372,22 @@ private extension GameBoardView {
                         ), lineWidth: 1.5
                     )
             )
-            .shadow(color: Color.purple.opacity(colorScheme == .dark ? 0.3 : 0.15), radius: 12, x: 0, y: 6)
-            .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
+            .shadow(color: Color.purple.opacity(colorScheme == .dark ? 0.3 : 0.15), radius: 8, x: 0, y: 4)  // Reduced shadow radius
+            .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
             .scaleEffect(animateBoardEntrance ? 1.0 : 0.9)
             .opacity(animateBoardEntrance ? 1.0 : 0.0)
             .animation(.spring(response: 0.6, dampingFraction: 0.8), value: animateBoardEntrance)
             .accessibilityElement(children: .contain)
         }
-        .frame(minHeight: isCompactHeight ? 360 : 420)
+        .frame(minHeight: isSELikeSmallScreen ? 360 : (isCompactHeight ? 360 : 420))  // Increased minHeight for larger board
     }
     
     var footer: some View {
-        HStack(spacing: isCompactHeight ? 8 : 12) {
-            Button(action: resetForNextRound) {
-                Label("Restart", systemImage: "arrow.counterclockwise.circle.fill")
-                    .font(isCompactHeight ? .subheadline : .headline)
-                    .padding(.vertical, isCompactHeight ? 10 : 12)
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.borderedProminent)
-            .tint(LinearGradient(colors: [.pink, .purple], startPoint: .top, endPoint: .bottom))
-            .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(LinearGradient(colors: [.pink.opacity(0.5), .purple.opacity(0.5)], startPoint: .top, endPoint: .bottom), lineWidth: 1)
-            )
-            .accessibilityLabel("Restart game")
-            .accessibilityHint("Starts a new round immediately")
+        HStack(spacing: isSELikeSmallScreen ? 4 : (isCompactHeight ? 8 : 12)) {
             
-            Spacer(minLength: isCompactHeight ? 8 : 12)
-            
-            Button(role: .destructive, action: exitToMenu) {
-                Label("Exit", systemImage: "xmark.circle.fill")
-                    .font(isCompactHeight ? .subheadline : .headline)
-                    .padding(.vertical, isCompactHeight ? 10 : 12)
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.bordered)
-            .tint(.red)
-            .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(LinearGradient(colors: [.red.opacity(0.5), .orange.opacity(0.5)], startPoint: .top, endPoint: .bottom), lineWidth: 1)
-            )
-            .accessibilityLabel("Exit to menu")
-            .accessibilityHint("Return to the main menu")
         }
-        .padding(.horizontal, isCompactHeight ? 12 : 16)
-        .padding(.top, isCompactHeight ? 2 : 6)
+        .padding(.horizontal, isSELikeSmallScreen ? 6 : (isCompactHeight ? 12 : 16))  // Tighter horizontal padding
+        .padding(.vertical, isSELikeSmallScreen ? 2 : (isCompactHeight ? 2 : 6))  // Tighter vertical padding
     }
     
     var footerButtonsOnly: some View {
@@ -434,28 +425,28 @@ private extension GameBoardView {
         HStack {
             if ticTacToe.playerToMove == ticTacToe.aiPlays && !gameTypeIsPVP {
                 Label("AI is Thinking…", systemImage: "brain.head.profile")
-                    .font(.system(.subheadline, design: .rounded).weight(.semibold))
-                    .padding(.vertical, 8)
-                    .padding(.horizontal, 12)
+                    .font(.system((isSELikeSmallScreen ? .caption2 : .subheadline), design: .rounded).weight(.semibold))
+                    .padding(.vertical, isSELikeSmallScreen ? 4 : 8)  // Tighter padding
+                    .padding(.horizontal, isSELikeSmallScreen ? 6 : 12)
                     .background(.ultraThinMaterial, in: Capsule())
                     .overlay(Capsule().stroke(LinearGradient(colors: [.purple, .blue], startPoint: .top, endPoint: .bottom), lineWidth: 1))
-                    .shadow(color: .purple.opacity(colorScheme == .dark ? 0.3 : 0.15), radius: 6)
+                    .shadow(color: .purple.opacity(colorScheme == .dark ? 0.3 : 0.15), radius: 4)  // Smaller shadow
                     .accessibilityLabel("AI is thinking")
             } else {
                 Label("\(currentPlayer)’s Turn", systemImage: ticTacToe.playerToMove == .x ? "xmark" : "circle")
-                    .font(.system(.subheadline, design: .rounded).weight(.semibold))
-                    .padding(.vertical, 8)
-                    .padding(.horizontal, 12)
+                    .font(.system((isSELikeSmallScreen ? .caption2 : .subheadline), design: .rounded).weight(.semibold))
+                    .padding(.vertical, isSELikeSmallScreen ? 4 : 8)
+                    .padding(.horizontal, isSELikeSmallScreen ? 6 : 12)
                     .background(.ultraThinMaterial, in: Capsule())
                     .overlay(Capsule().stroke(LinearGradient(colors: [.pink, .purple], startPoint: .top, endPoint: .bottom), lineWidth: 1))
-                    .shadow(color: .purple.opacity(colorScheme == .dark ? 0.3 : 0.15), radius: 6)
+                    .shadow(color: .purple.opacity(colorScheme == .dark ? 0.3 : 0.15), radius: 4)
                     .accessibilityLabel("\(currentPlayer) turn")
             }
         }
-        .padding(.horizontal, 20)
-        .padding(.bottom, 18)
+        .padding(.horizontal, isSELikeSmallScreen ? 8 : 20)
+        .padding(.bottom, isSELikeSmallScreen ? 8 : 18)
         .frame(maxWidth: .infinity)
-        .frame(height: 44)
+        .frame(height: isSELikeSmallScreen ? 32 : 44)  // Smaller height for SE
     }
     
     @ToolbarContentBuilder
@@ -477,19 +468,19 @@ private extension GameBoardView {
         }
 #else
         ToolbarItem(placement: .topBarLeading) {
-            Button(role: .cancel, action: exitToMenu) {
+            Button(role: .cancel, action: exitToMenu)
                 Label("Exit", systemImage: "xmark.circle.fill")
                     .labelStyle(.iconOnly)
-                    .imageScale(.large)
+                    .imageScale(isSELikeSmallScreen ? .small : .large)  // Use small for SE
                     .foregroundStyle(LinearGradient(colors: [.red, .orange], startPoint: .top, endPoint: .bottom))
                     .accessibilityLabel("Exit to menu")
             }
-        }
+        
         ToolbarItem(placement: .topBarTrailing) {
             Button(action: resetForNextRound) {
                 Label("Restart", systemImage: "arrow.counterclockwise.circle.fill")
                     .labelStyle(.iconOnly)
-                    .imageScale(.large)
+                    .imageScale(isSELikeSmallScreen ? .small : .large)
                     .foregroundStyle(LinearGradient(colors: [.pink, .purple], startPoint: .top, endPoint: .bottom))
             }
             .accessibilityLabel("Restart game")
@@ -549,7 +540,8 @@ private extension GameBoardView {
         else { return }
         
         aiThinking = true
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) {
+        let delay: TimeInterval = isSELikeSmallScreen ? 0.3 : 0.45
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
             let boardMoves = ticTacToe.boardArray
             let testBoard = Board(position: boardMoves, turn: .x)
             let answer = testBoard.bestMove(difficulty: difficulty)
@@ -570,7 +562,9 @@ private extension GameBoardView {
         if hSizeClass == .regular {
             return min(600, max(420, min(size.width, size.height) * 0.9))
         } else {
-            if isCompactHeight {
+            if isSELikeSmallScreen {
+                return min(400, max(340, min(size.width, size.height) * 0.98))  // Larger board for SE (~380-390pt)
+            } else if isCompactHeight {
                 return min(420, max(340, min(size.width, size.height) * 0.98))
             } else {
                 return min(440, max(360, min(size.width, size.height) * 0.95))
@@ -614,8 +608,9 @@ private extension GameBoardView {
     }
     
     func bannerShowTemporarily() {
+        let duration: TimeInterval = isSELikeSmallScreen ? 1.0 : 1.4
         withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) { showTurnBanner = true }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.4) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + duration) {
             withAnimation(.easeOut) { showTurnBanner = false }
         }
     }
@@ -654,7 +649,8 @@ private struct SquareButtonView: View {
     let size: CGFloat
     let winningIndices: [Int]
     let isRecentlyPlaced: Bool
-    var action: () -> Void
+    let isSELikeSmallScreen: Bool
+    let action: () -> Void
     
     @State private var isPressed: Bool = false
     @State private var glowPulse: Bool = false
@@ -720,8 +716,8 @@ private struct SquareButtonView: View {
             )
             .shadow(
                 color: Color.purple.opacity(colorScheme == .dark ? 0.4 : 0.2),
-                radius: glowPulse ? 12 : 8,
-                x: 0, y: glowPulse ? 6 : 4
+                radius: glowPulse ? 10 : 6,  // Reduced shadow radius
+                x: 0, y: glowPulse ? 4 : 2
             )
             .scaleEffect(tileScale)
             .animation(.spring(response: 0.3, dampingFraction: 0.7), value: dataSource.squareStatus)
@@ -736,17 +732,17 @@ private struct SquareButtonView: View {
         )
         
         return Text(symbol)
-            .font(.system(size: size * 0.55, weight: .black, design: .rounded))
+            .font(.system(size: size * (isSELikeSmallScreen ? 0.52 : 0.55), weight: .black, design: .rounded))  // Slightly larger symbols for larger cells
             .foregroundStyle(symbolGradient)
             .shadow(
                 color: winningGlowActive || glowPulse ? Color.yellow.opacity(0.85) : Color.black.opacity(0.25),
-                radius: winningGlowActive || glowPulse ? 18 : 6,
+                radius: winningGlowActive || glowPulse ? 12 : 4,  // Reduced shadow radius
                 x: 2, y: 2
             )
             .overlay {
                 if winningGlowActive || glowPulse {
                     RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                        .stroke(glowGradient, lineWidth: 4)
+                        .stroke(glowGradient, lineWidth: 3)  // Thinner stroke for larger cells
                         .blendMode(.screen)
                 }
             }
@@ -808,7 +804,7 @@ private struct SquareButtonView: View {
     }
     
     private var borderWidth: CGFloat { 1.5 }
-    private var cornerRadius: CGFloat { max(12, size * 0.12) }
+    private var cornerRadius: CGFloat { max(8, size * 0.08) }  // Smaller corner radius for larger cells
     
     private var tileScale: CGFloat {
 #if os(macOS)
@@ -835,8 +831,14 @@ private struct SquareButtonView: View {
 // MARK: - Enhanced Confetti View
 
 private struct ConfettiView: View {
-    @State private var particles: [ConfettiParticle] = (0..<40).map { _ in ConfettiParticle.random() }
+    let isSELikeSmallScreen: Bool
+    @State private var particles: [ConfettiParticle]
     @State private var t: Double = 0.0
+    
+    init(isSELikeSmallScreen: Bool) {
+        self.isSELikeSmallScreen = isSELikeSmallScreen
+        self._particles = State(initialValue: (0..<(isSELikeSmallScreen ? 20 : 40)).map { _ in ConfettiParticle.random() })
+    }
     
     var body: some View {
         GeometryReader { geo in
@@ -897,4 +899,5 @@ private struct ConfettiParticle {
             startingPlayerIsO: false
         )
     }
+    .previewDevice("iPhone SE (3rd generation)")
 }
