@@ -12,15 +12,29 @@ import CoreHaptics
 
 struct StartMenuView: View {
     // MARK: - Premium Styling
-    private let premiumGradient = LinearGradient(
-        colors: [
-            Color(red: 0.08, green: 0.08, blue: 0.10),
-            Color(red: 0.11, green: 0.12, blue: 0.18),
-            Color(red: 0.03, green: 0.04, blue: 0.06)
-        ],
-        startPoint: .topLeading,
-        endPoint: .bottomTrailing
-    )
+    private var premiumGradient: LinearGradient {
+        if colorScheme == .dark {
+            return LinearGradient(
+                colors: [
+                    Color(red: 0.08, green: 0.08, blue: 0.10),
+                    Color(red: 0.11, green: 0.12, blue: 0.18),
+                    Color(red: 0.03, green: 0.04, blue: 0.06)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        } else {
+            return LinearGradient(
+                colors: [
+                    Color(red: 0.98, green: 0.98, blue: 1.0), // Softer white-blue tint
+                    Color(red: 0.95, green: 0.96, blue: 0.99),
+                    Color(red: 0.90, green: 0.92, blue: 0.98)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        }
+    }
     
     private let accentGradient = LinearGradient(
         colors: [.pink.opacity(0.9), .purple.opacity(0.9), .blue.opacity(0.9)],
@@ -42,9 +56,9 @@ struct StartMenuView: View {
     
     @StateObject private var viewModel = ViewModel()
     @StateObject private var ticTacToeModel = GameViewModel()
-    #if os(iOS)
+#if os(iOS)
     @State private var hapticsEngine: CHHapticEngine?
-    #endif
+#endif
     
     private var startingPlayerIsO: Bool { selectedPlayer == .o }
     
@@ -56,12 +70,12 @@ struct StartMenuView: View {
     
     // MARK: - Layout Helpers
     private var aspectRatio: CGFloat {
-        #if os(iOS)
+#if os(iOS)
         let size = UIScreen.main.bounds.size
         return size.height / size.width
-        #else
+#else
         return 2.0
-        #endif
+#endif
     }
     
     private var layoutCategory: String {
@@ -87,21 +101,21 @@ struct StartMenuView: View {
     }
     
     private var isCompactHeightPhone: Bool {
-        #if os(iOS)
+#if os(iOS)
         vSizeClass == .compact || UIScreen.main.bounds.height <= 667
-        #else
+#else
         false
-        #endif
+#endif
     }
     
     private var contentMaxWidth: CGFloat {
-        #if os(macOS)
+#if os(macOS)
         720
-        #elseif os(visionOS)
+#elseif os(visionOS)
         780
-        #else
+#else
         hSizeClass == .regular ? 700 : (isCompactHeightPhone ? 360 : 500)
-        #endif
+#endif
     }
     
     private var cardBackground: AnyShapeStyle {
@@ -109,7 +123,7 @@ struct StartMenuView: View {
     }
     
     private var premiumShadow: (Color, CGFloat, CGFloat) {
-        let color = colorScheme == .dark ? Color.black.opacity(0.6) : Color.black.opacity(0.25)
+        let color = colorScheme == .dark ? Color.black.opacity(0.6) : Color.blue.opacity(0.15) // Softer blue shadow for light mode
         return (color, 24, 14)
     }
     
@@ -125,7 +139,7 @@ struct StartMenuView: View {
                         
                         HeroHeader(isCompactHeightPhone: isCompactHeightPhone,
                                    configurationSummary: configurationSummary)
-                            .font(headerFont)
+                        .font(headerFont)
                         
                         ConfigurationCard(
                             selectedPlayer: $selectedPlayer,
@@ -136,8 +150,15 @@ struct StartMenuView: View {
                             cardBackground: cardBackground
                         )
                         .background(RoundedRectangle(cornerRadius: 28).fill(cardBackground))
-                        .overlay(RoundedRectangle(cornerRadius: 28)
-                            .strokeBorder(Color.white.opacity(colorScheme == .dark ? 0.06 : 0.12), lineWidth: 1))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 28)
+                                .strokeBorder(
+                                    colorScheme == .dark
+                                    ? Color.white.opacity(0.06)
+                                    : Color.blue.opacity(0.08), // Subtle blue border for light mode
+                                    lineWidth: 1
+                                )
+                        )
                         .shadow(color: premiumShadow.0, radius: premiumShadow.1, x: 0, y: premiumShadow.2)
                         .padding(.top, isCompactHeightPhone ? 4 : 8)
                         .transition(.scale.combined(with: .opacity))
@@ -147,10 +168,17 @@ struct StartMenuView: View {
                             startGame()
                         }
                         .padding(layoutCategory == "tall" ? 20 : 12)
-                        .background(RoundedRectangle(cornerRadius: 20).fill(accentGradient.opacity(0.18)))
-                        .overlay(RoundedRectangle(cornerRadius: 20)
-                            .strokeBorder(Color.white.opacity(0.12), lineWidth: 1))
-                        .shadow(color: .purple.opacity(0.35), radius: 18, x: 0, y: 10)
+                        .background(RoundedRectangle(cornerRadius: 20).fill(accentGradient.opacity(colorScheme == .dark ? 0.18 : 0.24))) // Slightly higher opacity in light mode
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 28)
+                                .strokeBorder(
+                                    colorScheme == .dark
+                                    ? Color.white.opacity(0.06)
+                                    : Color.purple.opacity(0.08), // Purple tint for light mode border
+                                    lineWidth: 1
+                                )
+                        )
+                        .shadow(color: .purple.opacity(colorScheme == .dark ? 0.35 : 0.25), radius: 18, x: 0, y: 10) // Softer shadow in light mode
                         .sensoryFeedback(.success, trigger: showGame)
                     }
                     .padding(.horizontal, isCompactHeightPhone ? 12 : 16)
@@ -184,8 +212,8 @@ struct StartMenuView: View {
             
             Rectangle()
                 .fill(LinearGradient(colors: [
-                    Color.white.opacity(colorScheme == .dark ? 0.02 : 0.05),
-                    Color.black.opacity(0.02)
+                    Color.white.opacity(colorScheme == .dark ? 0.02 : 0.08), // Increased opacity for light mode depth
+                    Color.black.opacity(colorScheme == .dark ? 0.02 : 0.01)
                 ], startPoint: .topLeading, endPoint: .bottomTrailing))
                 .blendMode(.overlay)
                 .opacity(0.6)
@@ -194,29 +222,46 @@ struct StartMenuView: View {
                 .animation(.easeInOut(duration: 6).repeatForever(autoreverses: true), value: animateBackground)
             
             LinearGradient(colors: [
-                Color.black.opacity(0.35), .clear, Color.black.opacity(0.35)
+                Color.black.opacity(colorScheme == .dark ? 0.35 : 0.15), // Softer vignette in light mode
+                .clear,
+                Color.black.opacity(colorScheme == .dark ? 0.35 : 0.15)
             ], startPoint: .top, endPoint: .bottom)
             .ignoresSafeArea()
+            
+            // Added subtle noise texture for premium feel
+            NoiseTextureView()
+                .opacity(colorScheme == .dark ? 0.05 : 0.03)
+                .ignoresSafeArea()
         }
         .task {
             animateBackground = true
-            #if os(iOS)
+#if os(iOS)
             prepareHaptics()
-            #endif
+#endif
         }
     }
     
     private var bokehLayer: some View {
         ZStack {
-            Circle().fill(Color.pink.opacity(0.25)).frame(width: 220).blur(radius: 60).offset(x: -140, y: -180)
-            Circle().fill(Color.blue.opacity(0.20)).frame(width: 260).blur(radius: 70).offset(x: 160, y: -120)
-            Circle().fill(Color.purple.opacity(0.22)).frame(width: 280).blur(radius: 80).offset(x: 120, y: 220)
+            Circle().fill((colorScheme == .dark ? Color.pink : Color.pink.opacity(0.25))) // Increased opacity for light mode
+                .frame(width: 220).blur(radius: 60).offset(x: -140, y: -180)
+            Circle().fill((colorScheme == .dark ? Color.blue : Color.blue.opacity(0.22)))
+                .frame(width: 260).blur(radius: 70).offset(x: 160, y: -120)
+            Circle().fill((colorScheme == .dark ? Color.purple : Color.purple.opacity(0.24)))
+                .frame(width: 280).blur(radius: 80).offset(x: 120, y: 220)
+            
+            // Added extra smaller bokeh for more depth
+            Circle().fill((colorScheme == .dark ? Color.cyan.opacity(0.8) : Color.cyan.opacity(0.18)))
+                .frame(width: 150).blur(radius: 50).offset(x: -80, y: 180)
+            Circle().fill((colorScheme == .dark ? Color.indigo : Color.indigo.opacity(0.20)))
+                .frame(width: 180).blur(radius: 55).offset(x: 200, y: 100)
         }
         .transition(.opacity)
+        .animation(.easeInOut(duration: 2).repeatForever(autoreverses: true), value: animateBackground) // Gentle animation on bokeh
     }
     
     // MARK: - Haptics
-    #if os(iOS)
+#if os(iOS)
     private func prepareHaptics() {
         do {
             hapticsEngine = try CHHapticEngine()
@@ -235,9 +280,9 @@ struct StartMenuView: View {
             try player.start(atTime: 0)
         } catch { }
     }
-    #else
+#else
     private func triggerHaptic() {}
-    #endif
+#endif
     
     // MARK: - Game Logic
     private func startGame() {
