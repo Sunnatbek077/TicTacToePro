@@ -7,6 +7,14 @@
 
 import Foundation
 
+enum SquareStatus {
+    case empty
+    case x
+    case o
+    case xw
+    case ow
+}
+
 // MARK: - Skeleton map of the Board
 /// Represents the TicTacToe board and contains the main game logic (UI-agnostic)
 struct Board {
@@ -25,6 +33,18 @@ struct Board {
     ) {
         self.pos = position
         self.turn = turn
+    }
+    
+    // MARK: - Board Size Properties
+    
+    /// Taxta o'lchami (3x3, 4x4, 5x5, va h.k.)
+    var boardSize: Int {
+        Int(sqrt(Double(pos.count)))
+    }
+    
+    /// G'alaba uchun kerakli uzunlik
+    var winLength: Int {
+        boardSize
     }
     
     // MARK: - Make a move
@@ -47,22 +67,71 @@ struct Board {
         return pos.indices.filter { pos[$0] == .empty }
     }
     
-    // MARK: - Winning Combinations
-    /// Returns all possible winning combinations (rows, columns, diagonals)
+    // MARK: - Winning Combinations (Dynamic)
+    
+    /// Har qanday o'lchamdagi taxta uchun g'alaba kombinatsiyalarini yaratadi
+    func generateWinningCombos() -> [[Int]] {
+        let size = boardSize
+        var combos: [[Int]] = []
+        
+        // Qatorlar (Rows)
+        for row in 0..<size {
+            var combo: [Int] = []
+            for col in 0..<size {
+                combo.append(row * size + col)
+            }
+            combos.append(combo)
+        }
+        
+        // Ustunlar (Columns)
+        for col in 0..<size {
+            var combo: [Int] = []
+            for row in 0..<size {
+                combo.append(row * size + col)
+            }
+            combos.append(combo)
+        }
+        
+        // Bosh diagonal (Main diagonal)
+        var mainDiag: [Int] = []
+        for i in 0..<size {
+            mainDiag.append(i * size + i)
+        }
+        combos.append(mainDiag)
+        
+        // Teskari diagonal (Anti-diagonal)
+        var antiDiag: [Int] = []
+        for i in 0..<size {
+            antiDiag.append(i * size + (size - 1 - i))
+        }
+        combos.append(antiDiag)
+        
+        return combos
+    }
+    
+    /// Returns all possible winning combinations (3x3 uchun eski versiya)
     private var winningCombos: [[Int]] {
-        [
-            [0, 1, 2], [3, 4, 5], [6, 7, 8], // rows
-            [0, 3, 6], [1, 4, 7], [2, 5, 8], // columns
-            [0, 4, 8], [2, 4, 6]             // diagonals
-        ]
+        if boardSize == 3 {
+            return [
+                [0, 1, 2], [3, 4, 5], [6, 7, 8], // rows
+                [0, 3, 6], [1, 4, 7], [2, 5, 8], // columns
+                [0, 4, 8], [2, 4, 6]             // diagonals
+            ]
+        } else {
+            return generateWinningCombos()
+        }
     }
     
     /// Returns the winning line (indices) and winner mark if any
     var winningLine: (indices: [Int], winner: SquareStatus)? {
-        for combo in winningCombos {
-            let a = combo[0], b = combo[1], c = combo[2]
-            if pos[a] == pos[b], pos[b] == pos[c], pos[a] != .empty {
-                return (combo, pos[a])
+        let combos = generateWinningCombos()
+        for combo in combos {
+            let first = combo[0]
+            if pos[first] == .empty { continue }
+            
+            let allSame = combo.allSatisfy { pos[$0] == pos[first] }
+            if allSame {
+                return (combo, pos[first])
             }
         }
         return nil
@@ -78,7 +147,7 @@ struct Board {
         return !isWin && legalMoves.isEmpty
     }
     
-    // MARK: - Minimax Algorithm
+    // MARK: - Minimax Algorithm (3x3 uchun)
     /// Recursive minimax algorithm to evaluate board positions
     func minimax(_ board: Board, depth: Int, alpha: inout Int, beta: inout Int, maximizing: Bool, originalPlayer: SquareStatus) -> Int {
         if board.isWin && originalPlayer == board.opposite { return 10 - depth }
@@ -115,20 +184,32 @@ struct Board {
         return minimax(board, depth: 0, alpha: &alpha, beta: &beta, maximizing: maximizing, originalPlayer: originalPlayer)
     }
     
-    // MARK: - Find the Best Move for AI (Hard)
+    // MARK: - Find the Best Move for AI (Hard - 3x3 uchun)
     func findBestMove(_ board: Board) -> Int? {
-        var bestEval = Int.min
-        var bestMove = -1
-        for move in board.legalMoves {
-            let childBoard = board.move(move)
-            let result = evaluateMove(childBoard, maximizing: false, originalPlayer: board.turn)
-            if result > bestEval {
-                bestEval = result
-                bestMove = move
+        // 3x3 uchun eski minimax
+        if boardSize == 3 {
+            var bestEval = Int.min
+            var bestMove = -1
+            for move in board.legalMoves {
+                let childBoard = board.move(move)
+                let result = evaluateMove(childBoard, maximizing: false, originalPlayer: board.turn)
+                if result > bestEval {
+                    bestEval = result
+                    bestMove = move
+                }
             }
+            return bestMove >= 0 ? bestMove : nil
+        } else {
+            // Katta taxtalar uchun superior minimax
+            return findSuperiorMove(timeLimit: 5.0)
         }
-        return bestMove >= 0 ? bestMove : nil
     }
+    
+    // MARK: - Superior minimax for 4x4, 5x5, 6x6, 7x7, 8x8, 9x9
+    func superiorminimax() -> Int? {
+        return findSuperiorMove(timeLimit: 5.0)
+    }
+    
 }
 
 // MARK: - AI Difficulty Enum (core)
@@ -158,10 +239,9 @@ extension Board {
     
     private func mediumMove() -> Int {
         // Medium should feel beatable: allow some mistakes, but still take immediate wins
-        // Tunable probabilities
-        let blockProbability: Int = 70   // % chance to block an imminent loss
-        let randomOverrideProbability: Int = 30 // % chance to just play random early
-        let suboptimalHeuristicProbability: Int = 35 // % chance to pick a worse square in heuristic stage
+        let blockProbability: Int = 70
+        let randomOverrideProbability: Int = 30
+        let suboptimalHeuristicProbability: Int = 35
         
         // 0️⃣ Occasionally play random right away to feel human-like
         if Int.random(in: 0..<100) < randomOverrideProbability {
@@ -177,36 +257,300 @@ extension Board {
         // 2️⃣ Block opponent with some probability (not always)
         if Int.random(in: 0..<100) < blockProbability {
             for candidate in legalMoves {
-                // simulate opponent taking this square next
                 let opponentBoard = Board(position: self.pos, turn: self.opposite).move(candidate)
                 if opponentBoard.isWin { return candidate }
             }
         }
         
-        // 3️⃣ Heuristics with occasional suboptimal choices
-        // Prefer center > corners > edges, but sometimes pick a suboptimal bucket
-        let center = [4].filter { legalMoves.contains($0) }
-        let corners = [0, 2, 6, 8].filter { legalMoves.contains($0) }
-        let edges = [1, 3, 5, 7].filter { legalMoves.contains($0) }
+        // 3️⃣ Dynamic heuristics based on board size
+        let size = boardSize
+        let center = size / 2
         
-        // Helper to pick from a bucket
+        var centerIndices: [Int] = []
+        if size % 2 == 1 {
+            centerIndices = [center * size + center]
+        } else {
+            centerIndices = [
+                (center - 1) * size + (center - 1),
+                (center - 1) * size + center,
+                center * size + (center - 1),
+                center * size + center
+            ]
+        }
+        
+        var corners: [Int] = []
+        corners.append(0)
+        corners.append(size - 1)
+        corners.append(size * (size - 1))
+        corners.append(size * size - 1)
+        
+        let centerMoves = centerIndices.filter { legalMoves.contains($0) }
+        let cornerMoves = corners.filter { legalMoves.contains($0) }
+        let otherMoves = legalMoves.filter { !centerIndices.contains($0) && !corners.contains($0) }
+        
         func pick(_ arr: [Int]) -> Int? { arr.randomElement() }
         
         let roll = Int.random(in: 0..<100)
         if roll < suboptimalHeuristicProbability {
-            // Suboptimal branch: try edges first, then corners, then center
-            if let e = pick(edges) { return e }
-            if let c = pick(corners) { return c }
-            if let ce = pick(center) { return ce }
+            if let m = pick(otherMoves) { return m }
+            if let c = pick(cornerMoves) { return c }
+            if let ce = pick(centerMoves) { return ce }
         } else {
-            // Normal heuristic: center > corners > edges
-            if let ce = pick(center) { return ce }
-            if let c = pick(corners) { return c }
-            if let e = pick(edges) { return e }
+            if let ce = pick(centerMoves) { return ce }
+            if let c = pick(cornerMoves) { return c }
+            if let m = pick(otherMoves) { return m }
         }
         
         // 4️⃣ Fallback to random
         return easyMove()
+    }
+}
+
+// MARK: - Superior Minimax Implementation
+extension Board {
+    
+    // MARK: - Advanced Heuristic Evaluation
+    
+    /// Pozitsiyani heuristic baholash (terminal bo'lmagan holatlar uchun)
+    func advancedHeuristic(for player: SquareStatus) -> Int {
+        let opponent = player == .x ? SquareStatus.o : .x
+        let combos = generateWinningCombos()
+        var score = 0
+        
+        for combo in combos {
+            let playerCount = combo.filter { pos[$0] == player }.count
+            let opponentCount = combo.filter { pos[$0] == opponent }.count
+            
+            // Faqat bir o'yinchi belgilari bo'lgan chiziqlar
+            if playerCount > 0 && opponentCount == 0 {
+                score += scoreForLine(playerCount: playerCount)
+            }
+            
+            // Raqib bloklagan chiziqlar (manfiy ball)
+            if opponentCount > 0 && playerCount == 0 {
+                score -= scoreForLine(playerCount: opponentCount)
+            }
+        }
+        
+        // Markaziy pozitsiyalarga bonus
+        score += centerControlBonus(for: player)
+        
+        return score
+    }
+    
+    /// Chiziq uchun ball hisoblash
+    private func scoreForLine(playerCount: Int) -> Int {
+        switch playerCount {
+        case 1: return 1
+        case 2: return 10
+        case 3: return 100
+        case 4: return 1000
+        case 5: return 10000
+        default: return playerCount * 10000
+        }
+    }
+    
+    /// Markazni nazorat qilish bonusi
+    private func centerControlBonus(for player: SquareStatus) -> Int {
+        let size = boardSize
+        let center = size / 2
+        let centerIndices: [Int]
+        
+        if size % 2 == 1 {
+            // Toq o'lcham: bitta markaz
+            centerIndices = [center * size + center]
+        } else {
+            // Juft o'lcham: 4 ta markaziy katak
+            centerIndices = [
+                (center - 1) * size + (center - 1),
+                (center - 1) * size + center,
+                center * size + (center - 1),
+                center * size + center
+            ]
+        }
+        
+        var bonus = 0
+        for idx in centerIndices where pos.indices.contains(idx) {
+            if pos[idx] == player {
+                bonus += 5
+            }
+        }
+        return bonus
+    }
+    
+    // MARK: - Zobrist Hashing
+    
+    /// Zobrist hash uchun tasodifiy sonlar (static)
+    private static var zobristTable: [[Int]] = {
+        var table: [[Int]] = []
+        let maxSize = 81 // 9x9 maksimal
+        for _ in 0..<maxSize {
+            table.append([Int.random(in: 0..<Int.max), Int.random(in: 0..<Int.max)])
+        }
+        return table
+    }()
+    
+    /// Pozitsiyaning Zobrist hash qiymati
+    func zobristHash() -> Int {
+        var hash = 0
+        for i in pos.indices {
+            if pos[i] == .x {
+                hash ^= Board.zobristTable[i][0]
+            } else if pos[i] == .o {
+                hash ^= Board.zobristTable[i][1]
+            }
+        }
+        return hash
+    }
+    
+    // MARK: - Move Ordering
+    
+    /// Harakatlarni prioritet bo'yicha tartiblash
+    func orderedLegalMoves() -> [Int] {
+        let size = boardSize
+        let center = size / 2
+        
+        return legalMoves.sorted { move1, move2 in
+            let score1 = movePriority(move1, center: center, size: size)
+            let score2 = movePriority(move2, center: center, size: size)
+            return score1 > score2
+        }
+    }
+    
+    /// Harakat prioritetini hisoblash
+    private func movePriority(_ move: Int, center: Int, size: Int) -> Int {
+        let row = move / size
+        let col = move % size
+        
+        // Markazga yaqinroq - yuqoriroq prioritet
+        let distanceFromCenter = abs(row - center) + abs(col - center)
+        var priority = 100 - distanceFromCenter * 10
+        
+        // Diagonal pozitsiyalarga bonus
+        if row == col || row + col == size - 1 {
+            priority += 5
+        }
+        
+        return priority
+    }
+    
+    // MARK: - Core Superior Minimax with Negamax
+    
+    /// Superior Minimax with Transposition Table
+    func superiorMinimaxCore(
+        maxDepth: Int,
+        alpha: Int = Int.min,
+        beta: Int = Int.max,
+        transTable: inout [Int: (score: Int, depth: Int)]
+    ) -> (score: Int, bestMove: Int?) {
+        
+        let hash = zobristHash()
+        
+        // Transposition table tekshiruvi
+        if let entry = transTable[hash], entry.depth >= maxDepth {
+            return (entry.score, nil)
+        }
+        
+        // Terminal holatlar
+        if isWin {
+            let score = (opposite == turn) ? 10000 - maxDepth : -10000 + maxDepth
+            return (score, nil)
+        }
+        
+        if isDraw {
+            return (0, nil)
+        }
+        
+        // Chuqurlik chegarasi
+        if maxDepth == 0 {
+            let heuristic = advancedHeuristic(for: turn)
+            return (heuristic, nil)
+        }
+        
+        var bestScore = Int.min
+        var bestMove: Int? = nil
+        var currentAlpha = alpha
+        
+        // Tartiblangan harakatlarni tekshirish
+        for move in orderedLegalMoves() {
+            let newBoard = self.move(move)
+            let (score, _) = newBoard.superiorMinimaxCore(
+                maxDepth: maxDepth - 1,
+                alpha: -beta,
+                beta: -currentAlpha,
+                transTable: &transTable
+            )
+            let negatedScore = -score
+            
+            if negatedScore > bestScore {
+                bestScore = negatedScore
+                bestMove = move
+            }
+            
+            currentAlpha = max(currentAlpha, negatedScore)
+            
+            // Alpha-beta pruning
+            if currentAlpha >= beta {
+                break
+            }
+        }
+        
+        // Transposition table ga saqlash
+        transTable[hash] = (bestScore, maxDepth)
+        
+        return (bestScore, bestMove)
+    }
+    
+    // MARK: - Adaptive Depth
+    
+    /// Taxta o'lchamiga qarab adaptive chuqurlik
+    private func adaptiveMaxDepth() -> Int {
+        let size = boardSize
+        let emptyCount = legalMoves.count
+        
+        switch size {
+        case 3: return 9 // 3x3: to'liq tahlil
+        case 4: return emptyCount > 10 ? 6 : 8
+        case 5: return emptyCount > 15 ? 4 : 6
+        case 6: return emptyCount > 20 ? 3 : 5
+        case 7: return emptyCount > 30 ? 3 : 4
+        case 8: return emptyCount > 40 ? 2 : 3
+        case 9: return emptyCount > 50 ? 2 : 3
+        default: return 4
+        }
+    }
+    
+    // MARK: - Main Entry Point
+    
+    /// Eng yaxshi harakatni topish (iterative deepening bilan)
+    func findSuperiorMove(timeLimit: TimeInterval = 5.0) -> Int? {
+        let startTime = Date()
+        var transTable: [Int: (score: Int, depth: Int)] = [:]
+        var bestMove: Int?
+        var currentDepth = 1
+        let maxPossibleDepth = min(legalMoves.count, adaptiveMaxDepth())
+        
+        // Iterative deepening
+        while currentDepth <= maxPossibleDepth {
+            let (_, move) = superiorMinimaxCore(
+                maxDepth: currentDepth,
+                transTable: &transTable
+            )
+            
+            if let move = move {
+                bestMove = move
+            }
+            
+            // Vaqt chegarasini tekshirish
+            let elapsed = Date().timeIntervalSince(startTime)
+            if elapsed > timeLimit {
+                break
+            }
+            
+            currentDepth += 1
+        }
+        
+        return bestMove ?? legalMoves.first
     }
 }
 
@@ -238,4 +582,3 @@ extension Board {
         return 0
     }
 }
-

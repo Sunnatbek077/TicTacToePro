@@ -9,13 +9,7 @@ import SwiftUI
 import Foundation
 import Combine
 
-enum SquareStatus {
-    case empty
-    case x
-    case o
-    case xw
-    case ow
-}
+
 
 class Square: ObservableObject {
     @Published var squareStatus: SquareStatus
