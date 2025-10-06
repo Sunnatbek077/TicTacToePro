@@ -219,10 +219,10 @@ extension GameBoardView {
             .frame(width: side, height: side)
             .background(
                 .ultraThinMaterial,
-                in: RoundedRectangle(cornerRadius: 24, style: .continuous)
+                in: RoundedRectangle(cornerRadius: 16, style: .continuous)
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
                     .strokeBorder(
                         LinearGradient(
                             colors: colorScheme == .dark
@@ -234,7 +234,6 @@ extension GameBoardView {
                     )
             )
             .shadow(color: Color.purple.opacity(colorScheme == .dark ? 0.3 : 0.15), radius: 8, x: 0, y: 4)
-            .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
             .scaleEffect(animateBoardEntrance ? 1.0 : 0.9)
             .opacity(animateBoardEntrance ? 1.0 : 0.0)
             .animation(.spring(response: 0.6, dampingFraction: 0.8), value: animateBoardEntrance)

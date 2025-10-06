@@ -9,7 +9,7 @@ import SwiftUI
 
 struct SettingsView: View {
     @State private var enablingSounds: Bool = false
-    @State private var enableHapticFeeling: Bool = false
+    @AppStorage(HapticsManager.hapticsEnabledKey) private var enableHapticFeeling: Bool = false
     @State private var enableCharizmaticAI: Bool = true
     
     var body: some View {
@@ -27,6 +27,14 @@ struct SettingsView: View {
                     Image(systemName: enableHapticFeeling ? "iphone.gen2.radiowaves.left.and.right" : "iphone.gen2.slash")
                     Toggle("Enable Haptic Feeling", isOn: $enableHapticFeeling)
                         .toggleStyle(SwitchToggleStyle(tint: .blue))
+                        .onChange(of: enableHapticFeeling) { oldValue, newValue in
+                            HapticsManager.setEnabled(newValue)
+                            if newValue {
+                                HapticsManager.playNotification(.success, force: true)
+                            } else {
+                                HapticsManager.playSelection(force: true)
+                            }
+                        }
                 }
                 
                 // Charizmatic AI Toggle

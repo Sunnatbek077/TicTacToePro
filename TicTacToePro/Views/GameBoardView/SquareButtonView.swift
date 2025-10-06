@@ -5,6 +5,8 @@
 
 import SwiftUI
 
+// MARK: - Square Button View
+/// A button representing a single square on the Tic-Tac-Toe board
 struct SquareButtonView: View {
     @Environment(\.colorScheme) var colorScheme
     @ObservedObject var dataSource: Square
@@ -15,10 +17,6 @@ struct SquareButtonView: View {
     let action: () -> Void
     
     @State private var isPressed: Bool = false
-    @State private var glowPulse: Bool = false
-#if os(macOS)
-    @State private var isHovering: Bool = false
-#endif
     
     var body: some View {
         Button(action: handleTap) {
@@ -27,111 +25,77 @@ struct SquareButtonView: View {
                 symbolView
             }
             .frame(width: size, height: size)
-            .contentShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
-            .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
         }
         .buttonStyle(.plain)
-        .simultaneousGesture(DragGesture(minimumDistance: 0)
-            .onChanged { _ in
-                if !isPressed {
-                    withAnimation(.spring(response: 0.2, dampingFraction: 0.8)) { isPressed = true }
-                }
-            }
-            .onEnded { _ in
-                withAnimation(.spring(response: 0.2, dampingFraction: 0.8)) { isPressed = false }
-            }
+        .gesture(DragGesture(minimumDistance: 0)
+            .onChanged { _ in isPressed = true }
+            .onEnded { _ in isPressed = false }
         )
-#if os(macOS)
-        .onHover { hovering in
-            withAnimation(.spring(response: 0.2, dampingFraction: 0.8)) { isHovering = hovering }
-        }
-#endif
-        .onAppear {
-            if isRecentlyPlaced {
-                withAnimation(.easeInOut(duration: 0.6).repeatCount(2, autoreverses: true)) {
-                    glowPulse = true
-                }
-            }
-        }
         .sensoryFeedback(.impact(flexibility: .soft), trigger: isPressed)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(accessibilityLabel)
+        .accessibilityLabel("Board square")
         .accessibilityValue(accessibilityValue)
-        .accessibilityHint(dataSource.squareStatus == .empty ? "Double-tap to place your mark" : "")
+        .accessibilityHint(dataSource.squareStatus == .empty ? "Double-tap to place mark" : "")
     }
     
+    // MARK: - Button Action
+    /// Handles button tap, executes action if square is empty
     private func handleTap() {
         guard dataSource.squareStatus == .empty else { return }
         action()
-        withAnimation(.easeInOut(duration: 0.6).repeatCount(2, autoreverses: true)) {
-            glowPulse = true
-        }
     }
     
+    // MARK: - Tile Background
+    /// Renders the background of the square with a gradient and border
     private var tileBackground: some View {
-        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+        RoundedRectangle(cornerRadius: cornerRadius)
             .fill(backgroundGradient)
-            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .strokeBorder(borderGradient, lineWidth: borderWidth)
+                RoundedRectangle(cornerRadius: cornerRadius)
+                    .stroke(borderGradient, lineWidth: borderWidth)
             )
+            .opacity(isPressed ? 0.8 : 1.0) // Subtle opacity change for press feedback
+            .animation(.easeInOut(duration: 0.15), value: isPressed) // Shorter duration
             .shadow(
-                color: Color.purple.opacity(colorScheme == .dark ? 0.4 : 0.2),
-                radius: glowPulse ? 10 : 6,
-                x: 0, y: glowPulse ? 4 : 2
+                color: Color.black.opacity(colorScheme == .dark ? 0.15 : 0.1),
+                radius: 3,
+                x: 0, y: 1
             )
-            .scaleEffect(tileScale)
-            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: dataSource.squareStatus)
-            .animation(.easeInOut(duration: 0.6), value: glowPulse)
     }
     
+    // MARK: - Symbol View
+    /// Renders the symbol (X or O) with conditional styling
     private var symbolView: some View {
-        let glowGradient = LinearGradient(
-            colors: [Color.yellow.opacity(0.9), Color.orange.opacity(0.9)],
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-        )
-        
-        return Text(symbol)
-            .font(.system(size: size * (isSELikeSmallScreen ? 0.52 : 0.55), weight: .black, design: .rounded))
+        Text(symbol)
+            .font(.system(size: size * (isSELikeSmallScreen ? 0.5 : 0.55), weight: .bold, design: .rounded))
             .foregroundStyle(symbolGradient)
             .shadow(
-                color: winningGlowActive || glowPulse ? Color.yellow.opacity(0.85) : Color.black.opacity(0.25),
-                radius: winningGlowActive || glowPulse ? 12 : 4,
-                x: 2, y: 2
+                color: winningGlowActive ? Color.yellow.opacity(0.5) : Color.black.opacity(0.15),
+                radius: winningGlowActive ? 5 : 2
             )
-            .overlay {
-                if winningGlowActive || glowPulse {
-                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                        .stroke(glowGradient, lineWidth: 3)
-                        .blendMode(.screen)
-                }
-            }
-            .scaleEffect(isRecentlyPlaced ? 1.1 : 1.0)
-            .animation(.spring(response: 0.4, dampingFraction: 0.8), value: isRecentlyPlaced)
-            .minimumScaleFactor(0.5)
-            .lineLimit(1)
-            .padding(.zero)
-            .contentShape(Rectangle())
+            .scaleEffect(isRecentlyPlaced ? 1.05 : 1.0)
+            .animation(.easeInOut(duration: 0.25), value: isRecentlyPlaced) // Shorter duration
     }
     
+    // MARK: - Symbol Logic
+    /// Determines the symbol to display based on square status
     private var symbol: String {
         switch dataSource.squareStatus {
         case .x, .xw: return "X"
         case .o, .ow: return "O"
         case .empty: return ""
-        default: return ""
         }
     }
     
+    // MARK: - Winning Glow Logic
+    /// Indicates if the square is part of a winning line
     private var winningGlowActive: Bool {
-        switch dataSource.squareStatus {
-        case .xw, .ow: return true
-        default: return false
-        }
+        dataSource.squareStatus == .xw || dataSource.squareStatus == .ow
     }
     
+    // MARK: - Gradients
+    /// Gradient for the symbol based on square status
     private var symbolGradient: LinearGradient {
         switch dataSource.squareStatus {
         case .xw, .ow:
@@ -141,51 +105,43 @@ struct SquareButtonView: View {
         case .o:
             return LinearGradient(colors: [.cyan, .blue], startPoint: .topLeading, endPoint: .bottomTrailing)
         default:
-            return LinearGradient(colors: [.gray.opacity(0.5), .gray.opacity(0.2)], startPoint: .topLeading, endPoint: .bottomTrailing)
+            return LinearGradient(colors: [.gray.opacity(0.3)], startPoint: .topLeading, endPoint: .bottomTrailing)
         }
     }
     
+    /// Gradient for the background
     private var backgroundGradient: LinearGradient {
         LinearGradient(
             colors: colorScheme == .dark
-                ? [Color.white.opacity(0.08), Color.white.opacity(0.03)]
-                : [Color.white.opacity(0.98), Color.white.opacity(0.92)],
+                ? [Color.white.opacity(0.08), Color.white.opacity(0.04)]
+                : [Color.white.opacity(0.9), Color.white.opacity(0.85)],
             startPoint: .topLeading,
             endPoint: .bottomTrailing
         )
     }
     
+    /// Gradient for the border
     private var borderGradient: LinearGradient {
         LinearGradient(
             colors: colorScheme == .dark
-                ? [Color.white.opacity(0.15), Color.white.opacity(0.05)]
-                : [Color.purple.opacity(0.1), Color.blue.opacity(0.05)],
+                ? [Color.white.opacity(0.15), Color.white.opacity(0.08)]
+                : [Color.gray.opacity(0.25), Color.gray.opacity(0.15)],
             startPoint: .topLeading,
             endPoint: .bottomTrailing
         )
     }
     
-    private var borderWidth: CGFloat { 1.5 }
-    private var cornerRadius: CGFloat { max(8, size * 0.08) }
+    // MARK: - Styling Constants
+    private var borderWidth: CGFloat { 0.8 } // Reduced for lighter rendering
+    private var cornerRadius: CGFloat { size * 0.1 }
     
-    private var tileScale: CGFloat {
-#if os(macOS)
-        return isPressed ? 0.98 : (isHovering ? 1.02 : 1.0)
-#else
-        return isPressed ? 0.96 : 1.0
-#endif
-    }
-    
-    private var accessibilityLabel: String {
-        "Board square"
-    }
-    
+    // MARK: - Accessibility Value
+    /// Provides accessibility value based on square status
     private var accessibilityValue: String {
         switch dataSource.squareStatus {
         case .x, .xw: return "X"
         case .o, .ow: return "O"
         case .empty: return "Empty"
-        default: return "Empty"
         }
     }
 }
