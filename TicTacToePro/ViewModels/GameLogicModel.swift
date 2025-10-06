@@ -143,8 +143,33 @@ struct Board {
     }
     
     /// Checks if the game is a draw (no empty squares and no winner)
+    /// Checks if the game is a draw, meaning no player can achieve a winning combination
     var isDraw: Bool {
-        return !isWin && legalMoves.isEmpty
+        if isWin { return false } // If there's a winner, it's not a draw
+        
+        let combos = generateWinningCombos()
+        let size = boardSize
+        
+        // Check if any winning combination is still possible for either player
+        for combo in combos {
+            let xCount = combo.filter { pos[$0] == .x }.count
+            let oCount = combo.filter { pos[$0] == .o }.count
+            let emptyCount = combo.filter { pos[$0] == .empty }.count
+            
+            // A combination is achievable for a player if:
+            // 1. It has no opponent marks
+            // 2. The player has some marks or there are enough empty squares to complete the win
+            let xCanWin = oCount == 0 && (xCount > 0 || emptyCount >= winLength)
+            let oCanWin = xCount == 0 && (oCount > 0 || emptyCount >= winLength)
+            
+            // If any combination is achievable for either player, the game is not a draw
+            if xCanWin || oCanWin {
+                return false
+            }
+        }
+        
+        // No achievable winning combinations for either player
+        return true
     }
     
     // MARK: - Minimax Algorithm (3x3 uchun)
@@ -338,19 +363,19 @@ extension Board {
         return score
     }
     
-    /// Chiziq uchun ball hisoblash
+    /// Chiziq uchun ball hisoblash (reduced values to prevent overflow)
     private func scoreForLine(playerCount: Int) -> Int {
         switch playerCount {
         case 1: return 1
         case 2: return 10
         case 3: return 100
-        case 4: return 1000
-        case 5: return 10000
-        default: return playerCount * 10000
+        case 4: return 500
+        case 5: return 1000
+        default: return playerCount * 1000
         }
     }
     
-    /// Markazni nazorat qilish bonusi
+    /// Markazni nazorat qilish bonusi (reduced bonus to prevent large accumulations)
     private func centerControlBonus(for player: SquareStatus) -> Int {
         let size = boardSize
         let center = size / 2
@@ -372,7 +397,7 @@ extension Board {
         var bonus = 0
         for idx in centerIndices where pos.indices.contains(idx) {
             if pos[idx] == player {
-                bonus += 5
+                bonus += 2 // Reduced from 5 to avoid large scores
             }
         }
         return bonus
@@ -436,67 +461,115 @@ extension Board {
     
     // MARK: - Core Superior Minimax with Negamax
     
-    /// Superior Minimax with Transposition Table
+    /// Superior Minimax with Transposition Table and Error Handling
+    /// This function implements a negamax-style minimax with alpha-beta pruning,
+    /// using transposition tables for optimization and safe negation to prevent arithmetic overflows.
     func superiorMinimaxCore(
         maxDepth: Int,
-        alpha: Int = Int.min,
-        beta: Int = Int.max,
+        alpha: Int = Int.min / 2, // Safer initial value to prevent overflow
+        beta: Int = Int.max / 2, // Safer initial value to prevent overflow
         transTable: inout [Int: (score: Int, depth: Int)]
     ) -> (score: Int, bestMove: Int?) {
+        // Helper function to safely negate values and prevent overflow
+        func safeNegate(_ value: Int) -> Int {
+            if value == Int.min {
+                return Int.max // Approximate negation for Int.min to avoid overflow
+            }
+            return -value
+        }
+        
+        // Validate maxDepth to prevent invalid recursion
+        guard maxDepth >= 0 else {
+            print("Error: Invalid maxDepth (\(maxDepth)) in superiorMinimaxCore")
+            return (0, nil)
+        }
+        
+        // Log current board state for debugging
+        print("Minimax Depth: \(maxDepth), Turn: \(turn), Alpha: \(alpha), Beta: \(beta)")
+        printBoardState()
         
         let hash = zobristHash()
         
-        // Transposition table tekshiruvi
+        // Check transposition table for previously computed results
         if let entry = transTable[hash], entry.depth >= maxDepth {
+            print("Transposition table hit for hash: \(hash), score: \(entry.score), depth: \(entry.depth)")
             return (entry.score, nil)
         }
         
-        // Terminal holatlar
+        // Check terminal states (win or draw)
         if isWin {
-            let score = (opposite == turn) ? 10000 - maxDepth : -10000 + maxDepth
+            let score = (opposite == turn) ? 1000 - maxDepth : -1000 + maxDepth // Reduced scores to prevent overflow
+            print("Terminal state: Win detected for \(opposite == turn ? "current player" : "opponent"), Score: \(score)")
             return (score, nil)
         }
         
         if isDraw {
+            print("Terminal state: Draw detected")
             return (0, nil)
         }
         
-        // Chuqurlik chegarasi
-        if maxDepth == 0 {
-            let heuristic = advancedHeuristic(for: turn)
-            return (heuristic, nil)
+        // Check for empty legal moves
+        let moves = orderedLegalMoves()
+        guard !moves.isEmpty else {
+            print("Error: No legal moves available for board state")
+            return (0, nil)
         }
         
-        var bestScore = Int.min
+        // Validate board size consistency
+        guard boardSize * boardSize == pos.count else {
+            print("Error: Invalid board size. Expected \(boardSize * boardSize) cells, found \(pos.count)")
+            return (0, nil)
+        }
+        
+        var bestScore = Int.min / 2 // Safer initial best score
         var bestMove: Int? = nil
         var currentAlpha = alpha
         
-        // Tartiblangan harakatlarni tekshirish
-        for move in orderedLegalMoves() {
+        // Log moves being evaluated for debugging
+        print("Evaluating moves: \(moves)")
+        
+        // Evaluate each move recursively
+        for move in moves {
+            // Validate move index
+            guard pos.indices.contains(move), pos[move] == .empty else {
+                print("Error: Invalid move index \(move) or non-empty cell")
+                continue
+            }
+            
             let newBoard = self.move(move)
+            print("Evaluating move \(move) for player \(turn)")
+            
             let (score, _) = newBoard.superiorMinimaxCore(
                 maxDepth: maxDepth - 1,
-                alpha: -beta,
-                beta: -currentAlpha,
+                alpha: safeNegate(beta),
+                beta: safeNegate(currentAlpha),
                 transTable: &transTable
             )
-            let negatedScore = -score
+            let negatedScore = safeNegate(score)
             
             if negatedScore > bestScore {
                 bestScore = negatedScore
                 bestMove = move
+                print("New best move: \(move), Score: \(bestScore)")
             }
             
             currentAlpha = max(currentAlpha, negatedScore)
             
-            // Alpha-beta pruning
+            // Alpha-beta pruning to optimize search
             if currentAlpha >= beta {
+                print("Alpha-beta pruning at move \(move), Alpha: \(currentAlpha), Beta: \(beta)")
                 break
             }
         }
         
-        // Transposition table ga saqlash
+        // Warn if no valid move was found
+        if bestMove == nil {
+            print("Warning: No valid best move found at depth \(maxDepth)")
+        }
+        
+        // Save result to transposition table
         transTable[hash] = (bestScore, maxDepth)
+        print("Saving to transposition table: Hash: \(hash), Score: \(bestScore), Depth: \(maxDepth)")
         
         return (bestScore, bestMove)
     }
@@ -504,12 +577,13 @@ extension Board {
     // MARK: - Adaptive Depth
     
     /// Taxta o'lchamiga qarab adaptive chuqurlik
+    /// Determines the maximum search depth based on board size and empty cells
     private func adaptiveMaxDepth() -> Int {
         let size = boardSize
         let emptyCount = legalMoves.count
         
         switch size {
-        case 3: return 9 // 3x3: to'liq tahlil
+        case 3: return 9 // 3x3: full search possible
         case 4: return emptyCount > 10 ? 6 : 8
         case 5: return emptyCount > 15 ? 4 : 6
         case 6: return emptyCount > 20 ? 3 : 5
@@ -523,6 +597,7 @@ extension Board {
     // MARK: - Main Entry Point
     
     /// Eng yaxshi harakatni topish (iterative deepening bilan)
+    /// Finds the best move using iterative deepening within a time limit
     func findSuperiorMove(timeLimit: TimeInterval = 5.0) -> Int? {
         let startTime = Date()
         var transTable: [Int: (score: Int, depth: Int)] = [:]
@@ -530,27 +605,72 @@ extension Board {
         var currentDepth = 1
         let maxPossibleDepth = min(legalMoves.count, adaptiveMaxDepth())
         
-        // Iterative deepening
+        print("Starting findSuperiorMove with time limit: \(timeLimit) seconds, Max Depth: \(maxPossibleDepth)")
+        printBoardState()
+        
+        // Validate legal moves
+        guard !legalMoves.isEmpty else {
+            print("Error: No legal moves available")
+            return nil
+        }
+        
+        // Iterative deepening loop to progressively deepen the search
         while currentDepth <= maxPossibleDepth {
-            let (_, move) = superiorMinimaxCore(
+            print("Iterative deepening at depth: \(currentDepth)")
+            
+            let (score, move) = superiorMinimaxCore(
                 maxDepth: currentDepth,
                 transTable: &transTable
             )
             
             if let move = move {
                 bestMove = move
+                print("Best move at depth \(currentDepth): \(move), Score: \(score)")
+            } else {
+                print("Warning: No move returned at depth \(currentDepth)")
             }
             
-            // Vaqt chegarasini tekshirish
+            // Check time limit to prevent exceeding computation time
             let elapsed = Date().timeIntervalSince(startTime)
             if elapsed > timeLimit {
+                print("Time limit exceeded: \(elapsed) seconds")
                 break
             }
             
             currentDepth += 1
         }
         
-        return bestMove ?? legalMoves.first
+        // Log final result
+        if let finalMove = bestMove {
+            print("Final best move: \(finalMove)")
+        } else {
+            print("Warning: No best move found, falling back to first legal move")
+            bestMove = legalMoves.first
+        }
+        
+        return bestMove
+    }
+    
+    // MARK: - Helper for Logging Board State
+    
+    /// Prints the current board state to the console for debugging
+    private func printBoardState() {
+        let size = boardSize
+        print("Current Board State (\(size)x\(size)):")
+        for row in 0..<size {
+            var rowString = ""
+            for col in 0..<size {
+                let idx = row * size + col
+                switch pos[idx] {
+                case .empty: rowString += "."
+                case .x: rowString += "X"
+                case .o: rowString += "O"
+                case .xw, .ow: rowString += "W" // Winning marks
+                }
+                rowString += " "
+            }
+            print(rowString)
+        }
     }
 }
 
@@ -558,7 +678,7 @@ extension Board {
 extension Board {
     /// Compact bitmask representation (future use)
     var bitmaskRepresentation: (xMask: Int, oMask: Int) {
-        // TODO
+        // TODO: Implement bitmask for efficient state representation
         return (0, 0)
     }
     
@@ -566,19 +686,19 @@ extension Board {
     static var transpositionTable: [Int: Int] = [:]
     
     func stateHash() -> Int {
-        // TODO
+        // TODO: Implement alternative state hashing
         return pos.hashValue
     }
     
     /// Move ordering heuristic (future use)
     func orderedMoves() -> [Int] {
-        // TODO
+        // TODO: Advanced move ordering
         return legalMoves
     }
     
     /// Heuristic evaluation for non-terminal states (future use)
     func heuristicScore(for player: SquareStatus) -> Int {
-        // TODO
+        // TODO: Additional heuristic refinements
         return 0
     }
 }

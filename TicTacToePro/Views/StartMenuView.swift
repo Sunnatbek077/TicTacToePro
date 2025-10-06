@@ -364,7 +364,7 @@ struct StartMenuView: View {
     
     // MARK: - Game Logic
     private func startGame() {
-        ticTacToeModel.resetGame()
+        ticTacToeModel.setBoardSize(selectedBoardSize.rawValue)
         if !selectedGameMode.isPVP {
             ticTacToeModel.aiPlays = startingPlayerIsO ? .x : .o
         }

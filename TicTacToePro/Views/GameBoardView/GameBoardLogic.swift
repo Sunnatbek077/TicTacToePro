@@ -112,25 +112,9 @@ extension GameBoardView {
     
     func detectWinningIndices() -> [Int] {
         let statuses = ticTacToe.squares.map { $0.squareStatus }
-        func allEqualAndNotEmpty(_ idxs: [Int]) -> Bool {
-            guard let first = statuses[idxs[0]] as? AnyHashable else { return false }
-            if "\(first)" == "\(SquareStatus.empty)" { return false }
-            let base = statuses[idxs[0]]
-            return idxs.allSatisfy { statuses[$0] == base }
-        }
-        
-        let lines = [
-            [0,1,2], [3,4,5], [6,7,8], // rows
-            [0,3,6], [1,4,7], [2,5,8], // cols
-            [0,4,8], [2,4,6]           // diags
-        ]
-        
-        for line in lines {
-            if line.allSatisfy({ $0 >= 0 && $0 < statuses.count }) {
-                if allEqualAndNotEmpty(line) {
-                    return line
-                }
-            }
+        let board = Board(position: statuses, turn: ticTacToe.playerToMove)
+        if let (line, _) = board.winningLine {
+            return line
         }
         return []
     }

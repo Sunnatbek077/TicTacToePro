@@ -182,14 +182,15 @@ extension GameBoardView {
             let maxSide = min(proxy.size.width, proxy.size.height)
             let side = min(maxSide, preferredBoardSide(for: proxy.size))
             let spacing: CGFloat = isSELikeSmallScreen ? max(5, side * 0.012) : (isCompactHeight ? max(6, side * 0.015) : max(8, side * 0.02))
-            let cellSize = max(60, (side - spacing * 2) / 3)
             
             VStack(spacing: spacing) {
-                ForEach(0..<3, id: \.self) { row in
+                ForEach(0..<ticTacToe.boardSize, id: \.self) { row in
                     HStack(spacing: spacing) {
-                        ForEach(0..<3, id: \.self) { column in
-                            let index = row * 3 + column
+                        ForEach(0..<ticTacToe.boardSize, id: \.self) { column in
+                            let index = row * ticTacToe.boardSize + column
                             if ticTacToe.squares.indices.contains(index) {
+                                let sideCells = CGFloat(ticTacToe.boardSize)
+                                let cellSize = max(44, (side - spacing * (sideCells - 1)) / sideCells)
                                 SquareButtonView(
                                     dataSource: ticTacToe.squares[index],
                                     size: cellSize,
@@ -202,10 +203,12 @@ extension GameBoardView {
                                     }
                                 )
                                 .shadow(color: colorScheme == .dark ? Color.black.opacity(0.3) : Color.purple.opacity(0.2), radius: 6, x: 2, y: 2)
-#if os(iOS) || os(visionOS)
+        #if os(iOS) || os(visionOS)
                                 .hoverEffect(.lift)
-#endif
+        #endif
                             } else {
+                                let sideCells = CGFloat(ticTacToe.boardSize)
+                                let cellSize = max(44, (side - spacing * (sideCells - 1)) / sideCells)
                                 Color.clear.frame(width: cellSize, height: cellSize)
                             }
                         }
@@ -237,7 +240,7 @@ extension GameBoardView {
             .animation(.spring(response: 0.6, dampingFraction: 0.8), value: animateBoardEntrance)
             .accessibilityElement(children: .contain)
         }
-        .frame(minHeight: isSELikeSmallScreen ? 360 : (isCompactHeight ? 360 : 420))
+        .frame(minHeight: max(320, CGFloat(ticTacToe.boardSize) * 60))
     }
     
     var footer: some View {
