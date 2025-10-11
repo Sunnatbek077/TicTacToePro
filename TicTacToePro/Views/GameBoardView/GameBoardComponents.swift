@@ -179,22 +179,33 @@ extension GameBoardView {
     
     var board: some View {
         GeometryReader { proxy in
-            let maxSide = min(proxy.size.width, proxy.size.height)
+            let winning = detectWinningIndices()
+            let horizontalMargin: CGFloat = isSELikeSmallScreen ? 8 : (isCompactHeight ? 12 : 16)
+            let availableWidth = max(0, proxy.size.width - horizontalMargin * 2)
+            let maxSide = min(availableWidth, proxy.size.height)
             let side = min(maxSide, preferredBoardSide(for: proxy.size))
             let spacing: CGFloat = isSELikeSmallScreen ? max(5, side * 0.012) : (isCompactHeight ? max(6, side * 0.015) : max(8, side * 0.02))
+            let sideCells = CGFloat(ticTacToe.boardSize)
             
-            VStack(spacing: spacing) {
+            let isLargeGrid = ticTacToe.boardSize >= 8
+            let minCell: CGFloat = isLargeGrid ? 32 : 44
+            let adjustedSpacing = isLargeGrid ? max(4, spacing * 0.6) : spacing
+            let corner: CGFloat = isLargeGrid ? 10 : 16
+            
+            let useGPU = true
+            
+            // GRID START
+            VStack(spacing: adjustedSpacing) {
                 ForEach(0..<ticTacToe.boardSize, id: \.self) { row in
-                    HStack(spacing: spacing) {
+                    HStack(spacing: adjustedSpacing) {
                         ForEach(0..<ticTacToe.boardSize, id: \.self) { column in
                             let index = row * ticTacToe.boardSize + column
                             if ticTacToe.squares.indices.contains(index) {
-                                let sideCells = CGFloat(ticTacToe.boardSize)
-                                let cellSize = max(44, (side - spacing * (sideCells - 1)) / sideCells)
+                                let cellSize = max(minCell, (side - adjustedSpacing * (sideCells - 1)) / sideCells)
                                 SquareButtonView(
                                     dataSource: ticTacToe.squares[index],
                                     size: cellSize,
-                                    winningIndices: detectWinningIndices(),
+                                    winningIndices: winning,
                                     isRecentlyPlaced: recentlyPlacedIndex == index,
                                     isSELikeSmallScreen: isSELikeSmallScreen,
                                     action: {
@@ -202,44 +213,36 @@ extension GameBoardView {
                                         recentlyPlacedIndex = index
                                     }
                                 )
-                                .shadow(color: colorScheme == .dark ? Color.black.opacity(0.3) : Color.purple.opacity(0.2), radius: 6, x: 2, y: 2)
-        #if os(iOS) || os(visionOS)
-                                .hoverEffect(.lift)
-        #endif
+                                .shadow(color: (colorScheme == .dark ? Color.black.opacity(0.22) : Color.purple.opacity(0.14)), radius: 4, x: 1, y: 1)
+                                .if(isLargeGrid) { view in
+                                    view.compositingGroup().drawingGroup(opaque: false, colorMode: .extendedLinear)
+                                }
                             } else {
-                                let sideCells = CGFloat(ticTacToe.boardSize)
-                                let cellSize = max(44, (side - spacing * (sideCells - 1)) / sideCells)
+                                let cellSize = max(minCell, (side - adjustedSpacing * (sideCells - 1)) / sideCells)
                                 Color.clear.frame(width: cellSize, height: cellSize)
                             }
                         }
                     }
                 }
             }
-            .padding(spacing)
+            .compositingGroup()
+            .drawingGroup(opaque: false, colorMode: .extendedLinear)
+            .transaction { txn in
+                if isLargeGrid {
+                    txn.disablesAnimations = true
+                }
+            }
+            .padding(adjustedSpacing)
             .frame(width: side, height: side)
-            .background(
-                .ultraThinMaterial,
-                in: RoundedRectangle(cornerRadius: 16, style: .continuous)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .strokeBorder(
-                        LinearGradient(
-                            colors: colorScheme == .dark
-                                ? [Color.white.opacity(0.15), Color.white.opacity(0.05)]
-                                : [Color.purple.opacity(0.1), Color.blue.opacity(0.05)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        ), lineWidth: 1.5
-                    )
-            )
+            .aspectRatio(1, contentMode: .fit)
+            .position(x: proxy.size.width / 2, y: proxy.size.height / 2)
             .shadow(color: Color.purple.opacity(colorScheme == .dark ? 0.3 : 0.15), radius: 8, x: 0, y: 4)
             .scaleEffect(animateBoardEntrance ? 1.0 : 0.9)
             .opacity(animateBoardEntrance ? 1.0 : 0.0)
             .animation(.spring(response: 0.6, dampingFraction: 0.8), value: animateBoardEntrance)
             .accessibilityElement(children: .contain)
         }
-        .frame(minHeight: max(320, CGFloat(ticTacToe.boardSize) * 60))
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
     }
     
     var footer: some View {
@@ -307,5 +310,12 @@ extension GameBoardView {
         .padding(.bottom, isSELikeSmallScreen ? 8 : 18)
         .frame(maxWidth: .infinity)
         .frame(height: isSELikeSmallScreen ? 32 : 44)
+    }
+}
+
+private extension View {
+    @ViewBuilder
+    func `if`<Content: View>(_ condition: Bool, transform: (Self) -> Content) -> some View {
+        if condition { transform(self) } else { self }
     }
 }

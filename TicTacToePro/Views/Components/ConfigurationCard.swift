@@ -33,6 +33,8 @@ struct ConfigurationCard: View {
     }
     
     var body: some View {
+        let corner: CGFloat = 24
+        
         VStack(spacing: isCompactHeightPhone ? 16 : 24) {
             PlayerSelectionView(selectedPlayer: $selectedPlayer)
             
@@ -44,50 +46,48 @@ struct ConfigurationCard: View {
         }
         .padding(isCompactHeightPhone ? 16 : 24)
         .background(
-            RoundedRectangle(cornerRadius: 28)
+            RoundedRectangle(cornerRadius: corner, style: .continuous)
                 .fill(cardBackground)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 28)
-                        .stroke(accentGradient, lineWidth: 1.5) // Gradient border for vibrancy
-                        .opacity(colorScheme == .dark ? 0.2 : 0.3) // Adjusted opacity
+                    RoundedRectangle(cornerRadius: corner, style: .continuous)
+                        .stroke(
+                            LinearGradient(colors: [.white.opacity(colorScheme == .dark ? 0.10 : 0.18), .white.opacity(colorScheme == .dark ? 0.04 : 0.08)], startPoint: .topLeading, endPoint: .bottomTrailing),
+                            lineWidth: 1
+                        )
                 )
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 28)
-                .stroke(Color.purple.opacity(isLongPressed ? 0.8 : 0), lineWidth: 2)
-                .blur(radius: glowRadius)
-                .shadow(color: .purple.opacity(colorScheme == .dark ? 0.4 : 0.25), radius: 20) // Softer shadow in light mode
+            RoundedRectangle(cornerRadius: corner, style: .continuous)
+                .stroke(Color.purple.opacity(isLongPressed ? 0.35 : 0), lineWidth: 6)
+                .opacity(isLongPressed ? 1 : 0)
+                .animation(.spring(response: 0.35, dampingFraction: 0.85), value: isLongPressed)
         )
         .offset(x: baseOffset.width + dragOffset.width, y: baseOffset.height + dragOffset.height)
         .rotationEffect(.degrees(rotation))
         .scaleEffect(isLongPressed ? 1.03 : 1.0) // Slightly increased scale for feedback
-        .animation(.easeInOut(duration: 0.3), value: isLongPressed)
-        .animation(.spring(response: 0.5, dampingFraction: 0.7), value: glowRadius)
-        .animation(.spring(dampingFraction: 0.7), value: baseOffset)
         .gesture(
             DragGesture()
-                .updating($dragOffset) { value, state, transaction in
+                .updating($dragOffset) { value, state, _ in
                     state = value.translation
                     rotation = Double(value.translation.width / 50)
-                    transaction.animation = .easeOut(duration: 0.1)
                 }
                 .onEnded { value in
                     let threshold: CGFloat = 100
-                    if abs(value.translation.width) > threshold {
-                        withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+                    withAnimation(.spring(response: 0.55, dampingFraction: 0.85)) {
+                        if abs(value.translation.width) > threshold {
                             selectedGameMode = selectedGameMode == .ai ? .pvp : .ai
                             baseOffset = CGSize(width: value.translation.width > 0 ? 300 : -300, height: 0)
+                        } else {
+                            baseOffset = .zero
+                            rotation = 0.0
                         }
+                    }
+                    if abs(value.translation.width) > threshold {
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                             withAnimation(.spring()) {
                                 baseOffset = .zero
                                 rotation = 0.0
                             }
-                        }
-                    } else {
-                        withAnimation(.spring(response: 0.5, dampingFraction: 0.9)) {
-                            baseOffset = .zero
-                            rotation = 0.0
                         }
                     }
                 }
@@ -97,13 +97,16 @@ struct ConfigurationCard: View {
             pressing: { pressing in
                 withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) {
                     isLongPressed = pressing
-                    glowRadius = pressing ? 12 : 0 // Slightly larger glow
+                    glowRadius = pressing ? 12 : 0 // kept for state but no blur uses it
                 }
             },
             perform: {
                 print("Long press completed")
             }
         )
+        .transaction { transaction in
+            transaction.animation = nil
+        }
         .sensoryFeedback(.impact(flexibility: .soft), trigger: isLongPressed) // Added haptic feedback
     }
 }
@@ -126,21 +129,20 @@ struct PlayerSelectionView: View {
                             selectedPlayer = player
                         }
                     } label: {
+                        let selectedBG = LinearGradient(colors: [.pink.opacity(0.9), .purple.opacity(0.9)], startPoint: .top, endPoint: .bottom)
+                        let unselectedBG = LinearGradient(colors: [Color.gray.opacity(colorScheme == .dark ? 0.3 : 0.2)], startPoint: .top, endPoint: .bottom)
                         Text(player.rawValue)
                             .font(.title2.bold())
                             .frame(width: 60, height: 60)
-                            .background(
-                                selectedPlayer == player
-                                ? LinearGradient(colors: [.pink.opacity(0.9), .purple.opacity(0.9)], startPoint: .top, endPoint: .bottom)
-                                : LinearGradient(colors: [Color.gray.opacity(colorScheme == .dark ? 0.3 : 0.2)], startPoint: .top, endPoint: .bottom)
-                            )
+                            .background(selectedPlayer == player ? selectedBG : unselectedBG)
                             .foregroundStyle(selectedPlayer == player ? .white : .primary)
                             .clipShape(Circle())
                             .overlay(
                                 Circle()
                                     .stroke(LinearGradient(colors: [.pink, .purple], startPoint: .top, endPoint: .bottom), lineWidth: selectedPlayer == player ? 2 : 0)
                             )
-                            .shadow(color: .purple.opacity(selectedPlayer == player ? (colorScheme == .dark ? 0.4 : 0.2) : 0), radius: 6)
+                            .shadow(color: .purple.opacity(selectedPlayer == player ? (colorScheme == .dark ? 0.4 : 0.2) : 0), radius: 4)
+                            .animation(nil, value: selectedPlayer)
                     }
                     .accessibilityLabel("Select \(player.rawValue) as starting player")
                 }
@@ -167,22 +169,21 @@ struct GameModeSelectionView: View {
                             selectedGameMode = mode
                         }
                     } label: {
+                        let selectedBG = LinearGradient(colors: [.purple.opacity(0.9), .blue.opacity(0.9)], startPoint: .top, endPoint: .bottom)
+                        let unselectedBG = LinearGradient(colors: [Color.gray.opacity(colorScheme == .dark ? 0.3 : 0.2)], startPoint: .top, endPoint: .bottom)
                         Text(mode.rawValue)
                             .font(.body.bold())
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 10)
-                            .background(
-                                selectedGameMode == mode
-                                ? LinearGradient(colors: [.purple.opacity(0.9), .blue.opacity(0.9)], startPoint: .top, endPoint: .bottom)
-                                : LinearGradient(colors: [Color.gray.opacity(colorScheme == .dark ? 0.3 : 0.2)], startPoint: .top, endPoint: .bottom)
-                            )
+                            .background(selectedGameMode == mode ? selectedBG : unselectedBG)
                             .foregroundStyle(selectedGameMode == mode ? .white : .primary)
                             .clipShape(RoundedRectangle(cornerRadius: 12))
                             .overlay(
                                 RoundedRectangle(cornerRadius: 12)
                                     .stroke(LinearGradient(colors: [.purple, .blue], startPoint: .top, endPoint: .bottom), lineWidth: selectedGameMode == mode ? 2 : 0)
                             )
-                            .shadow(color: .blue.opacity(selectedGameMode == mode ? (colorScheme == .dark ? 0.4 : 0.2) : 0), radius: 6)
+                            .shadow(color: .blue.opacity(selectedGameMode == mode ? (colorScheme == .dark ? 0.4 : 0.2) : 0), radius: 4)
+                            .animation(nil, value: selectedGameMode)
                     }
                     .accessibilityLabel("Select \(mode.rawValue) game mode")
                 }
@@ -209,22 +210,21 @@ struct DifficultySelectionView: View {
                             selectedDifficulty = difficulty
                         }
                     } label: {
+                        let selectedBG = LinearGradient(colors: [.blue.opacity(0.9), .cyan.opacity(0.9)], startPoint: .top, endPoint: .bottom)
+                        let unselectedBG = LinearGradient(colors: [Color.gray.opacity(colorScheme == .dark ? 0.3 : 0.2)], startPoint: .top, endPoint: .bottom)
                         Text(difficulty.rawValue)
                             .font(.body.bold())
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 10)
-                            .background(
-                                selectedDifficulty == difficulty
-                                ? LinearGradient(colors: [.blue.opacity(0.9), .cyan.opacity(0.9)], startPoint: .top, endPoint: .bottom)
-                                : LinearGradient(colors: [Color.gray.opacity(colorScheme == .dark ? 0.3 : 0.2)], startPoint: .top, endPoint: .bottom)
-                            )
+                            .background(selectedDifficulty == difficulty ? selectedBG : unselectedBG)
                             .foregroundStyle(selectedDifficulty == difficulty ? .white : .primary)
                             .clipShape(RoundedRectangle(cornerRadius: 12))
                             .overlay(
                                 RoundedRectangle(cornerRadius: 12)
                                     .stroke(LinearGradient(colors: [.blue, .cyan], startPoint: .top, endPoint: .bottom), lineWidth: selectedDifficulty == difficulty ? 2 : 0)
                             )
-                            .shadow(color: .cyan.opacity(selectedDifficulty == difficulty ? (colorScheme == .dark ? 0.4 : 0.2) : 0), radius: 6)
+                            .shadow(color: .cyan.opacity(selectedDifficulty == difficulty ? (colorScheme == .dark ? 0.4 : 0.2) : 0), radius: 4)
+                            .animation(nil, value: selectedDifficulty)
                     }
                     .accessibilityLabel("Select \(difficulty.rawValue) difficulty")
                 }
