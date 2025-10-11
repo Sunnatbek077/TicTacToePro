@@ -15,7 +15,7 @@ enum HapticFeedbackStyle {
 struct HapticManager {
     static func trigger(style: HapticFeedbackStyle, override: Bool = false) {
 #if os(iOS) || os(tvOS) || os(visionOS)
-        let vibrationEnabled = UserDefaults.standard.bool(forKey: "vibration")
+        let vibrationEnabled = UserDefaults.standard.bool(forKey: HapticsManager.hapticsEnabledKey)
         guard vibrationEnabled || override else { return }
         
         let feedbackStyle: UIImpactFeedbackGenerator.FeedbackStyle
@@ -31,3 +31,4 @@ struct HapticManager {
 #endif
     }
 }
+

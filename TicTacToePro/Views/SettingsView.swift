@@ -8,9 +8,9 @@
 import SwiftUI
 
 struct SettingsView: View {
-    @State private var enablingSounds: Bool = false
+    @AppStorage("soundsEnabled") private var enablingSounds: Bool = true
     @AppStorage(HapticsManager.hapticsEnabledKey) private var enableHapticFeeling: Bool = false
-    @State private var enableCharizmaticAI: Bool = true
+    @AppStorage("charismaticAIEnabled") private var enableCharizmaticAI: Bool = true
     
     var body: some View {
         NavigationStack {
@@ -25,16 +25,18 @@ struct SettingsView: View {
                 // Haptic Toggle
                 HStack {
                     Image(systemName: enableHapticFeeling ? "iphone.gen2.radiowaves.left.and.right" : "iphone.gen2.slash")
-                    Toggle("Enable Haptic Feeling", isOn: $enableHapticFeeling)
-                        .toggleStyle(SwitchToggleStyle(tint: .blue))
-                        .onChange(of: enableHapticFeeling) { oldValue, newValue in
-                            HapticsManager.setEnabled(newValue)
-                            if newValue {
-                                HapticsManager.playNotification(.success, force: true)
-                            } else {
-                                HapticsManager.playSelection(force: true)
-                            }
+                    Toggle(isOn: $enableHapticFeeling) {
+                        Text("Enable Haptics")
+                    }
+                    .onChange(of: enableHapticFeeling) { oldValue, newValue in
+                        HapticsManager.setEnabled(newValue)
+                        if newValue {
+                            HapticsManager.playNotification(.success, force: true)
+                        } else {
+                            HapticsManager.playSelection(force: true)
                         }
+                    }
+                    .toggleStyle(SwitchToggleStyle(tint: .blue))
                 }
                 
                 // Charizmatic AI Toggle
@@ -66,3 +68,4 @@ struct SettingsView: View {
 #Preview {
     SettingsView()
 }
+

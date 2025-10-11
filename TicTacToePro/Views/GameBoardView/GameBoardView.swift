@@ -41,6 +41,70 @@ struct GameBoardView: View {
     @State var recentlyPlacedIndex: Int? = nil
     @State var animateBoardEntrance: Bool = false
     
+    // MARK: - Header Reaction Emojis (12 holatli)
+    private var headerReactions: [String] {
+        // O'yin tugagan bo'lsa
+        if ticTacToe.gameOver {
+            if ticTacToe.winner == .empty {
+                // 1. Durrang: Chalg'igan
+                return ["🤷", "😐"]
+            } else {
+                if !gameTypeIsPVP && ticTacToe.winner == ticTacToe.aiPlays {
+                    // 2. AI yutdi
+                    return ["🤖", "😎"]
+                } else {
+                    // 3. Siz yutdingiz!
+                    return ["🎉", "🏆"]
+                }
+            }
+        }
+        
+        // AI o'ylayapti
+        if !gameTypeIsPVP && ticTacToe.playerToMove == ticTacToe.aiPlays {
+            // 4. AI o'ylayapti
+            return ["🤔", "🧠"]
+        }
+        
+        // Xavfli vaziyatlarni tekshirish
+        let statuses = ticTacToe.squares.map { $0.squareStatus }
+        let boardNow = Board(position: statuses, turn: ticTacToe.playerToMove)
+        let canWinNow = boardNow.legalMoves.contains { boardNow.move($0).isWin }
+        let opponentTurn: SquareStatus = (ticTacToe.playerToMove == .x ? .o : .x)
+        let opponentBoard = Board(position: statuses, turn: opponentTurn)
+        let opponentCanWinNow = opponentBoard.legalMoves.contains { opponentBoard.move($0).isWin }
+        
+        if canWinNow && opponentCanWinNow {
+            // 5. Ikkalasi ham yutishi mumkin: Juda xavfli!
+            return ["⚠️", "💀"]
+        } else if canWinNow {
+            // 6. Siz yutishingiz mumkin: Zo'r imkoniyat!
+            return ["🔥", "💪"]
+        } else if opponentCanWinNow {
+            // 7. Raqib yutishi mumkin: Xavf!
+            return ["😰", "☠️"]
+        }
+        
+        // O'yin bosqichiga qarab
+        let moveCount = statuses.filter { $0 != .empty }.count
+        
+        if moveCount == 0 {
+            // 8. O'yin boshlanmagan: Tayyor
+            return ["🎮", "✨"]
+        } else if moveCount <= 2 {
+            // 9. Boshlanish: Tinch
+            return ["😊", "👍"]
+        } else if moveCount <= 4 {
+            // 10. O'rta bosqich: Qiziq
+            return ["🎯", "😏"]
+        } else if moveCount <= 6 {
+            // 11. Murakkab vaziyat: Diqqat
+            return ["👀", "🤨"]
+        } else {
+            // 12. Oxirgi bosqich: Tarang
+            return ["😬", "⚡"]
+        }
+    }
+    
     var body: some View {
         ZStack {
             premiumBackground
@@ -83,6 +147,16 @@ struct GameBoardView: View {
                 Label("Leave", systemImage: "xmark")
             }
             .accessibilityLabel("Leave")
+        }
+        ToolbarItem(placement: .topBarTrailing) {
+            HStack(spacing: 4) {
+                ForEach(headerReactions, id: \.self) { emoji in
+                    Text(emoji)
+                        .font(.title2)
+                        .transition(.scale.combined(with: .opacity))
+                }
+            }
+            .animation(.spring(response: 0.4, dampingFraction: 0.7), value: headerReactions)
         }
     }
 }
