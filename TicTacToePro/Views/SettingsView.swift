@@ -12,6 +12,19 @@ struct SettingsView: View {
     @AppStorage(HapticsManager.hapticsEnabledKey) private var enableHapticFeeling: Bool = false
     @AppStorage("charismaticAIEnabled") private var enableCharizmaticAI: Bool = true
     
+    // Centralized control for taptic feedback state from Settings
+    private func setTapticFeedbackEnabled(_ enabled: Bool) {
+        // Persisted via @AppStorage already; ensure runtime manager state matches
+        HapticsManager.setEnabled(enabled)
+        // Provide immediate feedback so user feels the change
+        if enabled {
+            HapticsManager.playNotification(.success, force: true)
+        } else {
+            // Optionally play a light selection to acknowledge turning it off
+            HapticsManager.playSelection(force: true)
+        }
+    }
+    
     var body: some View {
         NavigationStack {
             List {
@@ -29,12 +42,7 @@ struct SettingsView: View {
                         Text("Enable Haptics")
                     }
                     .onChange(of: enableHapticFeeling) { oldValue, newValue in
-                        HapticsManager.setEnabled(newValue)
-                        if newValue {
-                            HapticsManager.playNotification(.success, force: true)
-                        } else {
-                            HapticsManager.playSelection(force: true)
-                        }
+                        setTapticFeedbackEnabled(newValue)
                     }
                     .toggleStyle(SwitchToggleStyle(tint: .blue))
                 }
@@ -60,6 +68,9 @@ struct SettingsView: View {
             }
             .navigationTitle("Settings")
             .listStyle(InsetGroupedListStyle())
+            .onAppear {
+                setTapticFeedbackEnabled(enableHapticFeeling)
+            }
         }
         
     }

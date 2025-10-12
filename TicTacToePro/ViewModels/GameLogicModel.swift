@@ -480,44 +480,35 @@ extension Board {
         
         // Validate maxDepth to prevent invalid recursion
         guard maxDepth >= 0 else {
-            print("Error: Invalid maxDepth (\(maxDepth)) in superiorMinimaxCore")
             return (0, nil)
         }
         
-        // Log current board state for debugging
-        print("Minimax Depth: \(maxDepth), Turn: \(turn), Alpha: \(alpha), Beta: \(beta)")
-        printBoardState()
         
         let hash = zobristHash()
         
         // Check transposition table for previously computed results
         if let entry = transTable[hash], entry.depth >= maxDepth {
-            print("Transposition table hit for hash: \(hash), score: \(entry.score), depth: \(entry.depth)")
             return (entry.score, nil)
         }
         
         // Check terminal states (win or draw)
         if isWin {
             let score = (opposite == turn) ? 1000 - maxDepth : -1000 + maxDepth // Reduced scores to prevent overflow
-            print("Terminal state: Win detected for \(opposite == turn ? "current player" : "opponent"), Score: \(score)")
             return (score, nil)
         }
         
         if isDraw {
-            print("Terminal state: Draw detected")
             return (0, nil)
         }
         
         // Check for empty legal moves
         let moves = orderedLegalMoves()
         guard !moves.isEmpty else {
-            print("Error: No legal moves available for board state")
             return (0, nil)
         }
         
         // Validate board size consistency
         guard boardSize * boardSize == pos.count else {
-            print("Error: Invalid board size. Expected \(boardSize * boardSize) cells, found \(pos.count)")
             return (0, nil)
         }
         
@@ -526,18 +517,15 @@ extension Board {
         var currentAlpha = alpha
         
         // Log moves being evaluated for debugging
-        print("Evaluating moves: \(moves)")
         
         // Evaluate each move recursively
         for move in moves {
             // Validate move index
             guard pos.indices.contains(move), pos[move] == .empty else {
-                print("Error: Invalid move index \(move) or non-empty cell")
                 continue
             }
             
             let newBoard = self.move(move)
-            print("Evaluating move \(move) for player \(turn)")
             
             let (score, _) = newBoard.superiorMinimaxCore(
                 maxDepth: maxDepth - 1,
@@ -550,26 +538,22 @@ extension Board {
             if negatedScore > bestScore {
                 bestScore = negatedScore
                 bestMove = move
-                print("New best move: \(move), Score: \(bestScore)")
             }
             
             currentAlpha = max(currentAlpha, negatedScore)
             
             // Alpha-beta pruning to optimize search
             if currentAlpha >= beta {
-                print("Alpha-beta pruning at move \(move), Alpha: \(currentAlpha), Beta: \(beta)")
                 break
             }
         }
         
         // Warn if no valid move was found
         if bestMove == nil {
-            print("Warning: No valid best move found at depth \(maxDepth)")
         }
         
         // Save result to transposition table
         transTable[hash] = (bestScore, maxDepth)
-        print("Saving to transposition table: Hash: \(hash), Score: \(bestScore), Depth: \(maxDepth)")
         
         return (bestScore, bestMove)
     }
@@ -605,18 +589,14 @@ extension Board {
         var currentDepth = 1
         let maxPossibleDepth = min(legalMoves.count, adaptiveMaxDepth())
         
-        print("Starting findSuperiorMove with time limit: \(timeLimit) seconds, Max Depth: \(maxPossibleDepth)")
-        printBoardState()
         
         // Validate legal moves
         guard !legalMoves.isEmpty else {
-            print("Error: No legal moves available")
             return nil
         }
         
         // Iterative deepening loop to progressively deepen the search
         while currentDepth <= maxPossibleDepth {
-            print("Iterative deepening at depth: \(currentDepth)")
             
             let (score, move) = superiorMinimaxCore(
                 maxDepth: currentDepth,
@@ -625,15 +605,13 @@ extension Board {
             
             if let move = move {
                 bestMove = move
-                print("Best move at depth \(currentDepth): \(move), Score: \(score)")
             } else {
-                print("Warning: No move returned at depth \(currentDepth)")
             }
             
             // Check time limit to prevent exceeding computation time
             let elapsed = Date().timeIntervalSince(startTime)
             if elapsed > timeLimit {
-                print("Time limit exceeded: \(elapsed) seconds")
+
                 break
             }
             
@@ -642,9 +620,9 @@ extension Board {
         
         // Log final result
         if let finalMove = bestMove {
-            print("Final best move: \(finalMove)")
+
         } else {
-            print("Warning: No best move found, falling back to first legal move")
+
             bestMove = legalMoves.first
         }
         
@@ -653,25 +631,7 @@ extension Board {
     
     // MARK: - Helper for Logging Board State
     
-    /// Prints the current board state to the console for debugging
-    private func printBoardState() {
-        let size = boardSize
-        print("Current Board State (\(size)x\(size)):")
-        for row in 0..<size {
-            var rowString = ""
-            for col in 0..<size {
-                let idx = row * size + col
-                switch pos[idx] {
-                case .empty: rowString += "."
-                case .x: rowString += "X"
-                case .o: rowString += "O"
-                case .xw, .ow: rowString += "W" // Winning marks
-                }
-                rowString += " "
-            }
-            print(rowString)
-        }
-    }
+    
 }
 
 // MARK: - Future Optimizations (skeleton only)

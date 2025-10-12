@@ -101,7 +101,6 @@ struct ConfigurationCard: View {
                 }
             },
             perform: {
-                print("Long press completed")
             }
         )
         .transaction { transaction in

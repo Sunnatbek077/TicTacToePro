@@ -24,6 +24,13 @@ struct ContentView: View {
             }
             
             NavigationStack {
+                MultiplayerMenuView()
+            }
+            .tabItem {
+                Label("Multiplayer", systemImage: "person.line.dotted.person")
+            }
+            
+            NavigationStack {
                 SettingsView()
             }
             .tabItem {

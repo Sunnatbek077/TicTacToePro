@@ -10,6 +10,7 @@ import SwiftUI
 struct StartButton: View {
     let isCompactHeightPhone: Bool
     let action: () -> Void
+    public var buttonname: String = "Start Game"
     
     @Environment(\.colorScheme) private var colorScheme
     
@@ -23,7 +24,7 @@ struct StartButton: View {
                 Image(systemName: "play.circle.fill")
                     .imageScale(.large)
                     .foregroundStyle(LinearGradient(colors: [.pink, .purple], startPoint: .top, endPoint: .bottom)) // Gradient icon for appeal
-                Text("Start Game")
+                Text(buttonname)
                     .font(.headline.bold()) // Bolder font
             }
             .frame(maxWidth: .infinity)
