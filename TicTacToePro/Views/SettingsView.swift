@@ -9,19 +9,19 @@ import SwiftUI
 
 struct SettingsView: View {
     @AppStorage("soundsEnabled") private var enablingSounds: Bool = true
-    @AppStorage(HapticsManager.hapticsEnabledKey) private var enableHapticFeeling: Bool = false
+    @AppStorage(HapticManager.hapticsEnabledKey) private var enableHapticFeeling: Bool = false
     @AppStorage("charismaticAIEnabled") private var enableCharizmaticAI: Bool = true
     
     // Centralized control for taptic feedback state from Settings
     private func setTapticFeedbackEnabled(_ enabled: Bool) {
         // Persisted via @AppStorage already; ensure runtime manager state matches
-        HapticsManager.setEnabled(enabled)
+        HapticManager.setEnabled(enabled)
         // Provide immediate feedback so user feels the change
         if enabled {
-            HapticsManager.playNotification(.success, force: true)
+            HapticManager.playNotification(.success, force: true)
         } else {
             // Optionally play a light selection to acknowledge turning it off
-            HapticsManager.playSelection(force: true)
+            HapticManager.playSelection(force: true)
         }
     }
     

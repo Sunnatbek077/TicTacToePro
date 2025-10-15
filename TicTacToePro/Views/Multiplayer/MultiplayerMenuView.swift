@@ -18,8 +18,10 @@ struct MultiplayerMenuView: View {
     @EnvironmentObject private var appState: AppState
     
     @State private var selectedBoardSize: BoardSize = .small
+    @State private var selectedTimeLimit: TimeLimitOption = .tenMinutes
     @State private var showGame = false
     @State private var showBoardSizeSelector = false
+    @State private var showTimeLimitSelector = false
     @State private var animateBackground = false
     @State private var selectedLobby: String? = nil
     
@@ -32,9 +34,9 @@ struct MultiplayerMenuView: View {
     
     // Sample lobby data
     private let lobbies = [
-        ("Battle 1", BoardSize.small, "10 minutes"),
-        ("Battle 2", BoardSize.medium, "15 minutes"),
-        ("Battle 3", BoardSize.large, "20 minutes")
+        ("Battle 1", BoardSize.small, TimeLimitOption.tenMinutes),
+        ("Battle 2", BoardSize.medium, TimeLimitOption.fifteenMinutes),
+        ("Battle 3", BoardSize.large, TimeLimitOption.twentyMinutes)
     ]
     
     // MARK: - Layout Helpers
@@ -140,38 +142,12 @@ struct MultiplayerMenuView: View {
                         
                         // Lobby List
                         VStack(spacing: 12) {
-                            ForEach(lobbies, id: \.0) { lobby in
-                                LobbyCard(
-                                    name: lobby.0,
-                                    boardSize: lobby.1,
-                                    timeLimit: lobby.2,
-                                    isSelected: selectedLobby == lobby.0,
-                                    colorScheme: colorScheme
-                                ) {
-                                    withAnimation(.spring(duration: 0.3, bounce: 0.4)) {
-                                        selectedLobby = lobby.0
-                                        selectedBoardSize = lobby.1
-                                    }
-                                    triggerHaptic()
-                                    showBoardSizeSelector = true
-                                }
-                                .background(RoundedRectangle(cornerRadius: 20).fill(cardBackground))
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 20)
-                                        .strokeBorder(
-                                            colorScheme == .dark
-                                            ? Color.white.opacity(0.06)
-                                            : Color.blue.opacity(0.08),
-                                            lineWidth: 1
-                                        )
-                                )
-                                .shadow(color: premiumShadow.0, radius: premiumShadow.1, x: 0, y: premiumShadow.2)
-                            }
+                            // Servers
                         }
                         .padding(.horizontal, isCompactHeightPhone ? 12 : 16)
                         
                         // Create Lobby Button
-                        StartButton(isCompactHeightPhone: isCompactHeightPhone, buttonname: "Create Lobby") {
+                        StartButton(isCompactHeightPhone: isCompactHeightPhone) {
                             triggerHaptic()
                             showBoardSizeSelector = true
                         }
@@ -201,7 +177,8 @@ struct MultiplayerMenuView: View {
                             ticTacToe: ticTacToeModel,
                             gameTypeIsPVP: true,
                             difficulty: .easy, // Not used in PvP
-                            startingPlayerIsO: false
+                            startingPlayerIsO: false,
+                            timeLimit: selectedTimeLimit
                         )
                         .navigationBarTitleDisplayMode(.inline)
                         .onDisappear { appState.isGameOpen = false }
@@ -216,11 +193,27 @@ struct MultiplayerMenuView: View {
                     onConfirm: {
                         showBoardSizeSelector = false
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                            startGame()
+                            showTimeLimitSelector = true
                         }
                     },
                     onCancel: {
                         showBoardSizeSelector = false
+                    }
+                )
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+            }
+            .sheet(isPresented: $showTimeLimitSelector) {
+                TimeLimitSelectorView(
+                    selectedTimeLimit: $selectedTimeLimit,
+                    onConfirm: {
+                        showTimeLimitSelector = false
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                            startGame()
+                        }
+                    },
+                    onCancel: {
+                        showTimeLimitSelector = false
                     }
                 )
                 .presentationDetents([.medium, .large])
@@ -292,16 +285,19 @@ struct MultiplayerMenuView: View {
     private func startGame() {
         ticTacToeModel.setBoardSize(selectedBoardSize.rawValue)
         ticTacToeModel.playerToMove = .x
+        // Note: Time limit logic would need to be implemented in GameViewModel
+        // For now, we store selectedTimeLimit.rawValue (in minutes) for future use
         appState.isGameOpen = true
         showGame = true
     }
 }
 
+
 // MARK: - Lobby Card
 struct LobbyCard: View {
     let name: String
     let boardSize: BoardSize
-    let timeLimit: String
+    let timeLimit: TimeLimitOption
     let isSelected: Bool
     let colorScheme: ColorScheme
     let action: () -> Void
@@ -318,7 +314,7 @@ struct LobbyCard: View {
                         .font(.system(size: 17))
                         .foregroundColor(.secondary)
                     
-                    Text("Time Limit: \(timeLimit)")
+                    Text("Time Limit: \(timeLimit.title)")
                         .font(.system(size: 17))
                         .foregroundColor(.secondary)
                 }
@@ -357,8 +353,95 @@ struct LobbyCard: View {
 }
 
 
+// MARK: - Time Limit Selector View
+struct TimeLimitSelectorView: View {
+    @Binding var selectedTimeLimit: TimeLimitOption
+    let onConfirm: () -> Void
+    let onCancel: () -> Void
+    
+    @Environment(\.colorScheme) private var colorScheme
+    @State private var animateIn = false
+    
+    var body: some View {
+        ZStack {
+            // Premium background
+            LinearGradient(
+                colors: colorScheme == .dark
+                ? [Color(red: 0.08, green: 0.08, blue: 0.10), Color(red: 0.11, green: 0.12, blue: 0.18)]
+                : [Color(red: 0.95, green: 0.96, blue: 0.99), Color(red: 0.90, green: 0.92, blue: 0.98)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
+            
+            VStack(spacing: 24) {
+                // Header
+                VStack(spacing: 8) {
+                    Text("Choose Time Limit")
+                        .font(.title2.bold())
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [.pink, .purple, .blue],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                    
+                    Text("Select the duration for your game")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                }
+                .padding(.top, 20)
+                
+                // Time Limit Options
+                TimeLimitView(selectedTimeLimit: $selectedTimeLimit)
+                
+                // Action Buttons
+                HStack(spacing: 12) {
+                    Button(action: onCancel) {
+                        Text("Cancel")
+                            .font(.headline)
+                            .foregroundColor(.secondary)
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .fill(Color.gray.opacity(0.2))
+                            )
+                    }
+                    
+                    Button(action: onConfirm) {
+                        HStack {
+                            Text("Confirm")
+                                .font(.headline.bold())
+                            Image(systemName: "arrow.right")
+                        }
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(
+                            LinearGradient(
+                                colors: [.pink, .purple, .blue],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                        .shadow(color: .purple.opacity(0.4), radius: 12, x: 0, y: 6)
+                    }
+                }
+                .padding(.horizontal)
+                .padding(.bottom, 20)
+            }
+        }
+        .onAppear {
+            animateIn = true
+        }
+    }
+}
 
 #Preview {
     MultiplayerMenuView()
         .environmentObject(AppState())
 }
+

@@ -118,6 +118,8 @@ struct StartMenuView: View {
     // NEW: Board size selection
     @State private var showBoardSizeSelector = false
     @State private var selectedBoardSize: BoardSize = .small
+    @State private var selectedTimeLimit: TimeLimitOption = .tenMinutes
+    @State private var showTimeLimitSelector = false
     
     @StateObject private var viewModel = ViewModel()
     @StateObject private var ticTacToeModel = GameViewModel()
@@ -258,7 +260,8 @@ struct StartMenuView: View {
                             ticTacToe: ticTacToeModel,
                             gameTypeIsPVP: selectedGameMode.isPVP,
                             difficulty: selectedDifficulty.mapped,
-                            startingPlayerIsO: startingPlayerIsO
+                            startingPlayerIsO: startingPlayerIsO,
+                            timeLimit: selectedTimeLimit
                         )
                         .navigationBarTitleDisplayMode(.inline)
                         .onDisappear { appState.isGameOpen = false }
@@ -273,11 +276,27 @@ struct StartMenuView: View {
                     onConfirm: {
                         showBoardSizeSelector = false
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                            startGame()
+                            showTimeLimitSelector = true
                         }
                     },
                     onCancel: {
                         showBoardSizeSelector = false
+                    }
+                )
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+            }
+            .sheet(isPresented: $showTimeLimitSelector) {
+                TimeLimitSelectorView(
+                    selectedTimeLimit: $selectedTimeLimit,
+                    onConfirm: {
+                        showTimeLimitSelector = false
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                            startGame()
+                        }
+                    },
+                    onCancel: {
+                        showTimeLimitSelector = false
                     }
                 )
                 .presentationDetents([.medium, .large])
@@ -369,6 +388,7 @@ struct StartMenuView: View {
             ticTacToeModel.aiPlays = startingPlayerIsO ? .x : .o
         }
         ticTacToeModel.playerToMove = startingPlayerIsO ? .o : .x
+        // Optional: ticTacToeModel.timeLimitMinutes = selectedTimeLimit.rawValue
         appState.isGameOpen = true
         showGame = true
     }
