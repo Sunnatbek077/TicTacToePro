@@ -6,6 +6,14 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		6E435A632EA521C900D97180 /* FirebaseAI in Frameworks */ = {isa = PBXBuildFile; productRef = 6E435A622EA521C900D97180 /* FirebaseAI */; };
+		6E435A652EA521C900D97180 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 6E435A642EA521C900D97180 /* FirebaseAnalytics */; };
+		6E435A672EA521C900D97180 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 6E435A662EA521C900D97180 /* FirebaseAuth */; };
+		6E435A692EA521C900D97180 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 6E435A682EA521C900D97180 /* FirebaseFirestore */; };
+		6E435A6B2EA521C900D97180 /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = 6E435A6A2EA521C900D97180 /* FirebaseMessaging */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		6E7467D82E7F17FE00A3ABD9 /* TicTacToePro.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TicTacToePro.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -23,6 +31,11 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				6E435A652EA521C900D97180 /* FirebaseAnalytics in Frameworks */,
+				6E435A692EA521C900D97180 /* FirebaseFirestore in Frameworks */,
+				6E435A6B2EA521C900D97180 /* FirebaseMessaging in Frameworks */,
+				6E435A672EA521C900D97180 /* FirebaseAuth in Frameworks */,
+				6E435A632EA521C900D97180 /* FirebaseAI in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -65,6 +78,11 @@
 			);
 			name = TicTacToePro;
 			packageProductDependencies = (
+				6E435A622EA521C900D97180 /* FirebaseAI */,
+				6E435A642EA521C900D97180 /* FirebaseAnalytics */,
+				6E435A662EA521C900D97180 /* FirebaseAuth */,
+				6E435A682EA521C900D97180 /* FirebaseFirestore */,
+				6E435A6A2EA521C900D97180 /* FirebaseMessaging */,
 			);
 			productName = TicTacToePro;
 			productReference = 6E7467D82E7F17FE00A3ABD9 /* TicTacToePro.app */;
@@ -94,6 +112,9 @@
 			);
 			mainGroup = 6E7467CF2E7F17FE00A3ABD9;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				6E435A612EA521C900D97180 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 6E7467D92E7F17FE00A3ABD9 /* Products */;
 			projectDirPath = "";
@@ -361,6 +382,45 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		6E435A612EA521C900D97180 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 12.4.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		6E435A622EA521C900D97180 /* FirebaseAI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 6E435A612EA521C900D97180 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAI;
+		};
+		6E435A642EA521C900D97180 /* FirebaseAnalytics */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 6E435A612EA521C900D97180 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAnalytics;
+		};
+		6E435A662EA521C900D97180 /* FirebaseAuth */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 6E435A612EA521C900D97180 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAuth;
+		};
+		6E435A682EA521C900D97180 /* FirebaseFirestore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 6E435A612EA521C900D97180 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseFirestore;
+		};
+		6E435A6A2EA521C900D97180 /* FirebaseMessaging */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 6E435A612EA521C900D97180 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseMessaging;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 6E7467D02E7F17FE00A3ABD9 /* Project object */;
 }

@@ -17,27 +17,28 @@ struct MultiplayerMenuView: View {
     @Environment(\.colorScheme) private var colorScheme
     @EnvironmentObject private var appState: AppState
     
-    @State private var selectedBoardSize: BoardSize = .small
-    @State private var selectedTimeLimit: TimeLimitOption = .tenMinutes
-    @State private var showGame = false
-    @State private var showBoardSizeSelector = false
-    @State private var showTimeLimitSelector = false
-    @State private var animateBackground = false
-    @State private var selectedLobby: String? = nil
-    
+    @StateObject private var multiplayerVM = MultiplayerViewModel()
     @StateObject private var viewModel = ViewModel()
     @StateObject private var ticTacToeModel = GameViewModel()
+    
+    @State private var selectedBoardSize: BoardSize = .small
+    @State private var selectedTimeLimit: TimeLimitOption = .tenMinutes
+    @State private var gameName: String = ""
+    @State private var isPrivateGame: Bool = false
+    @State private var roomCodeInput: String = ""
+    
+    // Sheet states
+    @State private var showCreateGameSheet = false
+    @State private var showGameNameSheet = false
+    @State private var showBoardSizeSelector = false
+    @State private var showTimeLimitSelector = false
+    @State private var showJoinByCodeSheet = false
+    @State private var showGame = false
+    @State private var animateBackground = false
     
 #if os(iOS)
     @State private var hapticsEngine: CHHapticEngine?
 #endif
-    
-    // Sample lobby data
-    private let lobbies = [
-        ("Battle 1", BoardSize.small, TimeLimitOption.tenMinutes),
-        ("Battle 2", BoardSize.medium, TimeLimitOption.fifteenMinutes),
-        ("Battle 3", BoardSize.large, TimeLimitOption.twentyMinutes)
-    ]
     
     // MARK: - Layout Helpers
     private var aspectRatio: CGFloat {
@@ -93,11 +94,6 @@ struct MultiplayerMenuView: View {
         AnyShapeStyle(.ultraThinMaterial)
     }
     
-    private var premiumShadow: (Color, CGFloat, CGFloat) {
-        let color = colorScheme == .dark ? Color.black.opacity(0.6) : Color.blue.opacity(0.15)
-        return (color, 24, 14)
-    }
-    
     // MARK: - Premium Styling
     private var premiumGradient: LinearGradient {
         if colorScheme == .dark {
@@ -137,56 +133,54 @@ struct MultiplayerMenuView: View {
                 
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: isCompactHeightPhone ? 16 : 24) {
-                        HeroHeader(isCompactHeightPhone: isCompactHeightPhone, configurationSummary: "")
-                            .font(headerFont)
+                        // Header
+                        headerSection
                         
-                        // Lobby List
-                        VStack(spacing: 12) {
-                            // Servers
-                        }
-                        .padding(.horizontal, isCompactHeightPhone ? 12 : 16)
+                        // Connection Status
+                        connectionStatusView
                         
-                        // Create Lobby Button
-                        StartButton(isCompactHeightPhone: isCompactHeightPhone) {
-                            triggerHaptic()
-                            showBoardSizeSelector = true
-                        }
-                        .padding(layoutCategory == "tall" ? 20 : 12)
-                        .background(RoundedRectangle(cornerRadius: 20).fill(accentGradient.opacity(colorScheme == .dark ? 0.18 : 0.24)))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 20)
-                                .strokeBorder(
-                                    colorScheme == .dark
-                                    ? Color.white.opacity(0.06)
-                                    : Color.purple.opacity(0.08),
-                                    lineWidth: 1
-                                )
-                        )
-                        .shadow(color: .purple.opacity(colorScheme == .dark ? 0.35 : 0.25), radius: 18, x: 0, y: 10)
-                        .sensoryFeedback(.success, trigger: showGame)
+                        // Quick Actions
+                        quickActionsSection
+                        
+                        // Available Games List
+                        gamesListSection
                     }
                     .padding(.horizontal, isCompactHeightPhone ? 12 : 16)
                     .padding(.vertical, verticalPadding)
                     .padding(.top, layoutCategory == "tall" ? 48 : 32)
                     .frame(maxWidth: contentMaxWidth)
-                    .animation(.spring(duration: 0.8, bounce: 0.2), value: selectedLobby)
-                    .navigationDestination(isPresented: $showGame) {
-                        GameBoardView(
-                            onExit: { showGame = false },
-                            viewModel: viewModel,
-                            ticTacToe: ticTacToeModel,
-                            gameTypeIsPVP: true,
-                            difficulty: .easy, // Not used in PvP
-                            startingPlayerIsO: false,
-                            timeLimit: selectedTimeLimit
-                        )
-                        .navigationBarTitleDisplayMode(.inline)
-                        .onDisappear { appState.isGameOpen = false }
-                    }
+                }
+                .refreshable {
+                    await multiplayerVM.refreshGames()
+                }
+                
+                // Loading overlay
+                if multiplayerVM.isLoading {
+                    LoadingOverlay()
                 }
             }
-            .navigationTitle("Multiplayer Lobby")
+            .navigationTitle("Multiplayer")
             .navigationBarTitleDisplayMode(.inline)
+            .alert("Error", isPresented: $multiplayerVM.showError) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                Text(multiplayerVM.errorMessage ?? "Unknown error")
+            }
+            .sheet(isPresented: $showGameNameSheet) {
+                GameNameInputSheet(
+                    gameName: $gameName,
+                    isPrivate: $isPrivateGame,
+                    onNext: {
+                        showGameNameSheet = false
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                            showBoardSizeSelector = true
+                        }
+                    },
+                    onCancel: {
+                        showGameNameSheet = false
+                    }
+                )
+            }
             .sheet(isPresented: $showBoardSizeSelector) {
                 BoardSizeSelectorView(
                     selectedSize: $selectedBoardSize,
@@ -200,26 +194,181 @@ struct MultiplayerMenuView: View {
                         showBoardSizeSelector = false
                     }
                 )
-                .presentationDetents([.medium, .large])
-                .presentationDragIndicator(.visible)
             }
             .sheet(isPresented: $showTimeLimitSelector) {
                 TimeLimitSelectorView(
                     selectedTimeLimit: $selectedTimeLimit,
                     onConfirm: {
                         showTimeLimitSelector = false
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                            startGame()
+                        Task {
+                            await createGame()
                         }
                     },
                     onCancel: {
                         showTimeLimitSelector = false
                     }
                 )
-                .presentationDetents([.medium, .large])
-                .presentationDragIndicator(.visible)
+            }
+            .sheet(isPresented: $showJoinByCodeSheet) {
+                JoinByCodeSheet(
+                    roomCode: $roomCodeInput,
+                    onJoin: {
+                        showJoinByCodeSheet = false
+                        Task {
+                            await multiplayerVM.joinGameByCode(roomCodeInput)
+                            if multiplayerVM.currentGame != nil {
+                                showGame = true
+                            }
+                        }
+                    },
+                    onCancel: {
+                        showJoinByCodeSheet = false
+                    }
+                )
+            }
+            .fullScreenCover(isPresented: $showGame) {
+                MultiplayerGameView(
+                    game: multiplayerVM.currentGame!,
+                    multiplayerVM: multiplayerVM,
+                    onExit: {
+                        multiplayerVM.leaveGame()
+                        showGame = false
+                    }
+                )
             }
         }
+    }
+    
+    // MARK: - Header Section
+    private var headerSection: some View {
+        VStack(spacing: 8) {
+            Text("🎮 Online Multiplayer")
+                .font(headerFont)
+                .foregroundStyle(accentGradient)
+            
+            Text("Play with friends worldwide")
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+        }
+        .frame(maxWidth: .infinity)
+    }
+    
+    // MARK: - Connection Status
+    private var connectionStatusView: some View {
+        HStack {
+            Circle()
+                .fill(statusColor)
+                .frame(width: 8, height: 8)
+            
+            Text(multiplayerVM.connectionStatus.rawValue)
+                .font(.caption)
+                .foregroundColor(.secondary)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+        .background(
+            Capsule()
+                .fill(colorScheme == .dark ? Color(white: 0.15) : Color.white)
+        )
+    }
+    
+    private var statusColor: Color {
+        switch multiplayerVM.connectionStatus {
+        case .connected: return .green
+        case .connecting: return .yellow
+        case .disconnected: return .gray
+        case .error: return .red
+        }
+    }
+    
+    // MARK: - Quick Actions
+    private var quickActionsSection: some View {
+        VStack(spacing: 12) {
+            // Create Game Button
+            Button {
+                triggerHaptic()
+                showGameNameSheet = true
+            } label: {
+                HStack {
+                    Image(systemName: "plus.circle.fill")
+                        .font(.title2)
+                    Text("Create New Game")
+                        .font(.headline.bold())
+                }
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity)
+                .padding()
+                .background(accentGradient)
+                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .shadow(color: .purple.opacity(0.4), radius: 12, x: 0, y: 6)
+            }
+            
+            // Join by Code Button
+            Button {
+                triggerHaptic()
+                showJoinByCodeSheet = true
+            } label: {
+                HStack {
+                    Image(systemName: "keyboard")
+                        .font(.title2)
+                    Text("Join by Code")
+                        .font(.headline)
+                }
+                .foregroundColor(.primary)
+                .frame(maxWidth: .infinity)
+                .padding()
+                .background(
+                    RoundedRectangle(cornerRadius: 16)
+                        .fill(colorScheme == .dark ? Color(white: 0.15) : Color.white)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16)
+                        .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                )
+            }
+        }
+    }
+    
+    // MARK: - Games List Section
+    private var gamesListSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text("Available Games")
+                    .font(.headline)
+                    .foregroundColor(.primary)
+                
+                Spacer()
+                
+                Text("\(publicGames.count) games")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+            
+            if publicGames.isEmpty {
+                EmptyGamesView()
+            } else {
+                ForEach(publicGames) { game in
+                    GameLobbyCard(
+                        game: game,
+                        colorScheme: colorScheme,
+                        onJoin: {
+                            triggerHaptic()
+                            Task {
+                                await multiplayerVM.joinGame(gameId: game.id)
+                                if multiplayerVM.currentGame != nil {
+                                    showGame = true
+                                }
+                            }
+                        }
+                    )
+                }
+            }
+        }
+    }
+    
+    // Filter only public games
+    private var publicGames: [GameListItem] {
+        multiplayerVM.availableGames.filter { !$0.isPrivate }
     }
     
     // MARK: - Background
@@ -257,6 +406,21 @@ struct MultiplayerMenuView: View {
         }
     }
     
+    // MARK: - Game Logic
+    private func createGame() async {
+        await multiplayerVM.createGame(
+            gameName: gameName,
+            boardSize: selectedBoardSize.rawValue,
+            timeLimit: selectedTimeLimit.rawValue > 0 ? TimeInterval(selectedTimeLimit.rawValue * 60) : nil,
+            turnTimeLimit: 30,
+            isPrivate: isPrivateGame
+        )
+        
+        if multiplayerVM.currentGame != nil {
+            showGame = true
+        }
+    }
+    
     // MARK: - Haptics
 #if os(iOS)
     private func prepareHaptics() {
@@ -280,78 +444,393 @@ struct MultiplayerMenuView: View {
 #else
     private func triggerHaptic() {}
 #endif
-    
-    // MARK: - Game Logic
-    private func startGame() {
-        ticTacToeModel.setBoardSize(selectedBoardSize.rawValue)
-        ticTacToeModel.playerToMove = .x
-        // Note: Time limit logic would need to be implemented in GameViewModel
-        // For now, we store selectedTimeLimit.rawValue (in minutes) for future use
-        appState.isGameOpen = true
-        showGame = true
-    }
 }
 
+// MARK: - Supporting Views
 
-// MARK: - Lobby Card
-struct LobbyCard: View {
-    let name: String
-    let boardSize: BoardSize
-    let timeLimit: TimeLimitOption
-    let isSelected: Bool
+struct GameLobbyCard: View {
+    let game: GameListItem
     let colorScheme: ColorScheme
-    let action: () -> Void
+    let onJoin: () -> Void
     
     var body: some View {
-        Button(action: action) {
-            HStack {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(name)
-                        .font(.title2.bold())
-                        .foregroundColor(isSelected ? boardSize.color : .primary)
+        Button(action: onJoin) {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    // Status indicator
+                    Circle()
+                        .fill(game.status == .waiting ? Color.green : Color.yellow)
+                        .frame(width: 10, height: 10)
                     
-                    Text("Board Size: \(boardSize.title)")
-                        .font(.system(size: 17))
-                        .foregroundColor(.secondary)
+                    Text(game.player1Username)
+                        .font(.headline)
+                        .foregroundColor(.primary)
                     
-                    Text("Time Limit: \(timeLimit.title)")
-                        .font(.system(size: 17))
-                        .foregroundColor(.secondary)
+                    Spacer()
+                    
+                    // Room code for public games only
+                    if !game.isPrivate, let code = game.roomCode {
+                        Text(code)
+                            .font(.caption.monospaced())
+                            .foregroundColor(.secondary)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(
+                                Capsule()
+                                    .fill(Color.gray.opacity(0.2))
+                            )
+                    }
+                    
+                    // Private indicator
+                    if game.isPrivate {
+                        Image(systemName: "lock.fill")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
                 }
                 
-                Spacer()
-                
-                Text("Join")
-                    .font(.headline.bold())
-                    .foregroundColor(.white)
-                    .padding(.vertical, 8)
-                    .padding(.horizontal, 16)
-                    .background(
-                        LinearGradient(
-                            colors: isSelected ? [boardSize.color, boardSize.color.opacity(0.8)] : [.gray.opacity(0.3), .gray.opacity(0.2)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
+                HStack(spacing: 16) {
+                    // Board size
+                    Label("\(game.boardSize)x\(game.boardSize)", systemImage: "square.grid.3x3")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    
+                    // Players
+                    Label("\(game.player2Username != nil ? "2" : "1")/2", systemImage: "person.2")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    
+                    // Spectators
+                    if game.spectatorCount > 0 {
+                        Label("\(game.spectatorCount)", systemImage: "eye")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                    
+                    Spacer()
+                    
+                    // Join button
+                    Text(game.status == .waiting ? "Join" : "Watch")
+                        .font(.caption.bold())
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 6)
+                        .background(
+                            LinearGradient(
+                                colors: [.pink, .purple],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
                         )
-                    )
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(isSelected ? boardSize.color : .clear, lineWidth: 2)
-                    )
+                        .clipShape(Capsule())
+                }
             }
             .padding()
             .background(
-                RoundedRectangle(cornerRadius: 20)
-                    .fill(colorScheme == .dark ? Color(white: 0.15) : .white)
-                    .shadow(color: isSelected ? boardSize.color.opacity(0.3) : .black.opacity(0.1), radius: 12)
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(colorScheme == .dark ? Color(white: 0.15) : Color.white)
             )
-            .scaleEffect(isSelected ? 1.05 : 1.0)
-            .animation(.spring(duration: 0.3, bounce: 0.4), value: isSelected)
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(Color.gray.opacity(0.2), lineWidth: 1)
+            )
+            .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 4)
         }
         .buttonStyle(.plain)
     }
 }
 
+struct EmptyGamesView: View {
+    var body: some View {
+        VStack(spacing: 16) {
+            Image(systemName: "tray")
+                .font(.system(size: 48))
+                .foregroundColor(.secondary)
+            
+            Text("No active games")
+                .font(.headline)
+                .foregroundColor(.secondary)
+            
+            Text("Be the first to create a game!")
+                .font(.caption)
+                .foregroundColor(.secondary)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 40)
+    }
+}
+
+struct LoadingOverlay: View {
+    var body: some View {
+        ZStack {
+            Color.black.opacity(0.4)
+                .ignoresSafeArea()
+            
+            VStack(spacing: 16) {
+                ProgressView()
+                    .scaleEffect(1.5)
+                    .tint(.white)
+                
+                Text("Loading...")
+                    .font(.headline)
+                    .foregroundColor(.white)
+            }
+            .padding(32)
+            .background(
+                RoundedRectangle(cornerRadius: 20)
+                    .fill(.ultraThinMaterial)
+            )
+        }
+    }
+}
+
+struct GameNameInputSheet: View {
+    @Binding var gameName: String
+    @Binding var isPrivate: Bool
+    let onNext: () -> Void
+    let onCancel: () -> Void
+    
+    @Environment(\.colorScheme) private var colorScheme
+    @FocusState private var isFocused: Bool
+    
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                // Background
+                LinearGradient(
+                    colors: colorScheme == .dark
+                    ? [Color(red: 0.08, green: 0.08, blue: 0.10), Color(red: 0.11, green: 0.12, blue: 0.18)]
+                    : [Color(red: 0.95, green: 0.96, blue: 0.99), Color(red: 0.90, green: 0.92, blue: 0.98)],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                .ignoresSafeArea()
+                
+                VStack(spacing: 24) {
+                    // Header
+                    VStack(spacing: 8) {
+                        Text("Create New Game")
+                            .font(.title2.bold())
+                            .foregroundStyle(
+                                LinearGradient(
+                                    colors: [.pink, .purple, .blue],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
+                        
+                        Text("Give your game a unique name")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                    }
+                    .padding(.top, 20)
+                    
+                    // Game Name Input
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Game Name")
+                            .font(.headline)
+                            .foregroundColor(.primary)
+                        
+                        TextField("e.g., Epic Battle", text: $gameName)
+                            .textFieldStyle(.plain)
+                            .padding()
+                            .background(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(colorScheme == .dark ? Color(white: 0.15) : Color.white)
+                            )
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .stroke(isFocused ? Color.purple : Color.gray.opacity(0.3), lineWidth: 2)
+                            )
+                            .focused($isFocused)
+                    }
+                    .padding(.horizontal)
+                    
+                    // Privacy Toggle
+                    VStack(alignment: .leading, spacing: 12) {
+                        Toggle(isOn: $isPrivate) {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Private Game")
+                                    .font(.headline)
+                                
+                                Text("Only players with room code can join")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                        .tint(.purple)
+                    }
+                    .padding()
+                    .background(
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(colorScheme == .dark ? Color(white: 0.15) : Color.white)
+                    )
+                    .padding(.horizontal)
+                    
+                    Spacer()
+                    
+                    // Action Buttons
+                    HStack(spacing: 12) {
+                        Button(action: onCancel) {
+                            Text("Cancel")
+                                .font(.headline)
+                                .foregroundColor(.secondary)
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                                .background(
+                                    RoundedRectangle(cornerRadius: 16)
+                                        .fill(Color.gray.opacity(0.2))
+                                )
+                        }
+                        
+                        Button(action: onNext) {
+                            HStack {
+                                Text("Next")
+                                    .font(.headline.bold())
+                                Image(systemName: "arrow.right")
+                            }
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(
+                                LinearGradient(
+                                    colors: [.pink, .purple, .blue],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
+                            .clipShape(RoundedRectangle(cornerRadius: 16))
+                            .shadow(color: .purple.opacity(0.4), radius: 12, x: 0, y: 6)
+                        }
+                        .disabled(gameName.isEmpty)
+                        .opacity(gameName.isEmpty ? 0.5 : 1.0)
+                    }
+                    .padding(.horizontal)
+                    .padding(.bottom, 20)
+                }
+            }
+            .onAppear {
+                isFocused = true
+            }
+        }
+    }
+}
+
+struct JoinByCodeSheet: View {
+    @Binding var roomCode: String
+    let onJoin: () -> Void
+    let onCancel: () -> Void
+    
+    @Environment(\.colorScheme) private var colorScheme
+    @FocusState private var isFocused: Bool
+    
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                // Background
+                LinearGradient(
+                    colors: colorScheme == .dark
+                    ? [Color(red: 0.08, green: 0.08, blue: 0.10), Color(red: 0.11, green: 0.12, blue: 0.18)]
+                    : [Color(red: 0.95, green: 0.96, blue: 0.99), Color(red: 0.90, green: 0.92, blue: 0.98)],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                .ignoresSafeArea()
+                
+                VStack(spacing: 24) {
+                    // Header
+                    VStack(spacing: 8) {
+                        Image(systemName: "keyboard")
+                            .font(.system(size: 48))
+                            .foregroundStyle(
+                                LinearGradient(
+                                    colors: [.pink, .purple, .blue],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
+                        
+                        Text("Enter Room Code")
+                            .font(.title2.bold())
+                            .foregroundColor(.primary)
+                        
+                        Text("6-digit code from your friend")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                    }
+                    .padding(.top, 20)
+                    
+                    // Room Code Input
+                    TextField("ABC123", text: $roomCode)
+                        .textFieldStyle(.plain)
+                        .font(.system(size: 32, weight: .bold, design: .monospaced))
+                        .multilineTextAlignment(.center)
+                        .textCase(.uppercase)
+                        .autocorrectionDisabled()
+                        .keyboardType(.asciiCapable)
+                        .padding()
+                        .background(
+                            RoundedRectangle(cornerRadius: 16)
+                                .fill(colorScheme == .dark ? Color(white: 0.15) : Color.white)
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 16)
+                                .stroke(isFocused ? Color.purple : Color.gray.opacity(0.3), lineWidth: 2)
+                        )
+                        .padding(.horizontal)
+                        .focused($isFocused)
+                        .onChange(of: roomCode) { _, newValue in
+                            roomCode = String(newValue.prefix(6).uppercased())
+                        }
+                    
+                    Spacer()
+                    
+                    // Action Buttons
+                    HStack(spacing: 12) {
+                        Button(action: onCancel) {
+                            Text("Cancel")
+                                .font(.headline)
+                                .foregroundColor(.secondary)
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                                .background(
+                                    RoundedRectangle(cornerRadius: 16)
+                                        .fill(Color.gray.opacity(0.2))
+                                )
+                        }
+                        
+                        Button(action: onJoin) {
+                            HStack {
+                                Text("Join Game")
+                                    .font(.headline.bold())
+                                Image(systemName: "arrow.right.circle.fill")
+                            }
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(
+                                LinearGradient(
+                                    colors: [.pink, .purple, .blue],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
+                            .clipShape(RoundedRectangle(cornerRadius: 16))
+                            .shadow(color: .purple.opacity(0.4), radius: 12, x: 0, y: 6)
+                        }
+                        .disabled(roomCode.count != 6)
+                        .opacity(roomCode.count != 6 ? 0.5 : 1.0)
+                    }
+                    .padding(.horizontal)
+                    .padding(.bottom, 20)
+                }
+            }
+            .onAppear {
+                isFocused = true
+            }
+        }
+    }
+}
 
 // MARK: - Time Limit Selector View
 struct TimeLimitSelectorView: View {
@@ -444,4 +923,3 @@ struct TimeLimitSelectorView: View {
     MultiplayerMenuView()
         .environmentObject(AppState())
 }
-
