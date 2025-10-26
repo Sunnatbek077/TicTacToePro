@@ -18,9 +18,22 @@
 		6E7467D82E7F17FE00A3ABD9 /* TicTacToePro.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TicTacToePro.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		6E1573A32EAE4DA6002A4CC8 /* Exceptions for "TicTacToePro" folder in "TicTacToePro" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 6E7467D72E7F17FE00A3ABD9 /* TicTacToePro */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		6E7467DA2E7F17FE00A3ABD9 /* TicTacToePro */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				6E1573A32EAE4DA6002A4CC8 /* Exceptions for "TicTacToePro" folder in "TicTacToePro" target */,
+			);
 			path = TicTacToePro;
 			sourceTree = "<group>";
 		};
@@ -275,6 +288,7 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = TicTacToePro/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Tic Tac Pro";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.board-games";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
@@ -324,6 +338,7 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = TicTacToePro/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Tic Tac Pro";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.board-games";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
