@@ -137,6 +137,20 @@ class FirebaseManager: ObservableObject {
         }
     }
     
+    /// Update the username of the currently authenticated user in Firestore and memory
+    func updateUsername(_ newUsername: String) async throws {
+        guard let userId = currentUser?.id else { throw FirebaseError.userNotFound }
+        try await db.collection("users").document(userId).updateData([
+            "username": newUsername,
+            "updatedAt": FieldValue.serverTimestamp()
+        ])
+        await MainActor.run {
+            if let current = self.currentUser {
+                self.currentUser = FirebaseUser(id: current.id, username: newUsername, isAnonymous: current.isAnonymous)
+            }
+        }
+    }
+    
     private func fetchUser(userId: String) async throws -> FirebaseUser {
         let doc = try await db.collection("users").document(userId).getDocument()
         

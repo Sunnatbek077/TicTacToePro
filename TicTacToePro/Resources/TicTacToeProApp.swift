@@ -11,27 +11,24 @@ import FirebaseCore
 @main
 struct TicTacToeProApp: App {
     @StateObject private var appState = AppState()
+    @StateObject private var multiplayerVM = MultiplayerViewModel()
     
     init() {
         // Configure Firebase on app launch
         print("🚀 Starting Firebase configuration...")
-        
-        do {
-            // Check if Firebase is already configured
-            if FirebaseApp.app() == nil {
-                FirebaseApp.configure()
-                print("✅ Firebase configured successfully")
-            } else {
-                print("✅ Firebase already configured")
-            }
-            
-            // Verify configuration
-            if let app = FirebaseApp.app() {
-                print("📱 Firebase App Name: \(app.name)")
-                print("📱 Firebase Options: \(app.options)")
-            }
-        } catch {
-            print("❌ Firebase configuration error: \(error)")
+
+        // Check if Firebase is already configured
+        if FirebaseApp.app() == nil {
+            FirebaseApp.configure()
+            print("✅ Firebase configured successfully")
+        } else {
+            print("✅ Firebase already configured")
+        }
+
+        // Verify configuration
+        if let app = FirebaseApp.app() {
+            print("📱 Firebase App Name: \(app.name)")
+            print("📱 Firebase Options: \(app.options)")
         }
     }
     
@@ -39,6 +36,7 @@ struct TicTacToeProApp: App {
         WindowGroup {
             ContentView()
                 .environmentObject(appState)
+                .environmentObject(multiplayerVM)
                 .onAppear {
                     testFirebaseConnection()
                 }
@@ -89,3 +87,4 @@ struct TicTacToeProApp: App {
         #endif
     }
 }
+

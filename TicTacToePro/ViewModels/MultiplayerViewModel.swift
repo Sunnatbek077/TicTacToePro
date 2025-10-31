@@ -335,6 +335,58 @@ class MultiplayerViewModel: ObservableObject {
         }
         cancellables.removeAll()
     }
+
+    // MARK: - Profile / Username
+    func updateUsername(_ newUsername: String) async {
+        let trimmed = newUsername.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        do {
+            try await firebaseManager.updateUsername(trimmed)
+            await MainActor.run {
+                if let player = self.currentPlayer {
+                    self.currentPlayer = Player(
+                        id: player.id,
+                        username: trimmed,
+                        score: player.score,
+                        symbol: player.symbol,
+                        isOnline: player.isOnline,
+                        lastActiveTime: Date()
+                    )
+                }
+                // Update currentGame snapshot locally and push to Firestore so lobby lists show the new name
+                if var game = self.currentGame {
+                    if game.player1.id == self.currentPlayer?.id {
+                        game.player1 = Player(
+                            id: game.player1.id,
+                            username: trimmed,
+                            score: game.player1.score,
+                            symbol: game.player1.symbol,
+                            isOnline: game.player1.isOnline,
+                            lastActiveTime: Date()
+                        )
+                    } else if var p2 = game.player2, p2.id == self.currentPlayer?.id {
+                        p2 = Player(
+                            id: p2.id,
+                            username: trimmed,
+                            score: p2.score,
+                            symbol: p2.symbol,
+                            isOnline: p2.isOnline,
+                            lastActiveTime: Date()
+                        )
+                        game.player2 = p2
+                    }
+                    self.currentGame = game
+                    Task {
+                        try? await self.firebaseManager.updateGame(game)
+                    }
+                }
+            }
+        } catch {
+            await MainActor.run {
+                self.showErrorMessage("Failed to update username: \(error.localizedDescription)")
+            }
+        }
+    }
 }
 
 // MARK: - Preview Helper

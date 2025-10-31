@@ -12,6 +12,7 @@ struct SettingsView: View {
     @Environment(\.horizontalSizeClass) private var hSizeClass
     @Environment(\.verticalSizeClass) private var vSizeClass
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var multiplayerVM: MultiplayerViewModel
     
     // Settings states
     @AppStorage(HapticManager.hapticsEnabledKey) private var hapticsEnabled = false
@@ -22,7 +23,8 @@ struct SettingsView: View {
     
     @State private var showResetAlert = false
     @State private var showAbout = false
-    @State private var animateBackground = false
+    @State private var showProfile = false
+    // Removed: unused background animation state
     
     // Layout helpers
     private var isCompactHeightPhone: Bool {
@@ -99,7 +101,12 @@ struct SettingsView: View {
             .sheet(isPresented: $showAbout) {
                 AboutView()
             }
+            .sheet(isPresented: $showProfile) {
+                ProfileView()
+            }
         }
+        // Apply preferred color scheme according to user preference
+        .preferredColorScheme(resolvedColorScheme)
     }
     
     // MARK: - Header Section
@@ -230,6 +237,18 @@ struct SettingsView: View {
     private var advancedSection: some View {
         SettingsCard(title: "Advanced", icon: "gearshape.2.fill") {
             VStack(spacing: 0) {
+                // Profile
+                SettingsNavigationRow(
+                    icon: "person.crop.circle.fill",
+                    title: "Profile",
+                    iconColor: .blue
+                ) {
+                    showProfile = true
+                }
+                
+                Divider()
+                    .padding(.leading, 52)
+                
                 // Privacy
                 SettingsNavigationRow(
                     icon: "hand.raised.fill",
@@ -397,9 +416,6 @@ struct SettingsView: View {
                 .opacity(colorScheme == .dark ? 0.05 : 0.03)
                 .ignoresSafeArea()
         }
-        .task {
-            animateBackground = true
-        }
     }
     
     // MARK: - Helper Properties
@@ -408,6 +424,15 @@ struct SettingsView: View {
         case "light": return "sun.max.fill"
         case "dark": return "moon.fill"
         default: return "circle.lefthalf.filled"
+        }
+    }
+    
+    // Resolve the preferred color scheme based on stored preference
+    private var resolvedColorScheme: ColorScheme? {
+        switch colorSchemePreference {
+        case "light": return .light
+        case "dark": return .dark
+        default: return nil // system
         }
     }
     
@@ -426,11 +451,7 @@ struct SettingsView: View {
         // Implement App Store rating
         #if os(iOS)
         if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
-            if #available(iOS 14.0, *) {
-                if let scene = windowScene.windows.first?.windowScene {
-                    SKStoreReviewController.requestReview(in: scene)
-                }
-            }
+            SKStoreReviewController.requestReview(in: windowScene)
         }
         #endif
     }
@@ -438,11 +459,9 @@ struct SettingsView: View {
     private func shareApp() {
         // Implement share functionality
         #if os(iOS)
-        let appURL = "https://apps.apple.com/app/id123456789" // Replace with actual App Store URL
-        let activityVC = UIActivityViewController(
-            activityItems: ["Check out Tic Tac Toe Pro!", appURL],
-            applicationActivities: nil
-        )
+        let appURLString = "https://apps.apple.com/app/id123456789" // Replace with actual App Store URL
+        let items: [Any] = ["Check out Tic Tac Toe Pro!", URL(string: appURLString) as Any]
+        let activityVC = UIActivityViewController(activityItems: items, applicationActivities: nil)
         
         if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
            let window = windowScene.windows.first,
@@ -760,8 +779,9 @@ struct FeatureRow: View {
 
 #if os(iOS)
 import StoreKit
+import UIKit
 #endif
 
 #Preview {
-    SettingsView()
+    SettingsView().environmentObject(MultiplayerViewModel.preview)
 }
