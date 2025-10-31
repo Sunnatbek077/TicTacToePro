@@ -209,8 +209,12 @@ extension GameBoardView {
                                     isRecentlyPlaced: recentlyPlacedIndex == index,
                                     isSELikeSmallScreen: isSELikeSmallScreen,
                                     action: {
-                                        self.makeMove(at: index)
-                                        recentlyPlacedIndex = index
+                                        if let handler = onCellTap {
+                                            handler(index)
+                                        } else {
+                                            self.makeMove(at: index)
+                                            recentlyPlacedIndex = index
+                                        }
                                     }
                                 )
                                 .shadow(color: (colorScheme == .dark ? Color.black.opacity(0.22) : Color.purple.opacity(0.14)), radius: 4, x: 1, y: 1)

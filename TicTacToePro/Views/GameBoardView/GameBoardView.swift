@@ -27,6 +27,9 @@ struct GameBoardView: View {
     let difficulty: AIDifficulty
     let startingPlayerIsO: Bool
     let timeLimit: TimeLimitOption?
+    // Optional external tap handler (e.g., multiplayer). When provided, cell taps
+    // will be routed to this handler instead of mutating the local board state.
+    var onCellTap: ((Int) -> Void)? = nil
     
     // Local (session-only) scoreboard
     @State var xWins: Int = 0

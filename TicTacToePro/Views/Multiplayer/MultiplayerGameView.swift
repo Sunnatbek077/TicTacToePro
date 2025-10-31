@@ -103,7 +103,18 @@ struct MultiplayerGameView: View {
             gameTypeIsPVP: true,
             difficulty: .easy,
             startingPlayerIsO: game.player2?.symbol == .o,
-            timeLimit: timeLimitOption
+            timeLimit: timeLimitOption,
+            onCellTap: { index in
+                // Only allow if it's my turn and the cell is empty
+                guard let currentGame = multiplayerVM.currentGame,
+                      let me = multiplayerVM.currentPlayer else { return }
+                let isMyTurn = me.symbol == currentGame.currentTurn
+                let isCellEmpty = currentGame.boardState.indices.contains(index) && currentGame.boardState[index] == .empty
+                guard isMyTurn && isCellEmpty else { return }
+                Task {
+                    await multiplayerVM.makeMove(index: index)
+                }
+            }
         )
         .overlay(alignment: .bottomLeading) {
             // Forfeit button - o'yinni yakunlash
