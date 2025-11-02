@@ -35,6 +35,8 @@ struct MultiplayerMenuView: View {
     @State private var showJoinByCodeSheet = false
     @State private var showGame = false
     @State private var animateBackground = false
+    @State private var showDeleteConfirmation = false
+    @State private var gameToDelete: GameListItem?
     
 #if os(iOS)
     @State private var hapticsEngine: CHHapticEngine?
@@ -165,6 +167,23 @@ struct MultiplayerMenuView: View {
                 Button("OK", role: .cancel) { }
             } message: {
                 Text(multiplayerVM.errorMessage ?? "Unknown error")
+            }
+            .alert("Delete Game?", isPresented: $showDeleteConfirmation) {
+                Button("Cancel", role: .cancel) {
+                    gameToDelete = nil
+                }
+                Button("Delete", role: .destructive) {
+                    if let game = gameToDelete {
+                        Task {
+                            await deleteGame(game)
+                        }
+                    }
+                    gameToDelete = nil
+                }
+            } message: {
+                if let game = gameToDelete {
+                    Text("Are you sure you want to delete this game? This action cannot be undone.")
+                }
             }
             .sheet(isPresented: $showGameNameSheet) {
                 GameNameInputSheet(
@@ -346,24 +365,63 @@ struct MultiplayerMenuView: View {
             
             if publicGames.isEmpty {
                 EmptyGamesView()
+                    .padding(.vertical, 20)
             } else {
-                ForEach(publicGames) { game in
-                    GameLobbyCard(
-                        game: game,
-                        colorScheme: colorScheme,
-                        onJoin: {
-                            triggerHaptic()
-                            Task {
-                                await multiplayerVM.joinGame(gameId: game.id)
-                                if multiplayerVM.currentGame != nil {
-                                    showGame = true
+                // Use List for proper swipe action support
+                List {
+                    ForEach(publicGames) { game in
+                        GameLobbyCard(
+                            game: game,
+                            colorScheme: colorScheme,
+                            onJoin: {
+                                triggerHaptic()
+                                Task {
+                                    await multiplayerVM.joinGame(gameId: game.id)
+                                    if multiplayerVM.currentGame != nil {
+                                        showGame = true
+                                    }
+                                }
+                            }
+                        )
+                        .listRowInsets(EdgeInsets(top: 6, leading: 0, bottom: 6, trailing: 0))
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
+                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                            // Only show delete action for games created by the current player
+                            if isGameCreatedByCurrentPlayer(game) {
+                                Button(role: .destructive) {
+                                    gameToDelete = game
+                                    showDeleteConfirmation = true
+                                } label: {
+                                    Label("Delete", systemImage: "trash")
                                 }
                             }
                         }
-                    )
+                    }
                 }
+                .listStyle(.plain)
+                .scrollContentBackground(.hidden)
+                .frame(height: min(CGFloat(publicGames.count) * 110 + 20, 600))
             }
         }
+    }
+    
+    // MARK: - Helper Methods
+    
+    /// Check if the game was created by the current player
+    private func isGameCreatedByCurrentPlayer(_ game: GameListItem) -> Bool {
+        guard let currentPlayerId = multiplayerVM.currentPlayer?.id else {
+            return false
+        }
+        return game.player1Id == currentPlayerId
+    }
+    
+    /// Delete a game with error handling
+    private func deleteGame(_ game: GameListItem) async {
+        // Error handling is managed by the ViewModel's deleteGame method
+        // It will show an alert via showErrorMessage if deletion fails
+        await multiplayerVM.deleteGame(gameId: game.id)
+        // Note: deleteGame already calls refreshGames() internally
     }
     
     // Filter only public games

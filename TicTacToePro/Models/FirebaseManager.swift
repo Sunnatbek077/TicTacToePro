@@ -333,10 +333,76 @@ class FirebaseManager: ObservableObject {
         }
     }
     
+    func addChatMessage(gameId: String, message: ChatMessage) async throws {
+        let gameRef = db.collection("games").document(gameId)
+        
+        try await db.runTransaction { transaction, errorPointer in
+            let gameDoc: DocumentSnapshot
+            do {
+                gameDoc = try transaction.getDocument(gameRef)
+            } catch let error as NSError {
+                errorPointer?.pointee = error
+                return nil
+            }
+            
+            guard var data = gameDoc.data() else {
+                let error = NSError(domain: "FirebaseManager", code: -1,
+                                  userInfo: [NSLocalizedDescriptionKey: "Game not found"])
+                errorPointer?.pointee = error
+                return nil
+            }
+            
+            var chatMessages = data["chatMessages"] as? [[String: Any]] ?? []
+            chatMessages.append(try! self.chatMessageToDict(message))
+            
+            data["chatMessages"] = chatMessages
+            data["updatedAt"] = FieldValue.serverTimestamp()
+            
+            transaction.updateData(data, forDocument: gameRef)
+            return nil
+        }
+    }
+    
+    func forfeitGame(gameId: String, playerId: String) async throws {
+        let gameRef = db.collection("games").document(gameId)
+        
+        try await db.runTransaction { transaction, errorPointer in
+            let gameDoc: DocumentSnapshot
+            do {
+                gameDoc = try transaction.getDocument(gameRef)
+            } catch let error as NSError {
+                errorPointer?.pointee = error
+                return nil
+            }
+            
+            guard let data = gameDoc.data() else {
+                let error = NSError(domain: "FirebaseManager", code: -1,
+                                  userInfo: [NSLocalizedDescriptionKey: "Game not found"])
+                errorPointer?.pointee = error
+                return nil
+            }
+            
+            do {
+                var game = try self.firestoreDataToGame(data)
+                game.forfeit(playerId: playerId)
+                
+                let updatedData = try self.gameToFirestoreData(game)
+                transaction.updateData(
+                    updatedData.merging(["updatedAt": FieldValue.serverTimestamp()]) { _, new in new },
+                    forDocument: gameRef
+                )
+            } catch {
+                errorPointer?.pointee = error as NSError
+                return nil
+            }
+            
+            return nil
+        }
+    }
+    
     func findGameByRoomCode(_ code: String) async throws -> String {
         let snapshot = try await db.collection("games")
             .whereField("roomCode", isEqualTo: code)
-            .whereField("status", isEqualTo: MultiplayerGameStatus.waiting.rawValue)
             .limit(to: 1)
             .getDocuments()
         
@@ -345,32 +411,6 @@ class FirebaseManager: ObservableObject {
         }
         
         return doc.documentID
-    }
-    
-    func addChatMessage(gameId: String, message: ChatMessage) async throws {
-        try await db.collection("games").document(gameId).updateData([
-            "chatMessages": FieldValue.arrayUnion([try chatMessageToDict(message)]),
-            "updatedAt": FieldValue.serverTimestamp()
-        ])
-    }
-    
-    func forfeitGame(gameId: String, playerId: String) async throws {
-        let gameRef = db.collection("games").document(gameId)
-        let game = try await fetchGame(gameId: gameId)
-        
-        var result: MultiplayerGameResult
-        if playerId == game.player1.id {
-            result = .forfeitPlayer1
-        } else {
-            result = .forfeitPlayer2
-        }
-        
-        try await gameRef.updateData([
-            "status": MultiplayerGameStatus.finished.rawValue,
-            "result": result.rawValue,
-            "endTime": FieldValue.serverTimestamp(),
-            "updatedAt": FieldValue.serverTimestamp()
-        ])
     }
     
     func deleteGame(gameId: String) async throws {
@@ -465,6 +505,7 @@ class FirebaseManager: ObservableObject {
     private func firestoreDataToGameListItem(_ data: [String: Any]) throws -> GameListItem {
         guard let id = data["id"] as? String,
               let player1Data = data["player1"] as? [String: Any],
+              let player1Id = player1Data["id"] as? String,
               let player1Username = player1Data["username"] as? String,
               let statusRaw = data["status"] as? String,
               let settingsData = data["settings"] as? [String: Any],
@@ -491,6 +532,7 @@ class FirebaseManager: ObservableObject {
         
         return GameListItem(
             id: id,
+            player1Id: player1Id,
             player1Username: player1Username,
             player2Username: player2Username,
             status: status,

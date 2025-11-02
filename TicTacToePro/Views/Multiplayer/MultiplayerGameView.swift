@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Combine
 
 struct MultiplayerGameView: View {
     let game: MultiplayerGame
@@ -24,6 +25,9 @@ struct MultiplayerGameView: View {
     @State private var showExitAlert = false
     @State private var showWaitingOverlay = true
     @FocusState private var chatFocused: Bool
+    
+    // Timer for periodic refresh
+    @State private var timerCancellable: AnyCancellable?
     
     var body: some View {
         ZStack {
@@ -62,6 +66,10 @@ struct MultiplayerGameView: View {
         }
         .onAppear {
             syncGameState()
+            startRefreshTimer()
+        }
+        .onDisappear {
+            stopRefreshTimer()
         }
         .onChange(of: multiplayerVM.currentGame?.boardState) { _, _ in
             syncGameState()
@@ -69,6 +77,10 @@ struct MultiplayerGameView: View {
         .onChange(of: multiplayerVM.currentGame?.status) { _, newStatus in
             if newStatus == .active {
                 showWaitingOverlay = false
+            }
+            // Stop timer if game is finished
+            if newStatus == .finished {
+                stopRefreshTimer()
             }
         }
         .alert("Leave Game?", isPresented: $showExitAlert) {
@@ -597,6 +609,33 @@ struct MultiplayerGameView: View {
         chatMessage = ""
     }
     
+    // MARK: - Timer Functions
+    
+    /// Start timer to refresh game every 5 seconds
+    private func startRefreshTimer() {
+        stopRefreshTimer() // Stop any existing timer
+        
+        // Only start timer if game is not finished
+        guard let game = multiplayerVM.currentGame,
+              game.status != .finished else { return }
+        
+        // Create, connect and subscribe to the timer
+        timerCancellable = Timer.publish(every: 5.0, on: .main, in: .common)
+            .autoconnect()
+            .sink { [weak multiplayerVM] _ in
+                guard let multiplayerVM = multiplayerVM else { return }
+                Task { @MainActor in
+                    await multiplayerVM.refreshCurrentGame()
+                }
+            }
+    }
+    
+    /// Stop the refresh timer
+    private func stopRefreshTimer() {
+        timerCancellable?.cancel()
+        timerCancellable = nil
+    }
+    
     private func resultIcon(for result: MultiplayerGameResult) -> some View {
         let iconData = getResultIconData(for: result)
         
@@ -671,4 +710,3 @@ struct MultiplayerGameView: View {
         }
     }
 }
-

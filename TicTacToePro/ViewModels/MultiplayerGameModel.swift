@@ -461,6 +461,7 @@ struct GameListResponse: Codable {
 
 struct GameListItem: Codable, Identifiable {
     let id: String
+    let player1Id: String
     let player1Username: String
     let player2Username: String?
     let status: MultiplayerGameStatus

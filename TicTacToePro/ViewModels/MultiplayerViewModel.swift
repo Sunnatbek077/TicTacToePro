@@ -298,6 +298,30 @@ class MultiplayerViewModel: ObservableObject {
         isLoading = false
     }
     
+    /// Refresh the current game from Firebase
+    func refreshCurrentGame() async {
+        guard let gameId = currentGameId else { return }
+        
+        do {
+            let updatedGame = try await firebaseManager.fetchGame(gameId: gameId)
+            currentGame = updatedGame
+        } catch {
+            // Silently fail to avoid interrupting gameplay
+            // Error is already handled by the real-time listener
+            print("Failed to refresh current game: \(error.localizedDescription)")
+        }
+    }
+    
+    /// Delete a game
+    func deleteGame(gameId: String) async {
+        do {
+            try await firebaseManager.deleteGame(gameId: gameId)
+            await refreshGames()
+        } catch {
+            showErrorMessage("Failed to delete game: \(error.localizedDescription)")
+        }
+    }
+    
     // MARK: - Real-time Updates
     
     private func listenToGameUpdates(gameId: String) {
