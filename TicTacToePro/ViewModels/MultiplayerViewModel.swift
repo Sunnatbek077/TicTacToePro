@@ -69,8 +69,21 @@ class MultiplayerViewModel: ObservableObject {
             .sink { [weak self] firebaseUser in
                 guard let self = self, let fbUser = firebaseUser else { return }
                 
-                // Convert Firebase user to Player
-                if self.currentPlayer == nil {
+                // Create or update player from Firebase user
+                if let existingPlayer = self.currentPlayer {
+                    // Update existing player if username changed
+                    if existingPlayer.username != fbUser.username {
+                        self.currentPlayer = Player(
+                            id: existingPlayer.id,
+                            username: fbUser.username,
+                            score: existingPlayer.score,
+                            symbol: existingPlayer.symbol,
+                            isOnline: existingPlayer.isOnline,
+                            lastActiveTime: Date()
+                        )
+                    }
+                } else {
+                    // Create new player from Firebase user
                     self.currentPlayer = Player(
                         id: fbUser.id,
                         username: fbUser.username,
@@ -364,22 +377,50 @@ class MultiplayerViewModel: ObservableObject {
     func updateUsername(_ newUsername: String) async {
         let trimmed = newUsername.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
+        guard let playerId = currentPlayer?.id else {
+            showErrorMessage("Not authenticated")
+            return
+        }
+        
         do {
+            // 1. Update Firebase user document
             try await firebaseManager.updateUsername(trimmed)
-            await MainActor.run {
-                if let player = self.currentPlayer {
-                    self.currentPlayer = Player(
-                        id: player.id,
-                        username: trimmed,
-                        score: player.score,
-                        symbol: player.symbol,
-                        isOnline: player.isOnline,
-                        lastActiveTime: Date()
-                    )
+            
+            // 2. Wait a moment to ensure Firebase user update is propagated
+            try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
+            
+            // 3. Refresh currentUser from Firebase to ensure we have the latest
+            if let userId = firebaseManager.currentUser?.id {
+                let updatedFirebaseUser = try await firebaseManager.fetchUser(userId: userId)
+                await MainActor.run {
+                    firebaseManager.currentUser = updatedFirebaseUser
                 }
-                // Update currentGame snapshot locally and push to Firestore so lobby lists show the new name
+            }
+            
+            // 4. Update local currentPlayer with the new username
+            if let player = self.currentPlayer {
+                self.currentPlayer = Player(
+                    id: player.id,
+                    username: trimmed,
+                    score: player.score,
+                    symbol: player.symbol,
+                    isOnline: player.isOnline,
+                    lastActiveTime: Date()
+                )
+            }
+            
+            // 5. Update currentGame in Firebase using transaction
+            if let gameId = self.currentGameId {
+                try await firebaseManager.updatePlayerUsernameInGame(
+                    gameId: gameId,
+                    playerId: playerId,
+                    newUsername: trimmed
+                )
+                
+                // 6. Manually update local game snapshot to ensure UI updates immediately
+                // The listener will also update it, but we want immediate UI feedback
                 if var game = self.currentGame {
-                    if game.player1.id == self.currentPlayer?.id {
+                    if game.player1.id == playerId {
                         game.player1 = Player(
                             id: game.player1.id,
                             username: trimmed,
@@ -388,8 +429,8 @@ class MultiplayerViewModel: ObservableObject {
                             isOnline: game.player1.isOnline,
                             lastActiveTime: Date()
                         )
-                    } else if var p2 = game.player2, p2.id == self.currentPlayer?.id {
-                        p2 = Player(
+                    } else if let p2 = game.player2, p2.id == playerId {
+                        game.player2 = Player(
                             id: p2.id,
                             username: trimmed,
                             score: p2.score,
@@ -397,18 +438,13 @@ class MultiplayerViewModel: ObservableObject {
                             isOnline: p2.isOnline,
                             lastActiveTime: Date()
                         )
-                        game.player2 = p2
                     }
+                    // Set currentGame to trigger UI update
                     self.currentGame = game
-                    Task {
-                        try? await self.firebaseManager.updateGame(game)
-                    }
                 }
             }
         } catch {
-            await MainActor.run {
-                self.showErrorMessage("Failed to update username: \(error.localizedDescription)")
-            }
+            showErrorMessage("Failed to update username: \(error.localizedDescription)")
         }
     }
 }

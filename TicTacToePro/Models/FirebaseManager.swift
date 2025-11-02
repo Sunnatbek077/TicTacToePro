@@ -40,13 +40,27 @@ class FirebaseManager: ObservableObject {
     func signInAnonymously() async throws -> FirebaseUser {
         do {
             let result = try await auth.signInAnonymously()
+            let userId = result.user.uid
+            
+            // Check if user already exists in Firestore with a saved username
+            var savedUsername: String?
+            do {
+                let existingUser = try await fetchUser(userId: userId)
+                savedUsername = existingUser.username
+            } catch {
+                // User doesn't exist yet, will create new one
+            }
+            
+            // Use saved username if available, otherwise generate a random one
+            let username = savedUsername ?? "Player_\(Int.random(in: 1000...9999))"
+            
             let user = FirebaseUser(
-                id: result.user.uid,
-                username: "Player_\(Int.random(in: 1000...9999))",
+                id: userId,
+                username: username,
                 isAnonymous: true
             )
             
-            // Save user to Firestore
+            // Save/update user in Firestore (will merge if exists)
             try await saveUser(user)
             
             await MainActor.run {
@@ -151,7 +165,7 @@ class FirebaseManager: ObservableObject {
         }
     }
     
-    private func fetchUser(userId: String) async throws -> FirebaseUser {
+    public func fetchUser(userId: String) async throws -> FirebaseUser {
         let doc = try await db.collection("users").document(userId).getDocument()
         
         guard let data = doc.data() else {
@@ -206,6 +220,59 @@ class FirebaseManager: ObservableObject {
         try await db.collection("games").document(game.id).updateData(
             gameData.merging(["updatedAt": FieldValue.serverTimestamp()]) { _, new in new }
         )
+    }
+    
+    /// Update a player's username in a game using field path update
+    func updatePlayerUsernameInGame(gameId: String, playerId: String, newUsername: String) async throws {
+        let gameRef = db.collection("games").document(gameId)
+        
+        try await db.runTransaction { transaction, errorPointer in
+            let gameDoc: DocumentSnapshot
+            do {
+                gameDoc = try transaction.getDocument(gameRef)
+            } catch let error as NSError {
+                errorPointer?.pointee = error
+                return nil
+            }
+            
+            guard let data = gameDoc.data() else {
+                let error = NSError(domain: "FirebaseManager", code: -1,
+                                  userInfo: [NSLocalizedDescriptionKey: "Game not found"])
+                errorPointer?.pointee = error
+                return nil
+            }
+            
+            // Determine if player is player1 or player2 and update accordingly
+            if let player1Data = data["player1"] as? [String: Any],
+               let player1Id = player1Data["id"] as? String,
+               player1Id == playerId {
+                // Update player1
+                var updatedPlayer1 = player1Data
+                updatedPlayer1["username"] = newUsername
+                updatedPlayer1["lastActiveTime"] = FieldValue.serverTimestamp()
+                
+                transaction.updateData([
+                    "player1": updatedPlayer1,
+                    "updatedAt": FieldValue.serverTimestamp()
+                ], forDocument: gameRef)
+                
+            } else if let player2Data = data["player2"] as? [String: Any],
+                      let player2Id = player2Data["id"] as? String,
+                      player2Id == playerId {
+                // Update player2
+                var updatedPlayer2 = player2Data
+                updatedPlayer2["username"] = newUsername
+                updatedPlayer2["lastActiveTime"] = FieldValue.serverTimestamp()
+                
+                transaction.updateData([
+                    "player2": updatedPlayer2,
+                    "updatedAt": FieldValue.serverTimestamp()
+                ], forDocument: gameRef)
+            }
+            // If player not found in game, silently return (no error)
+            
+            return nil
+        }
     }
     
     func joinGame(gameId: String, player: Player) async throws {
