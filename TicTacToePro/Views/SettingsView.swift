@@ -18,13 +18,11 @@ struct SettingsView: View {
     @AppStorage(HapticManager.hapticsEnabledKey) private var hapticsEnabled = false
     @AppStorage("soundEffectsEnabled") private var soundEffectsEnabled = true
     @AppStorage("showAnimations") private var showAnimations = true
-    @AppStorage("defaultBoardSize") private var defaultBoardSize = 3
     @AppStorage("colorSchemePreference") private var colorSchemePreference = "system"
     
     @State private var showResetAlert = false
     @State private var showAbout = false
     @State private var showProfile = false
-    // Removed: unused background animation state
     
     // Layout helpers
     private var isCompactHeightPhone: Bool {
@@ -55,6 +53,9 @@ struct SettingsView: View {
                         // Header
                         headerSection
                         
+                        // Profile Section (First)
+                        profileSection
+                        
                         // Gameplay Settings
                         gameplaySection
                         
@@ -63,9 +64,6 @@ struct SettingsView: View {
                         
                         // Audio & Haptics
                         audioHapticsSection
-                        
-                        // Advanced Settings
-                        advancedSection
                         
                         // About & Support
                         aboutSection
@@ -140,29 +138,25 @@ struct SettingsView: View {
         .padding(.vertical, 8)
     }
     
+    // MARK: - Profile Section
+    private var profileSection: some View {
+        SettingsCard(title: "Profile", icon: "person.crop.circle.fill") {
+            VStack(spacing: 0) {
+                SettingsNavigationRow(
+                    icon: "person.crop.circle.fill",
+                    title: "Profile",
+                    iconColor: .blue
+                ) {
+                    showProfile = true
+                }
+            }
+        }
+    }
+    
     // MARK: - Gameplay Section
     private var gameplaySection: some View {
         SettingsCard(title: "Gameplay", icon: "gamecontroller.fill") {
             VStack(spacing: 0) {
-                // Default Board Size
-                SettingsRow(
-                    icon: "square.grid.3x3",
-                    title: "Default Board Size",
-                    iconColor: .blue
-                ) {
-                    Picker("Board Size", selection: $defaultBoardSize) {
-                        Text("3×3").tag(3)
-                        Text("4×4").tag(4)
-                        Text("5×5").tag(5)
-                        Text("6×6").tag(6)
-                    }
-                    .pickerStyle(.menu)
-                    .tint(.blue)
-                }
-                
-                Divider()
-                    .padding(.leading, 52)
-                
                 // Show Animations
                 SettingsToggleRow(
                     icon: "sparkles",
@@ -233,46 +227,6 @@ struct SettingsView: View {
         }
     }
     
-    // MARK: - Advanced Section
-    private var advancedSection: some View {
-        SettingsCard(title: "Advanced", icon: "gearshape.2.fill") {
-            VStack(spacing: 0) {
-                // Profile
-                SettingsNavigationRow(
-                    icon: "person.crop.circle.fill",
-                    title: "Profile",
-                    iconColor: .blue
-                ) {
-                    showProfile = true
-                }
-                
-                Divider()
-                    .padding(.leading, 52)
-                
-                // Privacy
-                SettingsNavigationRow(
-                    icon: "hand.raised.fill",
-                    title: "Privacy",
-                    iconColor: .indigo
-                ) {
-                    // Navigate to privacy settings
-                }
-                
-                Divider()
-                    .padding(.leading, 52)
-                
-                // Data & Storage
-                SettingsNavigationRow(
-                    icon: "externaldrive.fill",
-                    title: "Data & Storage",
-                    iconColor: .cyan
-                ) {
-                    // Navigate to data settings
-                }
-            }
-        }
-    }
-    
     // MARK: - About Section
     private var aboutSection: some View {
         SettingsCard(title: "About & Support", icon: "info.circle.fill") {
@@ -295,7 +249,6 @@ struct SettingsView: View {
                     title: "Rate on App Store",
                     iconColor: .yellow
                 ) {
-                    // Open App Store rating
                     rateApp()
                 }
                 
@@ -441,7 +394,6 @@ struct SettingsView: View {
         hapticsEnabled = false
         soundEffectsEnabled = true
         showAnimations = true
-        defaultBoardSize = 3
         colorSchemePreference = "system"
         
         HapticManager.playNotification(.success, force: true)
@@ -457,7 +409,6 @@ struct SettingsView: View {
     }
     
     private func shareApp() {
-        // Implement share functionality
         #if os(iOS)
         let appURLString = "https://apps.apple.com/app/id123456789" // Replace with actual App Store URL
         let items: [Any] = ["Check out Tic Tac Toe Pro!", URL(string: appURLString) as Any]
