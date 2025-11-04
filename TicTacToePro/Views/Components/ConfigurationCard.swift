@@ -1,4 +1,3 @@
-//
 //  ConfigurationCard.swift
 //  TicTacToePro
 //

@@ -19,6 +19,7 @@ struct SettingsView: View {
     @AppStorage("soundEffectsEnabled") private var soundEffectsEnabled = true
     @AppStorage("showAnimations") private var showAnimations = true
     @AppStorage("colorSchemePreference") private var colorSchemePreference = "system"
+    @AppStorage("profileName") private var profileName: String = ""  // Added
     
     @State private var showResetAlert = false
     @State private var showAbout = false
@@ -79,15 +80,9 @@ struct SettingsView: View {
                     .frame(maxWidth: contentMaxWidth)
                 }
             }
-            .navigationTitle("Settings")
+
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Done") {
-                        dismiss()
-                    }
-                }
-            }
+            
             .alert("Reset All Settings?", isPresented: $showResetAlert) {
                 Button("Cancel", role: .cancel) { }
                 Button("Reset", role: .destructive) {
@@ -101,6 +96,14 @@ struct SettingsView: View {
             }
             .sheet(isPresented: $showProfile) {
                 ProfileView()
+            }
+            .onAppear {
+                // Sync with multiplayer VM if local name is empty
+                if profileName.isEmpty,
+                   let vmName = multiplayerVM.currentPlayer?.username,
+                   !vmName.isEmpty {
+                    profileName = vmName
+                }
             }
         }
         // Apply preferred color scheme according to user preference
@@ -145,6 +148,7 @@ struct SettingsView: View {
                 SettingsNavigationRow(
                     icon: "person.crop.circle.fill",
                     title: "Profile",
+                    title2: displayName,
                     iconColor: .blue
                 ) {
                     showProfile = true
@@ -329,7 +333,7 @@ struct SettingsView: View {
                 .font(.caption)
                 .foregroundColor(.secondary)
             
-            Text("Made with ❤️ by Sunnatbek")
+            Text("Made with [heart] by Sunnatbek")
                 .font(.caption2)
                 .foregroundColor(.secondary.opacity(0.8))
         }
@@ -389,18 +393,31 @@ struct SettingsView: View {
         }
     }
     
+    // Display name with fallback
+    private var displayName: String {
+        let trimmed = profileName.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !trimmed.isEmpty {
+            return trimmed
+        } else if let vmName = multiplayerVM.currentPlayer?.username,
+                  !vmName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return vmName
+        } else {
+            return "Guest"
+        }
+    }
+    
     // MARK: - Actions
     private func resetAllSettings() {
         hapticsEnabled = false
         soundEffectsEnabled = true
         showAnimations = true
         colorSchemePreference = "system"
+        profileName = ""  // Reset name
         
         HapticManager.playNotification(.success, force: true)
     }
     
     private func rateApp() {
-        // Implement App Store rating
         #if os(iOS)
         if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
             SKStoreReviewController.requestReview(in: windowScene)
@@ -423,7 +440,6 @@ struct SettingsView: View {
     }
     
     private func contactSupport() {
-        // Open email client
         #if os(iOS)
         if let url = URL(string: "mailto:support@tictactoepro.com") {
             UIApplication.shared.open(url)
@@ -567,12 +583,23 @@ struct SettingsToggleRow: View {
     }
 }
 
-// MARK: - Settings Navigation Row
+// MARK: - Settings Navigation Row (Updated with subtitle)
 struct SettingsNavigationRow: View {
     let icon: String
     let title: String
+    let title2: String?
+    let subtitle: String?
     let iconColor: Color
     let action: () -> Void
+    
+    init(icon: String, title: String, title2: String? = nil, subtitle: String? = nil, iconColor: Color, action: @escaping () -> Void) {
+        self.icon = icon
+        self.title = title
+        self.title2 = title2
+        self.subtitle = subtitle
+        self.iconColor = iconColor
+        self.action = action
+    }
     
     var body: some View {
         Button(action: action) {
@@ -586,11 +613,23 @@ struct SettingsNavigationRow: View {
                             .fill(iconColor)
                     )
                 
-                Text(title)
-                    .font(.body)
-                    .foregroundColor(.primary)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(.body)
+                        .foregroundColor(.primary)
+                    
+                    if let subtitle = subtitle {
+                        Text(subtitle)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                }
                 
                 Spacer()
+                
+                Text(title2 ?? "")
+                    .font(.body)
+                    .foregroundColor(.secondary)
                 
                 Image(systemName: "chevron.right")
                     .font(.caption.bold())
@@ -604,95 +643,7 @@ struct SettingsNavigationRow: View {
     }
 }
 
-// MARK: - About View
-struct AboutView: View {
-    @Environment(\.dismiss) private var dismiss
-    @Environment(\.colorScheme) private var colorScheme
-    
-    var body: some View {
-        NavigationStack {
-            ZStack {
-                // Background
-                LinearGradient(
-                    colors: colorScheme == .dark
-                        ? [Color(red: 0.08, green: 0.08, blue: 0.10), Color(red: 0.11, green: 0.12, blue: 0.18)]
-                        : [Color(red: 0.95, green: 0.96, blue: 0.99), Color(red: 0.90, green: 0.92, blue: 0.98)],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-                .ignoresSafeArea()
-                
-                ScrollView {
-                    VStack(spacing: 24) {
-                        // App Icon
-                        Image(systemName: "xmark.circle.fill")
-                            .font(.system(size: 80))
-                            .foregroundStyle(
-                                LinearGradient(
-                                    colors: [.pink, .purple, .blue],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
-                            )
-                            .padding(.top, 40)
-                        
-                        // App Name
-                        Text("Tic Tac Toe Pro")
-                            .font(.title.bold())
-                            .foregroundColor(.primary)
-                        
-                        Text("Version 1.0.0")
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-                        
-                        // Description
-                        Text("A modern take on the classic game with stunning visuals, multiplayer support, and AI opponents.")
-                            .font(.body)
-                            .foregroundColor(.secondary)
-                            .multilineTextAlignment(.center)
-                            .padding(.horizontal, 32)
-                        
-                        // Features
-                        VStack(alignment: .leading, spacing: 16) {
-                            FeatureRow(icon: "brain.head.profile", title: "Smart AI", description: "Three difficulty levels")
-                            FeatureRow(icon: "person.2.fill", title: "Multiplayer", description: "Play with friends online")
-                            FeatureRow(icon: "square.grid.3x3", title: "Custom Boards", description: "3×3 to 12×12 grids")
-                            FeatureRow(icon: "paintbrush.fill", title: "Beautiful Design", description: "Premium UI/UX")
-                        }
-                        .padding(24)
-                        .background(
-                            RoundedRectangle(cornerRadius: 16)
-                                .fill(.ultraThinMaterial)
-                        )
-                        .padding(.horizontal)
-                        
-                        // Credits
-                        VStack(spacing: 8) {
-                            Text("Created by")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                            
-                            Text("Sunnatbek")
-                                .font(.headline.bold())
-                                .foregroundColor(.primary)
-                        }
-                        .padding(.top, 16)
-                    }
-                    .padding(.bottom, 40)
-                }
-            }
-            .navigationTitle("About")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Done") {
-                        dismiss()
-                    }
-                }
-            }
-        }
-    }
-}
+
 
 // MARK: - Feature Row
 struct FeatureRow: View {
