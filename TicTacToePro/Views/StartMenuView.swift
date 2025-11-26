@@ -263,13 +263,14 @@ struct StartMenuView: View {
                             startingPlayerIsO: startingPlayerIsO,
                             timeLimit: selectedTimeLimit
                         )
+#if !os(tvOS)
                         .navigationBarTitleDisplayMode(.inline)
+#endif
                         .onDisappear { appState.isGameOpen = false }
                     }
                 }
             }
-            .navigationTitle("Tic Tac Toe")
-            .navigationBarTitleDisplayMode(.inline)
+            
             .sheet(isPresented: $showBoardSizeSelector) {
                 BoardSizeSelectorView(
                     selectedSize: $selectedBoardSize,
@@ -587,4 +588,3 @@ struct BoardSizeCard: View {
     StartMenuView()
         .environmentObject(AppState())
 }
-

@@ -316,7 +316,8 @@ struct MultiplayerGameView: View {
                                     .foregroundColor(.white)
                                 
                                 Button {
-                                    UIPasteboard.general.string = roomCode
+                                    // Copy room code (available on iOS only)
+                                    copyToPasteboard(roomCode)
                                 } label: {
                                     Image(systemName: "doc.on.doc")
                                         .foregroundColor(.white)
@@ -500,10 +501,14 @@ struct MultiplayerGameView: View {
                     .disabled(chatMessage.isEmpty)
                 }
                 .padding()
-                .background(Color(uiColor: .systemBackground))
+                // tvOS-safe semantic background
+                .background(.background)
             }
             .navigationTitle("Chat")
+            // Guard iOS-only API on tvOS
+            #if !os(tvOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Done") {
@@ -594,7 +599,7 @@ struct MultiplayerGameView: View {
         gameViewModel.playerToMove = game.currentTurn
         
         // Check if it's local player's turn
-        let isMyTurn = multiplayerVM.currentPlayer?.symbol == game.currentTurn
+        let _ = multiplayerVM.currentPlayer?.symbol == game.currentTurn
         
         // Sync game over state
         if game.status == .finished {
@@ -607,6 +612,15 @@ struct MultiplayerGameView: View {
         guard !chatMessage.isEmpty else { return }
         multiplayerVM.sendChatMessage(chatMessage)
         chatMessage = ""
+    }
+    
+    // MARK: - Platform helpers
+    private func copyToPasteboard(_ text: String) {
+        #if os(iOS)
+        UIPasteboard.general.string = text
+        #else
+        // tvOS/macOS: no-op or add alternative sharing if desired
+        #endif
     }
     
     // MARK: - Timer Functions

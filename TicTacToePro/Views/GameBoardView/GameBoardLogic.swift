@@ -21,7 +21,7 @@ extension GameBoardView {
         withAnimation(.spring(response: 0.35, dampingFraction: 0.82)) {
             _ = ticTacToe.makeMove(index: index, gameTypeIsPVP: gameTypeIsPVP, difficulty: difficulty)
         }
-        HapticManager.playImpact(.soft)
+        HapticManager.playImpact(HapticFeedbackStyle.soft)
         bannerShowTemporarily()
     }
     
@@ -72,13 +72,13 @@ extension GameBoardView {
         guard isOver else { return }
         if ticTacToe.winner == .x {
             xWins += 1
-            HapticManager.playImpact(.heavy)
+            HapticManager.playImpact(HapticFeedbackStyle.heavy)
         } else if ticTacToe.winner == .o {
             oWins += 1
-            HapticManager.playImpact(.heavy)
+            HapticManager.playImpact(HapticFeedbackStyle.heavy)
         } else {
             ties += 1
-            HapticManager.playImpact(.medium)
+            HapticManager.playImpact(HapticFeedbackStyle.medium)
         }
         
         if ticTacToe.winner != .empty {

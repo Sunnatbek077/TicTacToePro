@@ -109,7 +109,9 @@ struct ProfileView: View {
                 }
             }
             .navigationTitle("Profile")
+#if !os(tvOS)
             .navigationBarTitleDisplayMode(.inline)
+#endif
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Done") {
@@ -197,6 +199,3 @@ private extension ProfileView {
 #Preview {
     ProfileView().environmentObject(MultiplayerViewModel.preview)
 }
-
-
-

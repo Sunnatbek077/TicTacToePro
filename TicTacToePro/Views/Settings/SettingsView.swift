@@ -81,7 +81,6 @@ struct SettingsView: View {
                 }
             }
 
-            .navigationBarTitleDisplayMode(.inline)
             
             .alert("Reset All Settings?", isPresented: $showResetAlert) {
                 Button("Cancel", role: .cancel) { }
@@ -224,7 +223,7 @@ struct SettingsView: View {
                 )
                 .onChange(of: hapticsEnabled) { _, newValue in
                     if newValue {
-                        HapticManager.playImpact(.medium, force: true)
+                        HapticManager.playImpact(HapticFeedbackStyle.medium, force: true)
                     }
                 }
             }
@@ -414,7 +413,7 @@ struct SettingsView: View {
         colorSchemePreference = "system"
         profileName = ""  // Reset name
         
-        HapticManager.playNotification(.success, force: true)
+        HapticManager.playNotification(HapticNotificationType.success, force: true)
     }
     
     private func rateApp() {
@@ -687,3 +686,4 @@ import UIKit
 #Preview {
     SettingsView().environmentObject(MultiplayerViewModel.preview)
 }
+

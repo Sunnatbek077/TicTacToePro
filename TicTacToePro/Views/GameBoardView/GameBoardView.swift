@@ -136,7 +136,6 @@ struct GameBoardView: View {
                 .ignoresSafeArea()
             
             content
-                .navigationBarTitleDisplayMode(.inline)
                 .toolbar { toolbarContent }
                 .onAppear {
                     withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {

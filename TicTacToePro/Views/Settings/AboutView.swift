@@ -14,10 +14,19 @@ struct AboutView: View {
     @Environment(\.colorScheme) private var colorScheme
     
     private var backgroundGradient: LinearGradient {
-        LinearGradient(
-            colors: colorScheme == .dark
-                ? [Color(.systemBackground).opacity(0.9), Color(.systemBackground).opacity(0.7)]
-                : [Color(.systemBackground), Color(.secondarySystemBackground)],
+        // tvOS-safe colors
+        let startColor: Color
+        let endColor: Color
+        if colorScheme == .dark {
+            startColor = Color.black.opacity(0.85)
+            endColor = Color.black.opacity(0.65)
+        } else {
+            startColor = Color.white
+            endColor = Color(white: 0.94)
+        }
+        
+        return LinearGradient(
+            colors: [startColor, endColor],
             startPoint: .topLeading,
             endPoint: .bottomTrailing
         )
@@ -109,7 +118,10 @@ struct AboutView: View {
                 }
             }
             .navigationTitle("About")
+            // Not available on tvOS
+            #if !os(tvOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {

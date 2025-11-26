@@ -204,7 +204,13 @@ struct TimeLimitView_Previews: PreviewProvider {
         TimeLimitView(selectedTimeLimit: .constant(.tenMinutes))
             .previewLayout(.sizeThatFits)
             .padding()
-            .background(Color(.systemBackground))
+#if os(iOS)
+            .background(Color(uiColor: .systemBackground))
+#elseif os(macOS)
+            .background(Color(NSColor.windowBackgroundColor))
+#else
+            .background(Color.clear)
+#endif
     }
 }
 #endif

@@ -37,7 +37,10 @@ struct ContentView: View {
                 Label("Settings", systemImage: "gear")
             }
         }
-        
+        /// Force classic bottom tab bar style on iPad and iPhone
+        .tabViewStyle(.sidebarAdaptable)
+        .toolbar(.visible, for: .tabBar)            // keep tabbar visible
+        .toolbarBackground(.visible, for: .tabBar)  // avoid transparent hiding
     }
 }
 

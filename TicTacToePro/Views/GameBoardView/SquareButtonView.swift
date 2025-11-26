@@ -28,11 +28,17 @@ struct SquareButtonView: View {
             .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
         }
         .buttonStyle(.plain)
+        // DragGesture is unavailable on tvOS; only attach on supported platforms
+        #if os(iOS) || os(macOS) || os(watchOS)
         .gesture(DragGesture(minimumDistance: 0)
             .onChanged { _ in isPressed = true }
             .onEnded { _ in isPressed = false }
         )
         .sensoryFeedback(.impact(flexibility: .soft), trigger: isPressed)
+        #else
+        // On tvOS, omit the drag gesture and keep default button behavior.
+        // Optionally, you could add focus-based visuals here if desired.
+        #endif
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Board square")
         .accessibilityValue(accessibilityValue)

@@ -64,6 +64,51 @@ struct ConfigurationCard: View {
         .offset(x: baseOffset.width + dragOffset.width, y: baseOffset.height + dragOffset.height)
         .rotationEffect(.degrees(rotation))
         .scaleEffect(isLongPressed ? 1.03 : 1.0) // Slightly increased scale for feedback
+        #if os(tvOS)
+        .focusable(true)
+        .onMoveCommand { direction in
+            switch direction {
+            case .left:
+                // Toggle to AI (or keep AI) and animate left swipe feel
+                withAnimation(.spring(response: 0.55, dampingFraction: 0.85)) {
+                    selectedGameMode = .ai
+                    baseOffset = CGSize(width: -300, height: 0)
+                    rotation = -6
+                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    withAnimation(.spring()) {
+                        baseOffset = .zero
+                        rotation = 0.0
+                    }
+                }
+            case .right:
+                // Toggle to PvP (or keep PvP) and animate right swipe feel
+                withAnimation(.spring(response: 0.55, dampingFraction: 0.85)) {
+                    selectedGameMode = .pvp
+                    baseOffset = CGSize(width: 300, height: 0)
+                    rotation = 6
+                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    withAnimation(.spring()) {
+                        baseOffset = .zero
+                        rotation = 0.0
+                    }
+                }
+            default:
+                break
+            }
+        }
+        .onLongPressGesture(
+            minimumDuration: 0.5,
+            pressing: { pressing in
+                withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) {
+                    isLongPressed = pressing
+                    glowRadius = pressing ? 12 : 0 // kept for state but no blur uses it
+                }
+            },
+            perform: { }
+        )
+        #else
         .gesture(
             DragGesture()
                 .updating($dragOffset) { value, state, _ in
@@ -102,10 +147,11 @@ struct ConfigurationCard: View {
             perform: {
             }
         )
+        .sensoryFeedback(.impact(flexibility: .soft), trigger: isLongPressed) // Added haptic feedback
+        #endif
         .transaction { transaction in
             transaction.animation = nil
         }
-        .sensoryFeedback(.impact(flexibility: .soft), trigger: isLongPressed) // Added haptic feedback
     }
 }
 

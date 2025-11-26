@@ -161,8 +161,7 @@ struct MultiplayerMenuView: View {
                     LoadingOverlay()
                 }
             }
-            .navigationTitle("Multiplayer")
-            .navigationBarTitleDisplayMode(.inline)
+            
             .alert("Error", isPresented: $multiplayerVM.showError) {
                 Button("OK", role: .cancel) { }
             } message: {
@@ -181,7 +180,7 @@ struct MultiplayerMenuView: View {
                     gameToDelete = nil
                 }
             } message: {
-                if let game = gameToDelete {
+                if let _ = gameToDelete {
                     Text("Are you sure you want to delete this game? This action cannot be undone.")
                 }
             }
@@ -213,6 +212,10 @@ struct MultiplayerMenuView: View {
                         showBoardSizeSelector = false
                     }
                 )
+                #if os(iOS)
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+                #endif
             }
             .sheet(isPresented: $showTimeLimitSelector) {
                 TimeLimitSelectorView(
@@ -227,6 +230,10 @@ struct MultiplayerMenuView: View {
                         showTimeLimitSelector = false
                     }
                 )
+                #if os(iOS)
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+                #endif
             }
             .sheet(isPresented: $showJoinByCodeSheet) {
                 JoinByCodeSheet(
@@ -264,10 +271,12 @@ struct MultiplayerMenuView: View {
             Text("🎮 Online Multiplayer")
                 .font(headerFont)
                 .foregroundStyle(accentGradient)
+                .focusable(false)
             
             Text("Play with friends worldwide")
                 .font(.subheadline)
                 .foregroundColor(.secondary)
+                .focusable(false)
         }
         .frame(maxWidth: .infinity)
     }
@@ -289,6 +298,7 @@ struct MultiplayerMenuView: View {
             Capsule()
                 .fill(colorScheme == .dark ? Color(white: 0.15) : Color.white)
         )
+        .focusable(false)
     }
     
     private var statusColor: Color {
@@ -321,6 +331,8 @@ struct MultiplayerMenuView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 16))
                 .shadow(color: .purple.opacity(0.4), radius: 12, x: 0, y: 6)
             }
+            .buttonStyle(.plain)
+            .focusable(true)
             
             // Join by Code Button
             Button {
@@ -345,6 +357,8 @@ struct MultiplayerMenuView: View {
                         .stroke(Color.gray.opacity(0.3), lineWidth: 1)
                 )
             }
+            .buttonStyle(.plain)
+            .focusable(true)
         }
     }
     
@@ -367,7 +381,7 @@ struct MultiplayerMenuView: View {
                 EmptyGamesView()
                     .padding(.vertical, 20)
             } else {
-                // Use List for proper swipe action support
+                // On tvOS, List exists but swipeActions are unavailable. We’ll hide swipe actions on tvOS.
                 List {
                     ForEach(publicGames) { game in
                         GameLobbyCard(
@@ -384,10 +398,12 @@ struct MultiplayerMenuView: View {
                             }
                         )
                         .listRowInsets(EdgeInsets(top: 6, leading: 0, bottom: 6, trailing: 0))
+                        #if !os(tvOS)
                         .listRowSeparator(.hidden)
+                        #endif
                         .listRowBackground(Color.clear)
+                        #if !os(tvOS)
                         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                            // Only show delete action for games created by the current player
                             if isGameCreatedByCurrentPlayer(game) {
                                 Button(role: .destructive) {
                                     gameToDelete = game
@@ -397,10 +413,31 @@ struct MultiplayerMenuView: View {
                                 }
                             }
                         }
+                        #endif
+                        // tvOS alternative: show a trailing contextual delete button inline if the game is yours
+                        #if os(tvOS)
+                        .overlay(alignment: .trailing) {
+                            if isGameCreatedByCurrentPlayer(game) {
+                                Button {
+                                    gameToDelete = game
+                                    showDeleteConfirmation = true
+                                } label: {
+                                    Image(systemName: "trash")
+                                        .foregroundColor(.red)
+                                        .padding(8)
+                                }
+                                .buttonStyle(.plain)
+                                .focusable(true)
+                                .padding(.trailing, 8)
+                            }
+                        }
+                        #endif
                     }
                 }
                 .listStyle(.plain)
+                #if !os(tvOS)
                 .scrollContentBackground(.hidden)
+                #endif
                 .frame(height: min(CGFloat(publicGames.count) * 110 + 20, 600))
             }
         }
@@ -418,10 +455,7 @@ struct MultiplayerMenuView: View {
     
     /// Delete a game with error handling
     private func deleteGame(_ game: GameListItem) async {
-        // Error handling is managed by the ViewModel's deleteGame method
-        // It will show an alert via showErrorMessage if deletion fails
         await multiplayerVM.deleteGame(gameId: game.id)
-        // Note: deleteGame already calls refreshGames() internally
     }
     
     // Filter only public games
@@ -595,6 +629,7 @@ struct GameLobbyCard: View {
             .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 4)
         }
         .buttonStyle(.plain)
+        .focusable(true)
     }
 }
 
@@ -615,6 +650,7 @@ struct EmptyGamesView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 40)
+        .focusable(false)
     }
 }
 
@@ -768,6 +804,7 @@ struct GameNameInputSheet: View {
                 }
             }
             .onAppear {
+                // tvOS shows keyboard upon focusing the field; focusing is still fine
                 isFocused = true
             }
         }
