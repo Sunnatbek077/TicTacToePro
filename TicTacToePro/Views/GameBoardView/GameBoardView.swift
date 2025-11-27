@@ -166,65 +166,7 @@ struct GameBoardView: View {
                     .zIndex(2)
             }
 
-            if hasTimeLimit {
-                            VStack(spacing: 8) {
-                                // Container
-                                VStack(spacing: isSELikeSmallScreen ? 6 : 8) {
-                                    // Progress bar
-                                    GeometryReader { geo in
-                                        let totalWidth = geo.size.width
-                                        let fillWidth = max(0, min(totalWidth, totalWidth * timeProgress))
-                                        ZStack(alignment: .leading) {
-                                            RoundedRectangle(cornerRadius: isSELikeSmallScreen ? 4 : 6, style: .continuous)
-                                                .fill(Color.primary.opacity(colorScheme == .dark ? 0.10 : 0.08))
-                                            RoundedRectangle(cornerRadius: isSELikeSmallScreen ? 4 : 6, style: .continuous)
-                                                .fill((timeLimit?.color ?? .blue).opacity(0.85))
-                                                .frame(width: fillWidth)
-                                        }
-                                    }
-                                    .frame(height: isSELikeSmallScreen ? 6 : (isCompactHeight ? 8 : 10))
-
-                                    // Remaining time pill
-                                    HStack(spacing: isSELikeSmallScreen ? 4 : 6) {
-                                        Image(systemName: "timer")
-                                            .font((isSELikeSmallScreen ? .caption2 : .caption))
-                                        Text(formattedRemaining)
-                                            .font((isSELikeSmallScreen ? .caption2 : .caption))
-                                    }
-                                    .padding(.horizontal, isSELikeSmallScreen ? 8 : 10)
-                                    .padding(.vertical, isSELikeSmallScreen ? 4 : 6)
-                                    .background(.thinMaterial, in: Capsule())
-                                    .foregroundStyle((timeLimit?.color ?? .blue))
-                                    .accessibilityElement(children: .combine)
-                                    .accessibilityLabel("Time remaining")
-                                    .accessibilityValue(formattedRemaining)
-                                }
-                                .padding(.horizontal, isSELikeSmallScreen ? 8 : 12)
-                                .padding(.vertical, isSELikeSmallScreen ? 6 : 10)
-                                .background(
-                                    .ultraThinMaterial,
-                                    in: RoundedRectangle(cornerRadius: isSELikeSmallScreen ? 10 : 14, style: .continuous)
-                                )
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: isSELikeSmallScreen ? 10 : 14, style: .continuous)
-                                        .strokeBorder(
-                                            LinearGradient(
-                                                colors: colorScheme == .dark
-                                                    ? [Color.white.opacity(0.10), Color.white.opacity(0.04)]
-                                                    : [Color.black.opacity(0.08), Color.black.opacity(0.03)],
-                                                startPoint: .topLeading,
-                                                endPoint: .bottomTrailing
-                                            ), lineWidth: isSELikeSmallScreen ? 0.5 : 1
-                                        )
-                                )
-                                .padding(.top, isSELikeSmallScreen ? 4 : 8)
-                                .padding(.horizontal, isSELikeSmallScreen ? 8 : (isCompactHeight ? 12 : 16))
-
-                                Spacer()
-                            }
-                            .transition(.opacity)
-                            .zIndex(4)
-                        }
+           
         }
     }
     
