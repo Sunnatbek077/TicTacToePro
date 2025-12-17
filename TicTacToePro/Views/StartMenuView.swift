@@ -464,7 +464,7 @@ struct BoardSizeSelectorView: View {
                             )
                         }
                     }
-                    .padding(.horizontal)
+                    .padding()
                 }
                 
                 // Action buttons
