@@ -101,6 +101,7 @@ class GameViewModel: ObservableObject {
     // AI Move (async, background compute)
     private func moveAIAsync(difficulty: AIDifficulty, gameTypeIsPVP: Bool) async {
         isAIThinking = true
+        let isHard = (difficulty == .hard)
         
         let currentBoard = Board(position: boardArray, turn: aiPlays)
         
@@ -112,7 +113,7 @@ class GameViewModel: ObservableObject {
                 if currentBoard.boardSize == 3 {
                     // 3x3 uchun standart minimax (tezroq)
                     best = currentBoard.bestMove(difficulty: difficulty)
-                } else if difficulty == .hard {
+                } else if isHard {
                     // 4x4+ uchun superior minimax (faqat hard rejimda)
                     best = currentBoard.findSuperiorMove(timeLimit: 5.0) ?? currentBoard.bestMove(difficulty: .medium)
                 } else {

@@ -148,7 +148,6 @@ struct Board {
         if isWin { return false } // If there's a winner, it's not a draw
         
         let combos = generateWinningCombos()
-        let size = boardSize
         
         // Check if any winning combination is still possible for either player
         for combo in combos {
@@ -598,7 +597,7 @@ extension Board {
         // Iterative deepening loop to progressively deepen the search
         while currentDepth <= maxPossibleDepth {
             
-            let (score, move) = superiorMinimaxCore(
+            let (_, move) = superiorMinimaxCore(
                 maxDepth: currentDepth,
                 transTable: &transTable
             )
@@ -619,7 +618,7 @@ extension Board {
         }
         
         // Log final result
-        if let finalMove = bestMove {
+        if bestMove != nil {
 
         } else {
 
@@ -662,3 +661,4 @@ extension Board {
         return 0
     }
 }
+
