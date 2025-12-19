@@ -72,8 +72,6 @@ struct SettingsView: View {
                         // Reset Settings
                         resetSection
                         
-                        // Version Info
-                        versionSection
                     }
                     .padding(.horizontal, isCompactHeightPhone ? 12 : 16)
                     .padding(.vertical, isCompactHeightPhone ? 16 : 24)
@@ -321,24 +319,6 @@ struct SettingsView: View {
         }
     }
     
-    // MARK: - Version Section
-    private var versionSection: some View {
-        VStack(spacing: 8) {
-            Text("Tic Tac Toe Pro")
-                .font(.caption.bold())
-                .foregroundColor(.secondary)
-            
-            Text("Version 1.0.0")
-                .font(.caption)
-                .foregroundColor(.secondary)
-            
-            Text("Made with [heart] by Sunnatbek")
-                .font(.caption2)
-                .foregroundColor(.secondary.opacity(0.8))
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 16)
-    }
     
     // MARK: - Premium Background
     private var premiumBackground: some View {
@@ -426,7 +406,7 @@ struct SettingsView: View {
     
     private func shareApp() {
         #if os(iOS)
-        let appURLString = "https://apps.apple.com/app/id123456789" // Replace with actual App Store URL
+        let appURLString = "https://apps.apple.com/uz/app/tictactoepro/id6755810923" // Replace with actual App Store URL
         let items: [Any] = ["Check out Tic Tac Toe Pro!", URL(string: appURLString) as Any]
         let activityVC = UIActivityViewController(activityItems: items, applicationActivities: nil)
         
@@ -440,7 +420,7 @@ struct SettingsView: View {
     
     private func contactSupport() {
         #if os(iOS)
-        if let url = URL(string: "mailto:support@tictactoepro.com") {
+        if let url = URL(string: "sunnatbekabdunabiyev@icloud.com") {
             UIApplication.shared.open(url)
         }
         #endif
