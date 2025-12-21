@@ -58,13 +58,13 @@ struct SettingsView: View {
                         profileSection
                         
                         // Gameplay Settings
-                        gameplaySection
+                        // gameplaySection
                         
                         // Appearance Settings
                         appearanceSection
                         
                         // Audio & Haptics
-                        audioHapticsSection
+                        // audioHapticsSection
                         
                         // About & Support
                         aboutSection
@@ -180,16 +180,21 @@ struct SettingsView: View {
                     title: "Theme",
                     iconColor: .orange
                 ) {
-                    Picker("Theme", selection: $colorSchemePreference) {
-                        Label("System", systemImage: "circle.lefthalf.filled")
-                            .tag("system")
-                        Label("Light", systemImage: "sun.max.fill")
-                            .tag("light")
-                        Label("Dark", systemImage: "moon.fill")
-                            .tag("dark")
+                    if hSizeClass == .compact {
+                        Picker("Theme", selection: $colorSchemePreference) {
+                            Text("System").tag("system")
+                            Text("Light").tag("light")
+                            Text("Dark").tag("dark")
+                        }
+                        .pickerStyle(.segmented)
+                    } else {
+                        Picker("Theme", selection: $colorSchemePreference) {
+                            Label("System", systemImage: "circle.lefthalf.filled").tag("system")
+                            Label("Light", systemImage: "sun.max.fill").tag("light")
+                            Label("Dark", systemImage: "moon.fill").tag("dark")
+                        }
+                        .pickerStyle(.menu)
                     }
-                    .pickerStyle(.menu)
-                    .tint(.orange)
                 }
             }
         }
@@ -420,7 +425,12 @@ struct SettingsView: View {
     
     private func contactSupport() {
         #if os(iOS)
-        if let url = URL(string: "sunnatbekabdunabiyev@icloud.com") {
+        let email = "sunnatbekabdunabiyev@icloud.com"
+        let subject = "Tic Tac Toe Pro Support"
+        
+        let encodedSubject = subject.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+        
+        if let url = URL(string: "mailto:\(email)?subject=\(encodedSubject)") {
             UIApplication.shared.open(url)
         }
         #endif

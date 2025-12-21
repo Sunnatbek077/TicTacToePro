@@ -234,7 +234,6 @@ struct StartMenuView: View {
                             triggerHaptic()
                             showBoardSizeSelector = true
                         }
-                        .padding(layoutCategory == "tall" ? 20 : 12)
                         .background(RoundedRectangle(cornerRadius: 20).fill(accentGradient.opacity(colorScheme == .dark ? 0.18 : 0.24)))
                         .overlay(
                             RoundedRectangle(cornerRadius: 28)
