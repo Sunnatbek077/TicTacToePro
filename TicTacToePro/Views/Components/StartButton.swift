@@ -23,7 +23,7 @@ struct StartButton: View {
     
     var body: some View {
         Button {
-            triggerHaptic()
+//            triggerHaptic()
             withAnimation(.spring(response: 0.35, dampingFraction: 0.82)) {
                 action()
             }
@@ -59,10 +59,10 @@ struct StartButton: View {
         .accessibilityHint("Opens board size selector and starts a new game")
     }
     
-    private func triggerHaptic() {
-        let impact = UIImpactFeedbackGenerator(style: .medium)
-        impact.impactOccurred()
-    }
+//    private func triggerHaptic() {
+//        let impact = UIImpactFeedbackGenerator(style: .medium)
+//        impact.impactOccurred()
+//    }
 }
 
 struct PressScaleButtonStyle: ButtonStyle {
