@@ -12,7 +12,7 @@
 		6E435A672EA521C900D97180 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 6E435A662EA521C900D97180 /* FirebaseAuth */; };
 		6E435A692EA521C900D97180 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 6E435A682EA521C900D97180 /* FirebaseFirestore */; };
 		6E435A6B2EA521C900D97180 /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = 6E435A6A2EA521C900D97180 /* FirebaseMessaging */; };
-		6EC4568C2ED9E3380093AFCC /* TicTacToePro (watchOS APP) Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 6EC456822ED9E3370093AFCC /* TicTacToePro (watchOS APP) Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		6EC4568C2ED9E3380093AFCC /* TicTacToePro Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 6EC456822ED9E3370093AFCC /* TicTacToePro Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -32,7 +32,7 @@
 			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
 			dstSubfolderSpec = 16;
 			files = (
-				6EC4568C2ED9E3380093AFCC /* TicTacToePro (watchOS APP) Watch App.app in Embed Watch Content */,
+				6EC4568C2ED9E3380093AFCC /* TicTacToePro Watch App.app in Embed Watch Content */,
 			);
 			name = "Embed Watch Content";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -41,7 +41,7 @@
 
 /* Begin PBXFileReference section */
 		6E7467D82E7F17FE00A3ABD9 /* TicTacToePro.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TicTacToePro.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		6EC456822ED9E3370093AFCC /* TicTacToePro (watchOS APP) Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "TicTacToePro (watchOS APP) Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		6EC456822ED9E3370093AFCC /* TicTacToePro Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "TicTacToePro Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -106,7 +106,7 @@
 			isa = PBXGroup;
 			children = (
 				6E7467D82E7F17FE00A3ABD9 /* TicTacToePro.app */,
-				6EC456822ED9E3370093AFCC /* TicTacToePro (watchOS APP) Watch App.app */,
+				6EC456822ED9E3370093AFCC /* TicTacToePro Watch App.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -143,9 +143,9 @@
 			productReference = 6E7467D82E7F17FE00A3ABD9 /* TicTacToePro.app */;
 			productType = "com.apple.product-type.application";
 		};
-		6EC456812ED9E3370093AFCC /* TicTacToePro (watchOS APP) Watch App */ = {
+		6EC456812ED9E3370093AFCC /* TicTacToePro Watch App */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 6EC4568D2ED9E3380093AFCC /* Build configuration list for PBXNativeTarget "TicTacToePro (watchOS APP) Watch App" */;
+			buildConfigurationList = 6EC4568D2ED9E3380093AFCC /* Build configuration list for PBXNativeTarget "TicTacToePro Watch App" */;
 			buildPhases = (
 				6EC4567E2ED9E3370093AFCC /* Sources */,
 				6EC4567F2ED9E3370093AFCC /* Frameworks */,
@@ -158,11 +158,11 @@
 			fileSystemSynchronizedGroups = (
 				6EC456832ED9E3370093AFCC /* TicTacToePro (watchOS APP) Watch App */,
 			);
-			name = "TicTacToePro (watchOS APP) Watch App";
+			name = "TicTacToePro Watch App";
 			packageProductDependencies = (
 			);
 			productName = "TicTacToePro (watchOS APP) Watch App";
-			productReference = 6EC456822ED9E3370093AFCC /* TicTacToePro (watchOS APP) Watch App.app */;
+			productReference = 6EC456822ED9E3370093AFCC /* TicTacToePro Watch App.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -201,7 +201,7 @@
 			projectRoot = "";
 			targets = (
 				6E7467D72E7F17FE00A3ABD9 /* TicTacToePro */,
-				6EC456812ED9E3370093AFCC /* TicTacToePro (watchOS APP) Watch App */,
+				6EC456812ED9E3370093AFCC /* TicTacToePro Watch App */,
 			);
 		};
 /* End PBXProject section */
@@ -243,7 +243,7 @@
 /* Begin PBXTargetDependency section */
 		6EC4568B2ED9E3380093AFCC /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 6EC456812ED9E3370093AFCC /* TicTacToePro (watchOS APP) Watch App */;
+			target = 6EC456812ED9E3370093AFCC /* TicTacToePro Watch App */;
 			targetProxy = 6EC4568A2ED9E3380093AFCC /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -486,7 +486,7 @@
 				DEVELOPMENT_TEAM = 62JGKCCD59;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "TicTacToePro (watchOS APP)";
+				INFOPLIST_KEY_CFBundleDisplayName = "TicTacToePro Watch App";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.supercoder.TicTacToePro;
 				INFOPLIST_KEY_WKRunsIndependentlyOfCompanionApp = YES;
@@ -521,7 +521,7 @@
 				DEVELOPMENT_TEAM = 62JGKCCD59;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "TicTacToePro (watchOS APP)";
+				INFOPLIST_KEY_CFBundleDisplayName = "TicTacToePro Watch App";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.supercoder.TicTacToePro;
 				INFOPLIST_KEY_WKRunsIndependentlyOfCompanionApp = YES;
@@ -567,7 +567,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		6EC4568D2ED9E3380093AFCC /* Build configuration list for PBXNativeTarget "TicTacToePro (watchOS APP) Watch App" */ = {
+		6EC4568D2ED9E3380093AFCC /* Build configuration list for PBXNativeTarget "TicTacToePro Watch App" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				6EC4568E2ED9E3380093AFCC /* Debug */,
