@@ -267,10 +267,6 @@ extension GameBoardView {
             }
             .buttonStyle(.borderedProminent)
             .tint(LinearGradient(colors: [.pink, .purple], startPoint: .top, endPoint: .bottom))
-            .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(LinearGradient(colors: [.pink.opacity(0.5), .purple.opacity(0.5)], startPoint: .top, endPoint: .bottom), lineWidth: 1)
-            )
             
             Button(role: .destructive, action: exitToMenu) {
                 Label("Exit", systemImage: "xmark.circle.fill")
@@ -280,10 +276,7 @@ extension GameBoardView {
             }
             .buttonStyle(.bordered)
             .tint(.red)
-            .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(LinearGradient(colors: [.red.opacity(0.5), .orange.opacity(0.5)], startPoint: .top, endPoint: .bottom), lineWidth: 1)
-            )
+            
         }
         .padding(.top, 8)
     }
