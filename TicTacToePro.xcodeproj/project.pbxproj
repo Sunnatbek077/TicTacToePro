@@ -50,11 +50,6 @@
 			path = TicTacToePro;
 			sourceTree = "<group>";
 		};
-		6EC456832ED9E3370093AFCC /* TicTacToePro (watchOS APP) Watch App */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = "TicTacToePro (watchOS APP) Watch App";
-			sourceTree = "<group>";
-		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -77,7 +72,6 @@
 			isa = PBXGroup;
 			children = (
 				6E7467DA2E7F17FE00A3ABD9 /* TicTacToePro */,
-				6EC456832ED9E3370093AFCC /* TicTacToePro (watchOS APP) Watch App */,
 				6E7467D92E7F17FE00A3ABD9 /* Products */,
 			);
 			sourceTree = "<group>";
