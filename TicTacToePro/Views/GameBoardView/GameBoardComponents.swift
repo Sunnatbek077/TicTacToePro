@@ -40,7 +40,7 @@ extension GameBoardView {
                 .ignoresSafeArea()
             
             GeometryReader { geo in
-                let scaleFactor: CGFloat = isSELikeSmallScreen ? 0.6 : 1.0
+                let scaleFactor: CGFloat = isSESmallScreen ? 0.6 : 1.0
                 let baseWidth = geo.size.width
                 let baseHeight = geo.size.height
                 ZStack {
@@ -64,8 +64,6 @@ extension GameBoardView {
         Group {
             if isWide {
                 HStack(spacing: 24) {
-                    leftPanel
-                        .frame(minWidth: 260, maxWidth: 360)
                     board
                     rightPanel
                         .frame(minWidth: 220, maxWidth: 320)
@@ -73,37 +71,37 @@ extension GameBoardView {
                 .padding(.horizontal, 24)
                 .padding(.vertical, 16)
             } else {
-                VStack(spacing: isSELikeSmallScreen ? 4 : (isCompactHeight ? 6 : 16)) {
+                VStack(spacing: isSESmallScreen ? 4 : (isCompactHeight ? 6 : 16)) {
                     header
-                        .padding(.top, isSELikeSmallScreen ? 0 : (isCompactHeight ? 2 : 0))
+                        .padding(.top, isSESmallScreen ? 0 : (isCompactHeight ? 2 : 0))
                     GameScoreView(
                         xWins: xWins,
                         oWins: oWins,
                         ties: ties,
                         currentTurn: currentPlayer
                     )
-                    .padding(.horizontal, isSELikeSmallScreen ? 4 : (isCompactHeight ? 8 : 16))
+                    .padding(.horizontal, isSESmallScreen ? 4 : (isCompactHeight ? 8 : 16))
                     board
-                        .padding(.horizontal, isSELikeSmallScreen ? 4 : (isCompactHeight ? 8 : 16))
+                        .padding(.horizontal, isSESmallScreen ? 4 : (isCompactHeight ? 8 : 16))
                     footer
-                        .padding(.bottom, isSELikeSmallScreen ? 2 : (isCompactHeight ? 6 : 12))
+                        .padding(.bottom, isSESmallScreen ? 2 : (isCompactHeight ? 6 : 12))
                 }
-                .padding(.top, isSELikeSmallScreen ? 0 : (isCompactHeight ? 4 : 12))
-                .padding(.bottom, isSELikeSmallScreen ? 0 : (isCompactHeight ? 4 : 12))
+                .padding(.top, isSESmallScreen ? 0 : (isCompactHeight ? 4 : 12))
+                .padding(.bottom, isSESmallScreen ? 0 : (isCompactHeight ? 4 : 12))
             }
         }
     }
     
     var leftPanel: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            header
-            Spacer(minLength: 0)
+        VStack {
+            
         }
-        .frame(maxHeight: .infinity, alignment: .top)
     }
     
     var rightPanel: some View {
         VStack(alignment: .leading, spacing: 12) {
+            header
+            
             GameScoreView(
                 xWins: xWins,
                 oWins: oWins,
@@ -149,27 +147,27 @@ extension GameBoardView {
     }
     
     var header: some View {
-        VStack(spacing: isSELikeSmallScreen ? 2 : (isCompactHeight ? 4 : 8)) {
+        VStack(spacing: isSESmallScreen ? 2 : (isCompactHeight ? 4 : 8)) {
             Text(headerTitle)
-                .font(isSELikeSmallScreen ? .system(.title2, design: .rounded).weight(.black) :
+                .font(isSESmallScreen ? .system(.title2, design: .rounded).weight(.black) :
                       (isCompactHeight ? .system(.title, design: .rounded).weight(.black) : .system(.largeTitle, design: .rounded).weight(.black)))
                 .foregroundStyle(LinearGradient(colors: [.pink, .purple, .blue], startPoint: .leading, endPoint: .trailing))
                 .accessibilityAddTraits(.isHeader)
             
             Text(headerSubtitle)
-                .font(isSELikeSmallScreen ? .caption : (isCompactHeight ? .headline : .title3.weight(.semibold)))
+                .font(isSESmallScreen ? .caption : (isCompactHeight ? .headline : .title3.weight(.semibold)))
                 .foregroundStyle(.secondary)
             
             Text(modeBadgeText)
                 .font(.caption.weight(.semibold))
-                .padding(.horizontal, isSELikeSmallScreen ? 4 : (isCompactHeight ? 8 : 12))
-                .padding(.vertical, isSELikeSmallScreen ? 2 : (isCompactHeight ? 4 : 6))
+                .padding(.horizontal, isSESmallScreen ? 4 : (isCompactHeight ? 8 : 12))
+                .padding(.vertical, isSESmallScreen ? 2 : (isCompactHeight ? 4 : 6))
                 .background(.ultraThinMaterial, in: Capsule())
                 .overlay(Capsule().strokeBorder(LinearGradient(colors: [.purple, .blue], startPoint: .top, endPoint: .bottom), lineWidth: 1))
                 .foregroundStyle(.primary)
         }
-        .padding(.horizontal, isSELikeSmallScreen ? 4 : 8)
-        .padding(.vertical, isSELikeSmallScreen ? 2 : 4)
+        .padding(.horizontal, isSESmallScreen ? 4 : 8)
+        .padding(.vertical, isSESmallScreen ? 2 : 4)
         .background(
             RoundedRectangle(cornerRadius: 12)
                 .fill(.ultraThinMaterial)
@@ -180,11 +178,11 @@ extension GameBoardView {
     var board: some View {
         GeometryReader { proxy in
             let winning = detectWinningIndices()
-            let horizontalMargin: CGFloat = isSELikeSmallScreen ? 8 : (isCompactHeight ? 12 : 16)
+            let horizontalMargin: CGFloat = isSESmallScreen ? 8 : (isCompactHeight ? 12 : 16)
             let availableWidth = max(0, proxy.size.width - horizontalMargin * 2)
             let maxSide = min(availableWidth, proxy.size.height)
             let side = min(maxSide, preferredBoardSide(for: proxy.size))
-            let spacing: CGFloat = isSELikeSmallScreen ? max(5, side * 0.012) : (isCompactHeight ? max(6, side * 0.015) : max(8, side * 0.02))
+            let spacing: CGFloat = isSESmallScreen ? max(5, side * 0.012) : (isCompactHeight ? max(6, side * 0.015) : max(8, side * 0.02))
             let sideCells = CGFloat(ticTacToe.boardSize)
             
             let isLargeGrid = ticTacToe.boardSize >= 8
@@ -207,7 +205,7 @@ extension GameBoardView {
                                     size: cellSize,
                                     winningIndices: winning,
                                     isRecentlyPlaced: recentlyPlacedIndex == index,
-                                    isSELikeSmallScreen: isSELikeSmallScreen,
+                                    isSELikeSmallScreen: isSESmallScreen,
                                     action: {
                                         if let handler = onCellTap {
                                             handler(index)
@@ -250,11 +248,11 @@ extension GameBoardView {
     }
     
     var footer: some View {
-        HStack(spacing: isSELikeSmallScreen ? 4 : (isCompactHeight ? 8 : 12)) {
+        HStack(spacing: isSESmallScreen ? 4 : (isCompactHeight ? 8 : 12)) {
             
         }
-        .padding(.horizontal, isSELikeSmallScreen ? 6 : (isCompactHeight ? 12 : 16))
-        .padding(.vertical, isSELikeSmallScreen ? 2 : (isCompactHeight ? 2 : 6))
+        .padding(.horizontal, isSESmallScreen ? 6 : (isCompactHeight ? 12 : 16))
+        .padding(.vertical, isSESmallScreen ? 2 : (isCompactHeight ? 2 : 6))
     }
     
     var footerButtonsOnly: some View {
@@ -285,28 +283,28 @@ extension GameBoardView {
         HStack {
             if ticTacToe.playerToMove == ticTacToe.aiPlays && !gameTypeIsPVP {
                 Label("AI is Thinking…", systemImage: "brain.head.profile")
-                    .font(.system((isSELikeSmallScreen ? .caption2 : .subheadline), design: .rounded).weight(.semibold))
-                    .padding(.vertical, isSELikeSmallScreen ? 4 : 8)
-                    .padding(.horizontal, isSELikeSmallScreen ? 6 : 12)
+                    .font(.system((isSESmallScreen ? .caption2 : .subheadline), design: .rounded).weight(.semibold))
+                    .padding(.vertical, isSESmallScreen ? 4 : 8)
+                    .padding(.horizontal, isSESmallScreen ? 6 : 12)
                     .background(.ultraThinMaterial, in: Capsule())
                     .overlay(Capsule().stroke(LinearGradient(colors: [.purple, .blue], startPoint: .top, endPoint: .bottom), lineWidth: 1))
                     .shadow(color: .purple.opacity(colorScheme == .dark ? 0.3 : 0.15), radius: 4)
                     .accessibilityLabel("AI is thinking")
             } else {
                 Label("\(currentPlayer)’s Turn", systemImage: ticTacToe.playerToMove == .x ? "xmark" : "circle")
-                    .font(.system((isSELikeSmallScreen ? .caption2 : .subheadline), design: .rounded).weight(.semibold))
-                    .padding(.vertical, isSELikeSmallScreen ? 4 : 8)
-                    .padding(.horizontal, isSELikeSmallScreen ? 6 : 12)
+                    .font(.system((isSESmallScreen ? .caption2 : .subheadline), design: .rounded).weight(.semibold))
+                    .padding(.vertical, isSESmallScreen ? 4 : 8)
+                    .padding(.horizontal, isSESmallScreen ? 6 : 12)
                     .background(.ultraThinMaterial, in: Capsule())
                     .overlay(Capsule().stroke(LinearGradient(colors: [.pink, .purple], startPoint: .top, endPoint: .bottom), lineWidth: 1))
                     .shadow(color: .purple.opacity(colorScheme == .dark ? 0.3 : 0.15), radius: 4)
                     .accessibilityLabel("\(currentPlayer) turn")
             }
         }
-        .padding(.horizontal, isSELikeSmallScreen ? 8 : 20)
-        .padding(.bottom, isSELikeSmallScreen ? 8 : 18)
+        .padding(.horizontal, isSESmallScreen ? 8 : 20)
+        .padding(.bottom, isSESmallScreen ? 8 : 18)
         .frame(maxWidth: .infinity)
-        .frame(height: isSELikeSmallScreen ? 32 : 44)
+        .frame(height: isSESmallScreen ? 32 : 44)
     }
 }
 

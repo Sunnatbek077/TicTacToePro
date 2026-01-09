@@ -42,7 +42,7 @@ extension GameBoardView {
 #endif
     }
     
-    var isSELikeSmallScreen: Bool {
+    var isSESmallScreen: Bool {
 #if os(iOS)
         return isCompactHeight && hSizeClass == .compact && UIScreen.main.bounds.height <= 667 && UIScreen.main.bounds.width <= 375
 #else
@@ -81,7 +81,7 @@ extension GameBoardView {
         if hSizeClass == .regular {
             return min(600, max(420, min(size.width, size.height) * 0.9))
         } else {
-            if isSELikeSmallScreen {
+            if isSESmallScreen {
                 return min(400, max(340, min(size.width, size.height) * 0.98))
             } else if isCompactHeight {
                 return min(420, max(340, min(size.width, size.height) * 0.98))

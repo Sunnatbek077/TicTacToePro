@@ -55,7 +55,7 @@ extension GameBoardView {
         else { return }
         
         aiThinking = true
-        let delay: TimeInterval = isSELikeSmallScreen ? 0.3 : 0.45
+        let delay: TimeInterval = isSESmallScreen ? 0.3 : 0.45
         DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
             let boardMoves = ticTacToe.boardArray
             let testBoard = Board(position: boardMoves, turn: .x)
@@ -103,7 +103,7 @@ extension GameBoardView {
     }
     
     func bannerShowTemporarily() {
-        let duration: TimeInterval = isSELikeSmallScreen ? 1.0 : 1.4
+        let duration: TimeInterval = isSESmallScreen ? 1.0 : 1.4
         withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) { showTurnBanner = true }
         DispatchQueue.main.asyncAfter(deadline: .now() + duration) {
             withAnimation(.easeOut) { showTurnBanner = false }

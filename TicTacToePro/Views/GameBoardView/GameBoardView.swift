@@ -155,7 +155,7 @@ struct GameBoardView: View {
                 }
             
             if showConfetti {
-                ConfettiView(isSELikeSmallScreen: isSELikeSmallScreen)
+                ConfettiView(isSELikeSmallScreen: isSESmallScreen)
                     .transition(.opacity)
                     .zIndex(3)
             }
@@ -235,4 +235,9 @@ struct GameBoardView: View {
         ticTacToe.winner = .empty
         ticTacToe.gameOver = true
     }
+}
+
+#Preview {
+    StartMenuView()
+        .environmentObject(AppState())
 }
