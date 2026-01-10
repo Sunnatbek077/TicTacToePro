@@ -204,53 +204,49 @@ struct StartMenuView: View {
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: isCompactHeightPhone ? 16 : 24) {
                         
-                        HeroHeader(isCompactHeightPhone: isCompactHeightPhone,
-                                   configurationSummary: configurationSummary)
-                        .font(headerFont)
-                        
-                        ConfigurationCard(
-                            selectedPlayer: $selectedPlayer,
-                            selectedGameMode: $selectedGameMode,
-                            selectedDifficulty: $selectedDifficulty,
-                            isCompactHeightPhone: isCompactHeightPhone,
-                            shadowColor: colorScheme == .dark ? .black : .gray,
-                            cardBackground: cardBackground
-                        )
-                        .background(RoundedRectangle(cornerRadius: 28).fill(cardBackground))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 28)
-                                .strokeBorder(
-                                    colorScheme == .dark
-                                    ? Color.white.opacity(0.06)
-                                    : Color.blue.opacity(0.08),
-                                    lineWidth: 1
-                                )
-                        )
+                        VStack {
+                            HeroHeader(isCompactHeightPhone: isCompactHeightPhone,
+                                       configurationSummary: configurationSummary)
+                            .font(headerFont)
+                            ConfigurationCard(
+                                selectedPlayer: $selectedPlayer,
+                                selectedGameMode: $selectedGameMode,
+                                selectedDifficulty: $selectedDifficulty,
+                                isCompactHeightPhone: isCompactHeightPhone,
+                                shadowColor: colorScheme == .dark ? .black : .gray,
+                                cardBackground: cardBackground
+                            )
+                            .frame(maxWidth: 700)
+                            .background(RoundedRectangle(cornerRadius: 28).fill(cardBackground))
+                            StartButton(isCompactHeightPhone: isCompactHeightPhone) {
+                                triggerHaptic()
+                                showBoardSizeSelector = true
+                            }
+                            .background(RoundedRectangle(cornerRadius: 20).fill(accentGradient.opacity(colorScheme == .dark ? 0.18 : 0.24)))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 28)
+                                    .strokeBorder(
+                                        colorScheme == .dark
+                                        ? Color.white.opacity(0.06)
+                                        : Color.purple.opacity(0.08),
+                                        lineWidth: 1
+                                    )
+                            )
+                            .frame(maxWidth: 700)
+
+                        }
+
                         .shadow(color: premiumShadow.0, radius: premiumShadow.1, x: 0, y: premiumShadow.2)
                         .padding(.top, isCompactHeightPhone ? 4 : 8)
                         .transition(.scale.combined(with: .opacity))
                         
-                        StartButton(isCompactHeightPhone: isCompactHeightPhone) {
-                            triggerHaptic()
-                            showBoardSizeSelector = true
-                        }
-                        .background(RoundedRectangle(cornerRadius: 20).fill(accentGradient.opacity(colorScheme == .dark ? 0.18 : 0.24)))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 28)
-                                .strokeBorder(
-                                    colorScheme == .dark
-                                    ? Color.white.opacity(0.06)
-                                    : Color.purple.opacity(0.08),
-                                    lineWidth: 1
-                                )
-                        )
+                        
                         .shadow(color: .purple.opacity(colorScheme == .dark ? 0.35 : 0.25), radius: 18, x: 0, y: 10)
                         .sensoryFeedback(.success, trigger: showGame)
                     }
                     .padding(.horizontal, isCompactHeightPhone ? 12 : 16)
                     .padding(.vertical, verticalPadding)
                     .padding(.top, layoutCategory == "tall" ? 48 : 32)
-                    .frame(maxWidth: contentMaxWidth)
                     .animation(.spring(duration: 0.8, bounce: 0.2), value: selectedGameMode)
                     .navigationDestination(isPresented: $showGame) {
                         GameBoardView(

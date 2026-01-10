@@ -18,7 +18,7 @@ struct GameScoreView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .firstTextBaseline) {
-                Text("Scooreboard")
+                Text("Scoreboard")
                     .font(.headline)
                 Spacer()
                 HStack(spacing: 8) {

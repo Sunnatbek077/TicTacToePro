@@ -62,11 +62,11 @@ struct AboutView: View {
                         
                         // App Name & Version
                         VStack(spacing: 4) {
-                            Text("Tic Tac Toe Pro")
+                            Text("Tic Tac Pro")
                                 .font(.largeTitle.bold())
                                 .foregroundColor(.primary)
                             
-                            Text("Version 1.0.0")
+                            Text("Version 1.2.2")
                                 .font(.subheadline)
                                 .foregroundColor(.secondary)
                         }

@@ -240,7 +240,7 @@ struct SettingsView: View {
                 // About
                 SettingsNavigationRow(
                     icon: "info.circle.fill",
-                    title: "About Tic Tac Toe Pro",
+                    title: "About Tic Tac Pro",
                     iconColor: .blue
                 ) {
                     showAbout = true
@@ -412,7 +412,7 @@ struct SettingsView: View {
     private func shareApp() {
         #if os(iOS)
         let appURLString = "https://apps.apple.com/uz/app/tictactoepro/id6755810923" // Replace with actual App Store URL
-        let items: [Any] = ["Check out Tic Tac Toe Pro!", URL(string: appURLString) as Any]
+        let items: [Any] = ["Check out Tic Tac Pro!", URL(string: appURLString) as Any]
         let activityVC = UIActivityViewController(activityItems: items, applicationActivities: nil)
         
         if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
@@ -426,7 +426,7 @@ struct SettingsView: View {
     private func contactSupport() {
         #if os(iOS)
         let email = "sunnatbekabdunabiyev@icloud.com"
-        let subject = "Tic Tac Toe Pro Support"
+        let subject = "Tic Tac Pro Support"
         
         let encodedSubject = subject.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
         

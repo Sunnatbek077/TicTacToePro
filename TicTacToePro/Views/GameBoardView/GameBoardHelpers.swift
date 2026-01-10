@@ -14,7 +14,7 @@ extension GameBoardView {
         if gameTypeIsPVP {
             return "\(currentPlayer)’s Move"
         } else {
-            return ticTacToe.playerToMove == ticTacToe.aiPlays ? "AI is Thinking…" : "Your Move"
+            return ticTacToe.playerToMove == ticTacToe.aiPlays ? "AI is thinking..." : "Your Move"
         }
     }
     

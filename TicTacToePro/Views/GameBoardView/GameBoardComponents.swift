@@ -282,14 +282,14 @@ extension GameBoardView {
     var turnBanner: some View {
         HStack {
             if ticTacToe.playerToMove == ticTacToe.aiPlays && !gameTypeIsPVP {
-                Label("AI is Thinking…", systemImage: "brain.head.profile")
+                Label("AI is thinking...", systemImage: "brain.head.profile")
                     .font(.system((isSESmallScreen ? .caption2 : .subheadline), design: .rounded).weight(.semibold))
                     .padding(.vertical, isSESmallScreen ? 4 : 8)
                     .padding(.horizontal, isSESmallScreen ? 6 : 12)
                     .background(.ultraThinMaterial, in: Capsule())
                     .overlay(Capsule().stroke(LinearGradient(colors: [.purple, .blue], startPoint: .top, endPoint: .bottom), lineWidth: 1))
                     .shadow(color: .purple.opacity(colorScheme == .dark ? 0.3 : 0.15), radius: 4)
-                    .accessibilityLabel("AI is thinking")
+                    .accessibilityLabel("AI is thinking...")
             } else {
                 Label("\(currentPlayer)’s Turn", systemImage: ticTacToe.playerToMove == .x ? "xmark" : "circle")
                     .font(.system((isSESmallScreen ? .caption2 : .subheadline), design: .rounded).weight(.semibold))

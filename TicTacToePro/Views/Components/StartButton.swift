@@ -55,7 +55,7 @@ struct StartButton: View {
         .buttonStyle(PressScaleButtonStyle())
         // Only apply sensory feedback if binding exists and value becomes true
         .sensoryFeedback(.success, trigger: showGameBinding?.wrappedValue ?? false)
-        .accessibilityLabel("Start game")
+        .accessibilityLabel("Start Game")
         .accessibilityHint("Opens board size selector and starts a new game")
     }
     
