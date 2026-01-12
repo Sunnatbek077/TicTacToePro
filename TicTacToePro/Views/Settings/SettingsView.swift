@@ -20,10 +20,12 @@ struct SettingsView: View {
     @AppStorage("showAnimations") private var showAnimations = true
     @AppStorage("colorSchemePreference") private var colorSchemePreference = "system"
     @AppStorage("profileName") private var profileName: String = ""  // Added
+    @AppStorage("appLanguage") private var appLanguage: String = Locale.current.language.languageCode?.identifier ?? "en"
     
     @State private var showResetAlert = false
     @State private var showAbout = false
     @State private var showProfile = false
+    @State private var showLanguage = false
     
     // Layout helpers
     private var isCompactHeightPhone: Bool {
@@ -94,6 +96,9 @@ struct SettingsView: View {
             .sheet(isPresented: $showProfile) {
                 ProfileView()
             }
+            .sheet(isPresented: $showLanguage) {
+                LanguageSelectorView()
+            }
             .onAppear {
                 // Sync with multiplayer VM if local name is empty
                 if profileName.isEmpty,
@@ -138,9 +143,9 @@ struct SettingsView: View {
         .padding(.vertical, 8)
     }
     
-    // MARK: - Profile Section
+    // profileSection ichida:
     private var profileSection: some View {
-        SettingsCard(title: "Profile", icon: "person.crop.circle.fill") {
+        SettingsCard(title: "General", icon: "person.crop.circle.fill") {
             VStack(spacing: 0) {
                 SettingsNavigationRow(
                     icon: "person.crop.circle.fill",
@@ -150,6 +155,45 @@ struct SettingsView: View {
                 ) {
                     showProfile = true
                 }
+                
+                Divider()
+                    .padding(.leading, 52)
+                
+                // Language Navigation Link
+                NavigationLink {
+                    LanguageSelectorView() // Normal mode
+                } label: {
+                    HStack(spacing: 12) {
+                        Image(systemName: "globe")
+                            .font(.title3)
+                            .foregroundColor(.white)
+                            .frame(width: 32, height: 32)
+                            .background(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .fill(Color.green)
+                            )
+                        
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Language")
+                                .font(.body)
+                                .foregroundColor(.primary)
+                        }
+                        
+                        Spacer()
+                        
+                        Text(LanguageSelectorView.getLanguageName(for: appLanguage))
+                            .font(.body)
+                            .foregroundColor(.secondary)
+                        
+                        Image(systemName: "chevron.right")
+                            .font(.caption.bold())
+                            .foregroundColor(.secondary)
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
             }
         }
     }
@@ -569,6 +613,54 @@ struct SettingsToggleRow: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
+    }
+}
+
+// MARK: - Settings Navigation Link Row
+struct SettingsNavigationLinkRow<Destination: View>: View {
+    let icon: String
+    let title: String
+    let title2: String?
+    let iconColor: Color
+    let destination: Destination
+    
+    var body: some View {
+        NavigationLink {
+            destination
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: icon)
+                    .font(.title3)
+                    .foregroundColor(.white)
+                    .frame(width: 32, height: 32)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(iconColor)
+                    )
+                
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(.body)
+                        .foregroundColor(.primary)
+                }
+                
+                Spacer()
+                
+                if let title2 = title2, !title2.isEmpty {
+                    Text(title2)
+                        .font(.body)
+                        .foregroundColor(.secondary)
+                }
+                
+                Image(systemName: "chevron.right")
+                    .font(.caption.bold())
+                    .foregroundColor(.secondary)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
     }
 }
 

@@ -41,25 +41,6 @@ struct AboutView: View {
                 
                 ScrollView {
                     VStack(spacing: 28) {
-                        // App Icon (Custom Tic-Tac-Toe Grid)
-                        ZStack {
-                            Circle()
-                                .fill(
-                                    AngularGradient(
-                                        colors: [.pink, .purple, .blue, .pink],
-                                        center: .center
-                                    )
-                                )
-                                .frame(width: 100, height: 100)
-                                .shadow(color: .black.opacity(0.2), radius: 8, x: 0, y: 4)
-                            
-                            Image(systemName: "grid")
-                                .font(.system(size: 44, weight: .medium))
-                                .foregroundColor(.white)
-                        }
-                        .padding(.top, 32)
-                        .accessibilityHidden(true)
-                        
                         // App Name & Version
                         VStack(spacing: 4) {
                             Text("Tic Tac Pro")
