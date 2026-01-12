@@ -8,6 +8,8 @@ import Foundation
 
 struct AIWinMessages {
     static let messages = [
+        "Heisenberg: Say my name!",
+        "You underestimate my Power 🥷🏻",
         "Ha! I told you I was unstoppable! 😎",
         "Better luck next time, human. 😂",
         "I win again! Are you even trying? 🤖",
