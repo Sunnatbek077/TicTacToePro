@@ -1063,6 +1063,9 @@
         }
       }
     },
+    "Add Text Color" : {
+
+    },
     "AI Difficulty" : {
       "localizations" : {
         "ar" : {
@@ -1202,6 +1205,12 @@
           }
         }
       }
+    },
+    "Animation" : {
+
+    },
+    "Animation Speed" : {
+
     },
     "App will restart in a moment..." : {
       "localizations" : {
@@ -1552,6 +1561,12 @@
           }
         }
       }
+    },
+    "Background" : {
+
+    },
+    "Background Settings" : {
+
     },
     "Be the first to create a game!" : {
       "localizations" : {
@@ -2672,6 +2687,9 @@
           }
         }
       }
+    },
+    "Customize your app appearance" : {
+
     },
     "Customize your experience" : {
       "localizations" : {
@@ -6942,6 +6960,9 @@
           }
         }
       }
+    },
+    "Start Menu" : {
+
     },
     "Starting Player" : {
       "localizations" : {

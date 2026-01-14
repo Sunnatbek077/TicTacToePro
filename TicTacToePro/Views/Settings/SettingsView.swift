@@ -240,7 +240,39 @@ struct SettingsView: View {
                         .pickerStyle(.menu)
                     }
                 }
-            }
+                
+                NavigationLink {
+                    BackgroundView()
+                } label: {
+                    HStack(spacing: 12) {
+                        Image(systemName: "bubbles.and.sparkles.fill")
+                            .font(.title3)
+                            .foregroundColor(.white)
+                            .frame(width: 32, height: 32)
+                            .background(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .fill(Color.purple)
+                            )
+                        
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Background")
+                                .font(.body)
+                                .foregroundColor(.primary)
+                        }
+                        
+                        Spacer()
+                        
+                        Image(systemName: "chevron.right")
+                            .font(.caption.bold())
+                            .foregroundColor(.secondary)
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
+                    .contentShape(Rectangle())
+                }
+                }
+                
+                
         }
     }
     
