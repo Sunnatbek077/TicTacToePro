@@ -8,6 +8,19 @@
 
 import SwiftUI
 
+// MARK: - Animation Mood Enum
+enum AnimationMood: String, CaseIterable {
+    case none = "None"
+    case randomFlicker = "Random Flicker"
+    case joyfulPulse = "Joyful Pulse"
+    case sadFade = "Sad Fade"
+    case angryFlash = "Angry Flash"
+    case calmWave = "Calm Wave"
+    case romanticHeartbeat = "Romantic Heartbeat"
+    case energeticRainbow = "Energetic Rainbow"
+    case mysticGlow = "Mystic Glow"
+}
+
 struct SelectableColor: Identifiable, Hashable {
     let id = UUID()
     let color: Color
@@ -19,31 +32,6 @@ struct ColorSelectionView: View {
     @Binding var selectableColor: SelectableColor
     @Environment(\.colorScheme) private var colorScheme
     
-    // MARK: - Premium Styling
-    private var premiumGradient: LinearGradient {
-        if colorScheme == .dark {
-            return LinearGradient(
-                colors: [
-                    Color(red: 0.08, green: 0.08, blue: 0.10),
-                    Color(red: 0.11, green: 0.12, blue: 0.18),
-                    Color(red: 0.03, green: 0.04, blue: 0.06)
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-        } else {
-            return LinearGradient(
-                colors: [
-                    Color(red: 0.98, green: 0.98, blue: 1.0),
-                    Color(red: 0.95, green: 0.96, blue: 0.99),
-                    Color(red: 0.90, green: 0.92, blue: 0.98)
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-        }
-    }
-    
     var body: some View {
         ZStack {
             RoundedRectangle(cornerRadius: 16, style: .continuous)
@@ -53,15 +41,15 @@ struct ColorSelectionView: View {
                     RoundedRectangle(cornerRadius: 16, style: .continuous)
                         .strokeBorder(
                             selectableColor.isSelected
-                                ? Color.white.opacity(0.8)
-                                : Color.clear,
+                            ? Color.white.opacity(0.8)
+                            : Color.clear,
                             lineWidth: 3
                         )
                 )
                 .shadow(
                     color: selectableColor.isSelected
-                        ? selectableColor.color.opacity(0.6)
-                        : Color.black.opacity(0.2),
+                    ? selectableColor.color.opacity(0.6)
+                    : Color.black.opacity(0.2),
                     radius: selectableColor.isSelected ? 12 : 4,
                     x: 0,
                     y: selectableColor.isSelected ? 6 : 2
@@ -100,22 +88,34 @@ struct BackgroundView: View {
     @Environment(\.horizontalSizeClass) private var hSizeClass
     @Environment(\.verticalSizeClass) private var vSizeClass
     
-    @State private var isStartViewEnabled: Bool = true
-    @State private var isMultiplayerViewEnabled: Bool = true
-    @State private var isSettingsViewEnabled: Bool = true
-    @State private var animationSpeed: Double = 0.5
-    @State private var isEnabledAnimation: Bool = true
-    @State private var isEnabledBlur: Bool = true
+    // Saqlanadigan holatlar
+    @AppStorage("isStartViewEnabled") private var isStartViewEnabled: Bool = true
+    @AppStorage("isMultiplayerEnabled") private var isMultiplayerViewEnabled: Bool = true
+    @AppStorage("isSettingsEnabled") private var isSettingsViewEnabled: Bool = true
+    
+    @AppStorage("enableBackgroundBlur") private var isEnabledBlur: Bool = false
+    @AppStorage("enableBackgroundAnimation") private var isEnabledAnimation: Bool = true
+    @AppStorage("animationSpeed") private var animationSpeed: Double = 0.5
+    
+    // Faqat bitta mood saqlaymiz
+    @AppStorage("selectedAnimationMood") private var selectedMoodRawValue: String = AnimationMood.none.rawValue
+    
+    // Computed property - oson qilib mood bilan ishlash uchun
+    private var selectedMood: AnimationMood {
+        get {
+            AnimationMood(rawValue: selectedMoodRawValue) ?? .none
+        }
+        nonmutating set {
+            selectedMoodRawValue = newValue.rawValue
+        }
+    }
     
     @State private var colors: [SelectableColor] = [
-        // Existing background base colors
         SelectableColor(color: .pink),
         SelectableColor(color: .blue),
         SelectableColor(color: .purple),
         SelectableColor(color: .cyan),
         SelectableColor(color: .indigo),
-
-        // Apple system accent colors
         SelectableColor(color: .red),
         SelectableColor(color: .green),
         SelectableColor(color: .orange)
@@ -147,19 +147,10 @@ struct BackgroundView: View {
                 
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: isCompactHeightPhone ? 16 : 24) {
-                        // Header
                         headerSection
-                        
-                        // Background Colors Section
                         backgroundColorsSection
-                        
-                        // Head Text Colors Section
                         headTextColorsSection
-                        
-                        // Animation Section
                         animationSection
-                        
-                        // Tabs Section
                         tabsSection
                     }
                     .padding(.horizontal, isCompactHeightPhone ? 12 : 16)
@@ -167,7 +158,6 @@ struct BackgroundView: View {
                     .frame(maxWidth: contentMaxWidth)
                 }
             }
-            .navigationBarTitleDisplayMode(.inline)
         }
     }
     
@@ -206,7 +196,6 @@ struct BackgroundView: View {
     private var backgroundColorsSection: some View {
         SettingsCard(title: "Background Colors", icon: "paintbrush.fill") {
             VStack(spacing: 16) {
-                // Color Grid
                 LazyVGrid(
                     columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: 4),
                     spacing: 12
@@ -221,7 +210,6 @@ struct BackgroundView: View {
                 Divider()
                     .padding(.horizontal, 16)
                 
-                // Blur Toggle
                 SettingsToggleRow(
                     icon: "camera.filters",
                     title: "Enable Blur",
@@ -304,7 +292,7 @@ struct BackgroundView: View {
                                     .fill(Color.orange)
                             )
                         
-                        VStack(alignment: .leading, spacing: 2) {
+                        VStack(alignment: .leading) {
                             Text("Animation Speed")
                                 .font(.body)
                                 .foregroundColor(.primary)
@@ -346,9 +334,145 @@ struct BackgroundView: View {
                 }
                 .padding(.vertical, 8)
                 
+                Divider()
+                    .padding(.leading, 52)
+                
+                // Animation Moods Section
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Animation Moods")
+                        .font(.headline)
+                        .foregroundColor(.primary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 16)
+                        .padding(.top, 8)
+                    
+                    Text("Select one mood at a time")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 16)
+                        .padding(.bottom, 4)
+                }
+                
+                // Mood toggles
+                moodToggleRow(
+                    icon: "sparkles",
+                    title: "Random Flicker",
+                    description: "Chaotic and energetic flickering",
+                    iconColor: .yellow,
+                    mood: .randomFlicker
+                )
+                
+                Divider()
+                    .padding(.leading, 52)
+                
+                moodToggleRow(
+                    icon: "heart.fill",
+                    title: "Joyful Pulse",
+                    description: "Happy party atmosphere",
+                    iconColor: .pink,
+                    mood: .joyfulPulse
+                )
+                
+                Divider()
+                    .padding(.leading, 52)
+                
+                moodToggleRow(
+                    icon: "cloud.drizzle.fill",
+                    title: "Sad Fade",
+                    description: "Melancholic and reflective",
+                    iconColor: .gray,
+                    mood: .sadFade
+                )
+                
+                Divider()
+                    .padding(.leading, 52)
+                
+                moodToggleRow(
+                    icon: "flame.fill",
+                    title: "Angry Flash",
+                    description: "Intense and aggressive",
+                    iconColor: .red,
+                    mood: .angryFlash
+                )
+                
+                Divider()
+                    .padding(.leading, 52)
+                
+                moodToggleRow(
+                    icon: "water.waves",
+                    title: "Calm Wave",
+                    description: "Relaxing and peaceful",
+                    iconColor: .cyan,
+                    mood: .calmWave
+                )
+                
+                Divider()
+                    .padding(.leading, 52)
+                
+                moodToggleRow(
+                    icon: "heart.circle.fill",
+                    title: "Romantic Heartbeat",
+                    description: "Warm and loving mood",
+                    iconColor: Color(red: 1.0, green: 0.4, blue: 0.6),
+                    mood: .romanticHeartbeat
+                )
+                
+                Divider()
+                    .padding(.leading, 52)
+                
+                moodToggleRow(
+                    icon: "rainbow",
+                    title: "Energetic Rainbow",
+                    description: "High-energy disco vibe",
+                    iconColor: .purple,
+                    mood: .energeticRainbow
+                )
+                
+                Divider()
+                    .padding(.leading, 52)
+                
+                moodToggleRow(
+                    icon: "moon.stars.fill",
+                    title: "Mystic Glow",
+                    description: "Dreamy and mysterious",
+                    iconColor: .indigo,
+                    mood: .mysticGlow
+                )
             }
             .padding(.bottom, 8)
         }
+    }
+    
+    // MARK: - Helper Function for Mood Toggle
+    @ViewBuilder
+    private func moodToggleRow(
+        icon: String,
+        title: String,
+        description: String,
+        iconColor: Color,
+        mood: AnimationMood
+    ) -> some View {
+        let isSelected = selectedMood == mood
+        
+        SettingsToggleRow(
+            icon: icon,
+            title: title,
+            description: description,
+            iconColor: iconColor,
+            isOn: Binding(
+                get: { isSelected },
+                set: { newValue in
+                    if newValue {
+                        // Yangi mood tanlandi
+                        selectedMood = mood
+                    } else {
+                        // O'chirish - none ga qaytarish
+                        selectedMood = .none
+                    }
+                }
+            )
+        )
     }
     
     // MARK: - Tabs Section
@@ -392,46 +516,26 @@ struct BackgroundView: View {
     private var premiumBackground: some View {
         GeometryReader { geometry in
             ZStack {
+                // asosiy gradient
                 LinearGradient(
                     colors: colorScheme == .dark
-                        ? [Color(red: 0.08, green: 0.08, blue: 0.10), Color(red: 0.11, green: 0.12, blue: 0.18), Color(red: 0.03, green: 0.04, blue: 0.06)]
-                        : [Color(red: 0.98, green: 0.98, blue: 1.0), Color(red: 0.95, green: 0.96, blue: 0.99), Color(red: 0.90, green: 0.92, blue: 0.98)],
+                    ? [Color(red: 0.08, green: 0.08, blue: 0.10), Color(red: 0.11, green: 0.12, blue: 0.18), Color(red: 0.03, green: 0.04, blue: 0.06)]
+                    : [Color(red: 0.98, green: 0.98, blue: 1.0), Color(red: 0.95, green: 0.96, blue: 0.99), Color(red: 0.90, green: 0.92, blue: 0.98)],
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
                 )
                 .ignoresSafeArea()
                 
-                // Neon lights background
                 ForEach(colors.filter { $0.isSelected }) { selectedColor in
                     NeonLightView(
                         color: selectedColor.color,
                         geometry: geometry,
                         isAnimated: isEnabledAnimation,
-                        animationSpeed: animationSpeed
+                        animationSpeed: animationSpeed,
+                        mood: selectedMood // Uzatish
                     )
                 }
                 
-                Rectangle()
-                    .fill(LinearGradient(colors: [
-                        Color.white.opacity(colorScheme == .dark ? 0.02 : 0.08),
-                        Color.black.opacity(colorScheme == .dark ? 0.02 : 0.01)
-                    ], startPoint: .topLeading, endPoint: .bottomTrailing))
-                    .blendMode(.overlay)
-                    .opacity(0.6)
-                    .ignoresSafeArea()
-                
-                LinearGradient(
-                    colors: [Color.black.opacity(colorScheme == .dark ? 0.35 : 0.15), .clear, Color.black.opacity(colorScheme == .dark ? 0.35 : 0.15)],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-                .ignoresSafeArea()
-                
-                NoiseTextureView()
-                    .opacity(colorScheme == .dark ? 0.05 : 0.03)
-                    .ignoresSafeArea()
-                
-                // Optional blur controlled by toggle
                 if isEnabledBlur {
                     Rectangle()
                         .fill(.ultraThinMaterial)

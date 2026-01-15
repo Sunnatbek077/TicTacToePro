@@ -1209,6 +1209,9 @@
     "Animation" : {
 
     },
+    "Animation Moods" : {
+
+    },
     "Animation Speed" : {
 
     },
@@ -6470,6 +6473,9 @@
           }
         }
       }
+    },
+    "Select one mood at a time" : {
+
     },
     "Select the duration for your game" : {
       "localizations" : {
