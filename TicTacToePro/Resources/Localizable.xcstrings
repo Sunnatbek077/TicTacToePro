@@ -2411,6 +2411,9 @@
         }
       }
     },
+    "Continue" : {
+
+    },
     "Create New Game" : {
       "localizations" : {
         "ar" : {

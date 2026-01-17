@@ -1,5 +1,5 @@
 //
-//  StartMenuView.swift - Updated with Board Size Selector
+//  StartMenuView.swift - Updated with CustomBackgroundView
 //  TicTacToePro
 //
 
@@ -110,6 +110,9 @@ struct StartMenuView: View {
     @Environment(\.colorScheme) private var colorScheme
     @EnvironmentObject private var appState: AppState
     
+    // Check if custom background is enabled
+    @AppStorage("isStartViewBackgroundEnabled") private var isStartViewBackgroundEnabled: Bool = true
+    
     @State private var selectedPlayer: PlayerOption = .x
     @State private var selectedDifficulty: DifficultyOption = .easy
     @State private var selectedGameMode: GameMode = .ai
@@ -198,8 +201,14 @@ struct StartMenuView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                premiumBackground
-                if showBokeh { bokehLayer.allowsHitTesting(false) }
+                // Custom Background - avtomatik sozlamalar asosida
+                if isStartViewBackgroundEnabled {
+                    CustomBackgroundView(viewType: .startView)
+                } else {
+                    // Default fallback background
+                    premiumBackground
+                    if showBokeh { bokehLayer.allowsHitTesting(false) }
+                }
                 
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: isCompactHeightPhone ? 16 : 24) {
@@ -299,9 +308,15 @@ struct StartMenuView: View {
                 .presentationDragIndicator(.visible)
             }
         }
+        .task {
+            animateBackground = true
+#if os(iOS)
+            prepareHaptics()
+#endif
+        }
     }
     
-    // MARK: - Backgrounds
+    // MARK: - Backgrounds (Fallback)
     private var premiumBackground: some View {
         ZStack {
             premiumGradient.ignoresSafeArea()
@@ -327,12 +342,6 @@ struct StartMenuView: View {
             NoiseTextureView()
                 .opacity(colorScheme == .dark ? 0.05 : 0.03)
                 .ignoresSafeArea()
-        }
-        .task {
-            animateBackground = true
-#if os(iOS)
-            prepareHaptics()
-#endif
         }
     }
     
@@ -384,7 +393,6 @@ struct StartMenuView: View {
             ticTacToeModel.aiPlays = startingPlayerIsO ? .x : .o
         }
         ticTacToeModel.playerToMove = startingPlayerIsO ? .o : .x
-        // Optional: ticTacToeModel.timeLimitMinutes = selectedTimeLimit.rawValue
         appState.isGameOpen = true
         showGame = true
     }
@@ -478,7 +486,7 @@ struct BoardSizeSelectorView: View {
                     
                     Button(action: onConfirm) {
                         HStack {
-                            Text("Start Game")
+                            Text("Continue")
                                 .font(.headline.bold())
                             Image(systemName: "arrow.right")
                         }

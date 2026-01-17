@@ -1,5 +1,5 @@
 //
-//  MultiplayerMenuView.swift
+//  MultiplayerMenuView.swift - Updated with CustomBackgroundView
 //  TicTacToePro
 //
 //  Created by Sunnatbek on 12/10/25.
@@ -16,6 +16,9 @@ struct MultiplayerMenuView: View {
     @Environment(\.verticalSizeClass) private var vSizeClass
     @Environment(\.colorScheme) private var colorScheme
     @EnvironmentObject private var appState: AppState
+    
+    // Check if custom background is enabled
+    @AppStorage("isMultiplayerBackgroundEnabled") private var isMultiplayerBackgroundEnabled: Bool = true
     
     @StateObject private var multiplayerVM = MultiplayerViewModel()
     @StateObject private var viewModel = ViewModel()
@@ -131,7 +134,13 @@ struct MultiplayerMenuView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                premiumBackground
+                // Custom Background - avtomatik sozlamalar asosida
+                if isMultiplayerBackgroundEnabled {
+                    CustomBackgroundView(viewType: .multiplayerView)
+                } else {
+                    // Default fallback background
+                    premiumBackground
+                }
                 
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: isCompactHeightPhone ? 16 : 24) {
@@ -263,6 +272,12 @@ struct MultiplayerMenuView: View {
                 )
             }
         }
+        .task {
+            animateBackground = true
+#if os(iOS)
+            prepareHaptics()
+#endif
+        }
     }
     
     // MARK: - Header Section
@@ -381,7 +396,6 @@ struct MultiplayerMenuView: View {
                 EmptyGamesView()
                     .padding(.vertical, 20)
             } else {
-                // On tvOS, List exists but swipeActions are unavailable. We’ll hide swipe actions on tvOS.
                 List {
                     ForEach(publicGames) { game in
                         GameLobbyCard(
@@ -414,7 +428,6 @@ struct MultiplayerMenuView: View {
                             }
                         }
                         #endif
-                        // tvOS alternative: show a trailing contextual delete button inline if the game is yours
                         #if os(tvOS)
                         .overlay(alignment: .trailing) {
                             if isGameCreatedByCurrentPlayer(game) {
@@ -463,7 +476,7 @@ struct MultiplayerMenuView: View {
         multiplayerVM.availableGames.filter { !$0.isPrivate }
     }
     
-    // MARK: - Background
+    // MARK: - Background (Fallback)
     private var premiumBackground: some View {
         ZStack {
             premiumGradient.ignoresSafeArea()
@@ -489,12 +502,6 @@ struct MultiplayerMenuView: View {
             NoiseTextureView()
                 .opacity(colorScheme == .dark ? 0.05 : 0.03)
                 .ignoresSafeArea()
-        }
-        .task {
-            animateBackground = true
-#if os(iOS)
-            prepareHaptics()
-#endif
         }
     }
     
@@ -804,7 +811,6 @@ struct GameNameInputSheet: View {
                 }
             }
             .onAppear {
-                // tvOS shows keyboard upon focusing the field; focusing is still fine
                 isFocused = true
             }
         }

@@ -4,6 +4,7 @@
 //
 //  Created by Sunnatbek on 14/01/26.
 //  Updated with Mood Support on 15/01/26
+//  Complete Implementation on 17/01/26
 //
 
 import SwiftUI
@@ -13,7 +14,7 @@ struct NeonLightView: View {
     let geometry: GeometryProxy
     let isAnimated: Bool
     let animationSpeed: Double
-    let mood: AnimationMood // YANGI: Mood parametri qo'shildi
+    let mood: AnimationMood
     
     // Asosiy animatsiya state'lari
     @State private var randomX: CGFloat = 0
@@ -22,40 +23,43 @@ struct NeonLightView: View {
     @State private var animationOffset: CGFloat = 0
     @State private var pulseScale: CGFloat = 1.0
     
-    // YANGI: Random Flicker uchun state'lar
+    // Random Flicker uchun state'lar
     @State private var flickerOpacity: Double = 1.0
     @State private var flickerBrightness: Double = 1.0
     
-    // YANGI: Joyful Pulse uchun state'lar
+    // Joyful Pulse uchun state'lar
     @State private var joyfulScale: CGFloat = 1.0
     @State private var joyfulBrightness: Double = 1.0
     
-    // YANGI: Sad Fade uchun state'lar
+    // Sad Fade uchun state'lar
     @State private var fadeOpacity: Double = 1.0
     @State private var fadeDarkness: Double = 0.0
     
-    // YANGI: Angry Flash uchun state'lar
+    // Angry Flash uchun state'lar
     @State private var flashOn: Bool = true
     @State private var flashIntensity: Double = 1.0
     
-    // YANGI: Calm Wave uchun state'lar
+    // Calm Wave uchun state'lar
     @State private var waveOffset: CGFloat = 0
     @State private var wavePhase: Double = 0
     
-    // YANGI: Romantic Heartbeat uchun state'lar
+    // Romantic Heartbeat uchun state'lar
     @State private var heartbeatScale: CGFloat = 1.0
     @State private var heartbeatGlow: Double = 1.0
     
-    // YANGI: Energetic Rainbow uchun state'lar
+    // Energetic Rainbow uchun state'lar
     @State private var rainbowHue: Double = 0.0
     @State private var rainbowPosition: CGFloat = 0
     
-    // YANGI: Mystic Glow uchun state'lar
+    // Mystic Glow uchun state'lar
     @State private var mysticHue: Double = 0.0
     @State private var mysticGlow: Double = 1.0
     @State private var mysticPulse: CGFloat = 1.0
     
     @StateObject private var motion = MotionManager()
+    
+    // Timer management
+    @State private var animationTimer: Timer?
     
     var body: some View {
         ZStack {
@@ -111,8 +115,8 @@ struct NeonLightView: View {
             }
         }
         .onChange(of: mood) { _, _ in
-            // Mood o'zgarganda animatsiyani yangilash
             if isAnimated {
+                stopAllAnimations()
                 resetAnimationStates()
                 startMoodAnimation()
             }
@@ -121,14 +125,17 @@ struct NeonLightView: View {
             if newValue {
                 startMoodAnimation()
             } else {
+                stopAllAnimations()
                 resetAnimationStates()
             }
+        }
+        .onDisappear {
+            stopAllAnimations()
         }
     }
     
     // MARK: - Computed Properties
     
-    // Joriy rang (Rainbow mood uchun o'zgaradi)
     private var currentColor: Color {
         if mood == .energeticRainbow {
             return Color(hue: rainbowHue, saturation: 0.8, brightness: 0.9)
@@ -138,7 +145,6 @@ struct NeonLightView: View {
         return color
     }
     
-    // Joriy opacity (har xil mood'lar uchun)
     private var currentOpacity: Double {
         switch mood {
         case .randomFlicker:
@@ -152,7 +158,6 @@ struct NeonLightView: View {
         }
     }
     
-    // Joriy scale
     private var currentScale: CGFloat {
         switch mood {
         case .joyfulPulse:
@@ -166,7 +171,6 @@ struct NeonLightView: View {
         }
     }
     
-    // Joriy brightness
     private var currentBrightness: Double {
         switch mood {
         case .randomFlicker:
@@ -187,30 +191,28 @@ struct NeonLightView: View {
     }
     
     private var currentXOffset: CGFloat {
-            // Giroskopdan kelayotgan -1 va 1 oralig'idagi qiymatni 50 piksel oralig'iga ko'paytiramiz
-            let gyroShift = CGFloat(motion.x) * 50
-            
-            switch mood {
-            case .calmWave:
-                return waveOffset + gyroShift
-            case .energeticRainbow:
-                return rainbowPosition + gyroShift
-            default:
-                return animationOffset + gyroShift
-            }
-        }
+        let gyroShift = CGFloat(motion.x) * 50
         
-        private var currentYOffset: CGFloat {
-            // Telefonni tepaga/pastga qiyshaytirganda harakatlanish
-            let gyroShift = CGFloat(motion.y) * 50
-            
-            switch mood {
-            case .calmWave:
-                return (sin(wavePhase) * 30) + gyroShift
-            default:
-                return gyroShift
-            }
+        switch mood {
+        case .calmWave:
+            return waveOffset + gyroShift
+        case .energeticRainbow:
+            return rainbowPosition + gyroShift
+        default:
+            return animationOffset + gyroShift
         }
+    }
+    
+    private var currentYOffset: CGFloat {
+        let gyroShift = CGFloat(motion.y) * 50
+        
+        switch mood {
+        case .calmWave:
+            return (sin(wavePhase) * 30) + gyroShift
+        default:
+            return gyroShift
+        }
+    }
     
     // MARK: - Helper Functions
     
@@ -243,6 +245,11 @@ struct NeonLightView: View {
         pulseScale = 1.0
     }
     
+    private func stopAllAnimations() {
+        animationTimer?.invalidate()
+        animationTimer = nil
+    }
+    
     // MARK: - Main Animation Starter
     
     private func startMoodAnimation() {
@@ -268,53 +275,183 @@ struct NeonLightView: View {
         }
     }
     
-    // MARK: - Animation Functions (Placeholder'lar)
+    // MARK: - Animation Functions
     
+    // 1. Default Animation - Oddiy pulse
     private func startDefaultAnimation() {
-        Timer.scheduledTimer(withTimeInterval: 1.0 / animationSpeed, repeats: true) { _ in
+        let interval = max(0.1, 1.0 / animationSpeed)
+        animationTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { _ in
             withAnimation(.easeInOut(duration: 2.0)) {
-                pulseScale = CGFloat.random(in: 0.95...1.05) // Kichikroq diapazon
+                pulseScale = CGFloat.random(in: 0.95...1.05)
             }
         }
     }
     
+    // 2. Random Flicker - Chaotic va energetic miltillash
     private func startRandomFlickerAnimation() {
-        // Keyingi bosqichda to'ldiramiz
-        print("Random Flicker animation - coming soon!")
+        // Tez-tez o'zgaradigan random miltillash
+        let baseInterval = max(0.05, 0.1 / animationSpeed)
+        animationTimer = Timer.scheduledTimer(withTimeInterval: baseInterval, repeats: true) { _ in
+            // Tasodifiy tezlikda o'zgarish
+            let duration = Double.random(in: 0.05...0.2)
+            withAnimation(.linear(duration: duration)) {
+                flickerOpacity = Double.random(in: 0.3...1.0)
+                flickerBrightness = Double.random(in: 0.5...1.5)
+                pulseScale = CGFloat.random(in: 0.8...1.2)
+            }
+        }
     }
     
+    // 3. Joyful Pulse - Quvnoq party atmosferasi
     private func startJoyfulPulseAnimation() {
-        // Keyingi bosqichda to'ldiramiz
-        print("Joyful Pulse animation - coming soon!")
+        // Tez va ritmik pulse
+        withAnimation(.easeInOut(duration: 0.3).repeatForever(autoreverses: true)) {
+            joyfulScale = 1.15
+        }
+        
+        withAnimation(.easeInOut(duration: 0.6).repeatForever(autoreverses: true)) {
+            joyfulBrightness = 1.3
+        }
+        
+        // Qo'shimcha harakat
+        let interval = max(0.1, 0.3 / animationSpeed)
+        animationTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { _ in
+            withAnimation(.spring(duration: 0.4, bounce: 0.6)) {
+                animationOffset = CGFloat.random(in: -10...10)
+            }
+        }
     }
     
+    // 4. Sad Fade - Melancholik va reflective
     private func startSadFadeAnimation() {
-        // Keyingi bosqichda to'ldiramiz
-        print("Sad Fade animation - coming soon!")
+        // Sekin fade in/out
+        withAnimation(.easeInOut(duration: 3.0 / animationSpeed).repeatForever(autoreverses: true)) {
+            fadeOpacity = 0.3
+        }
+        
+        withAnimation(.easeInOut(duration: 4.0 / animationSpeed).repeatForever(autoreverses: true)) {
+            fadeDarkness = 0.4
+        }
+        
+        // Sekin pastga tushish harakati
+        withAnimation(.easeInOut(duration: 5.0 / animationSpeed).repeatForever(autoreverses: true)) {
+            animationOffset = 20
+        }
     }
     
+    // 5. Angry Flash - Kuchli va aggressive
     private func startAngryFlashAnimation() {
-        // Keyingi bosqichda to'ldiramiz
-        print("Angry Flash animation - coming soon!")
+        // Tez va keskin flash
+        let interval = max(0.05, 0.15 / animationSpeed)
+        animationTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { _ in
+            withAnimation(.linear(duration: 0.05)) {
+                flashOn.toggle()
+                flashIntensity = flashOn ? 1.5 : 0.5
+                pulseScale = flashOn ? 1.2 : 0.9
+            }
+        }
     }
     
+    // 6. Calm Wave - Tinch va osoyishta to'lqin
     private func startCalmWaveAnimation() {
-        // Keyingi bosqichda to'ldiramiz
-        print("Calm Wave animation - coming soon!")
+        // Smooth horizontal wave
+        withAnimation(.linear(duration: 4.0 / animationSpeed).repeatForever(autoreverses: false)) {
+            wavePhase = .pi * 2
+        }
+        
+        withAnimation(.easeInOut(duration: 3.0 / animationSpeed).repeatForever(autoreverses: true)) {
+            waveOffset = 30
+        }
+        
+        // Yumshoq pulse
+        withAnimation(.easeInOut(duration: 2.5 / animationSpeed).repeatForever(autoreverses: true)) {
+            pulseScale = 1.08
+        }
     }
     
+    // 7. Romantic Heartbeat - Issiq va mehribon yurak urishi
     private func startRomanticHeartbeatAnimation() {
-        // Keyingi bosqichda to'ldiramiz
-        print("Romantic Heartbeat animation - coming soon!")
+        // Yurak urishi kabi ikki marta tez-tez pulse
+        func performHeartbeat() {
+            // Birinchi urish
+            withAnimation(.easeOut(duration: 0.15)) {
+                heartbeatScale = 1.15
+                heartbeatGlow = 1.3
+            }
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                withAnimation(.easeIn(duration: 0.15)) {
+                    heartbeatScale = 1.0
+                    heartbeatGlow = 1.0
+                }
+            }
+            
+            // Ikkinchi urish
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                withAnimation(.easeOut(duration: 0.15)) {
+                    heartbeatScale = 1.12
+                    heartbeatGlow = 1.2
+                }
+            }
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                withAnimation(.easeIn(duration: 0.15)) {
+                    heartbeatScale = 1.0
+                    heartbeatGlow = 1.0
+                }
+            }
+        }
+        
+        // Har 1 sekundda yurak urishi
+        let interval = max(0.5, 1.0 / animationSpeed)
+        performHeartbeat()
+        animationTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { _ in
+            performHeartbeat()
+        }
     }
     
+    // 8. Energetic Rainbow - High-energy disco vibe
     private func startEnergeticRainbowAnimation() {
-        // Keyingi bosqichda to'ldiramiz
-        print("Energetic Rainbow animation - coming soon!")
+        // Tez rang o'zgarishi
+        withAnimation(.linear(duration: 2.0 / animationSpeed).repeatForever(autoreverses: false)) {
+            rainbowHue = 1.0
+        }
+        
+        // Tez harakat
+        withAnimation(.easeInOut(duration: 0.5).repeatForever(autoreverses: true)) {
+            rainbowPosition = 25
+        }
+        
+        // Energetic pulse
+        withAnimation(.easeInOut(duration: 0.3).repeatForever(autoreverses: true)) {
+            pulseScale = 1.2
+        }
     }
     
+    // 9. Mystic Glow - Dreamy va mysterious
     private func startMysticGlowAnimation() {
-        // Keyingi bosqichda to'ldiramiz
-        print("Mystic Glow animation - coming soon!")
+        // Sekin rang o'zgarishi (faqat purple-blue-indigo oralig'ida)
+        withAnimation(.easeInOut(duration: 5.0 / animationSpeed).repeatForever(autoreverses: true)) {
+            mysticHue = 0.8 // Purple dan blue gacha
+        }
+        
+        // Mystic pulsation
+        withAnimation(.easeInOut(duration: 2.5 / animationSpeed).repeatForever(autoreverses: true)) {
+            mysticPulse = 1.15
+            mysticGlow = 1.4
+        }
+        
+        // Sekin aylanish harakati
+        let interval = max(0.1, 0.5 / animationSpeed)
+        var angle: Double = 0
+        animationTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { _ in
+            angle += 0.1
+            withAnimation(.easeInOut(duration: 1.0)) {
+                animationOffset = sin(angle) * 15
+            }
+        }
+        
+        // Initial hue
+        mysticHue = 0.7 // Indigo
     }
 }

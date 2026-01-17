@@ -1,5 +1,5 @@
 //
-//  SettingsView.swift
+//  SettingsView.swift - Updated with CustomBackgroundView
 //  TicTacToePro
 //
 //  Created by Sunnatbek
@@ -14,12 +14,15 @@ struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var multiplayerVM: MultiplayerViewModel
     
+    // Check if custom background is enabled
+    @AppStorage("isSettingsBackgroundEnabled") private var isSettingsBackgroundEnabled: Bool = true
+    
     // Settings states
     @AppStorage(HapticManager.hapticsEnabledKey) private var hapticsEnabled = false
     @AppStorage("soundEffectsEnabled") private var soundEffectsEnabled = true
     @AppStorage("showAnimations") private var showAnimations = true
     @AppStorage("colorSchemePreference") private var colorSchemePreference = "system"
-    @AppStorage("profileName") private var profileName: String = ""  // Added
+    @AppStorage("profileName") private var profileName: String = ""
     @AppStorage("appLanguage") private var appLanguage: String = Locale.current.language.languageCode?.identifier ?? "en"
     
     @State private var showResetAlert = false
@@ -49,7 +52,13 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                premiumBackground
+                // Custom Background - avtomatik sozlamalar asosida
+                if isSettingsBackgroundEnabled {
+                    CustomBackgroundView(viewType: .settingsView)
+                } else {
+                    // Default fallback background
+                    premiumBackground
+                }
                 
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: isCompactHeightPhone ? 16 : 24) {
@@ -59,14 +68,8 @@ struct SettingsView: View {
                         // Profile Section (First)
                         profileSection
                         
-                        // Gameplay Settings
-                        // gameplaySection
-                        
                         // Appearance Settings
                         appearanceSection
-                        
-                        // Audio & Haptics
-                        // audioHapticsSection
                         
                         // About & Support
                         aboutSection
@@ -80,7 +83,6 @@ struct SettingsView: View {
                     .frame(maxWidth: contentMaxWidth)
                 }
             }
-
             
             .alert("Reset All Settings?", isPresented: $showResetAlert) {
                 Button("Cancel", role: .cancel) { }
@@ -198,22 +200,6 @@ struct SettingsView: View {
         }
     }
     
-    // MARK: - Gameplay Section
-    private var gameplaySection: some View {
-        SettingsCard(title: "Gameplay", icon: "gamecontroller.fill") {
-            VStack(spacing: 0) {
-                // Show Animations
-                SettingsToggleRow(
-                    icon: "sparkles",
-                    title: "Animations",
-                    description: "Enable visual animations",
-                    iconColor: .purple,
-                    isOn: $showAnimations
-                )
-            }
-        }
-    }
-    
     // MARK: - Appearance Section
     private var appearanceSection: some View {
         SettingsCard(title: "Appearance", icon: "paintbrush.fill") {
@@ -240,6 +226,9 @@ struct SettingsView: View {
                         .pickerStyle(.menu)
                     }
                 }
+                
+                Divider()
+                    .padding(.leading, 52)
                 
                 NavigationLink {
                     BackgroundView()
@@ -270,41 +259,7 @@ struct SettingsView: View {
                     .padding(.vertical, 12)
                     .contentShape(Rectangle())
                 }
-                }
-                
-                
-        }
-    }
-    
-    // MARK: - Audio & Haptics Section
-    private var audioHapticsSection: some View {
-        SettingsCard(title: "Audio & Haptics", icon: "speaker.wave.3.fill") {
-            VStack(spacing: 0) {
-                // Sound Effects
-                SettingsToggleRow(
-                    icon: "speaker.wave.2.fill",
-                    title: "Sound Effects",
-                    description: "Play sound effects during gameplay",
-                    iconColor: .green,
-                    isOn: $soundEffectsEnabled
-                )
-                
-                Divider()
-                    .padding(.leading, 52)
-                
-                // Haptic Feedback
-                SettingsToggleRow(
-                    icon: "hand.tap.fill",
-                    title: "Haptic Feedback",
-                    description: "Feel vibrations during gameplay",
-                    iconColor: .pink,
-                    isOn: $hapticsEnabled
-                )
-                .onChange(of: hapticsEnabled) { _, newValue in
-                    if newValue {
-                        HapticManager.playImpact(HapticFeedbackStyle.medium, force: true)
-                    }
-                }
+                .buttonStyle(.plain)
             }
         }
     }
@@ -401,7 +356,7 @@ struct SettingsView: View {
     }
     
     
-    // MARK: - Premium Background
+    // MARK: - Premium Background (Fallback)
     private var premiumBackground: some View {
         ZStack {
             LinearGradient(
@@ -472,7 +427,7 @@ struct SettingsView: View {
         soundEffectsEnabled = true
         showAnimations = true
         colorSchemePreference = "system"
-        profileName = ""  // Reset name
+        profileName = ""
         
         HapticManager.playNotification(HapticNotificationType.success, force: true)
     }
@@ -487,7 +442,7 @@ struct SettingsView: View {
     
     private func shareApp() {
         #if os(iOS)
-        let appURLString = "https://apps.apple.com/uz/app/tictactoepro/id6755810923" // Replace with actual App Store URL
+        let appURLString = "https://apps.apple.com/uz/app/tictactoepro/id6755810923"
         let items: [Any] = ["Check out Tic Tac Pro!", URL(string: appURLString) as Any]
         let activityVC = UIActivityViewController(activityItems: items, applicationActivities: nil)
         
@@ -696,7 +651,7 @@ struct SettingsNavigationLinkRow<Destination: View>: View {
     }
 }
 
-// MARK: - Settings Navigation Row (Updated with subtitle)
+// MARK: - Settings Navigation Row
 struct SettingsNavigationRow: View {
     let icon: String
     let title: String
@@ -756,8 +711,6 @@ struct SettingsNavigationRow: View {
     }
 }
 
-
-
 // MARK: - Feature Row
 struct FeatureRow: View {
     let icon: String
@@ -800,4 +753,3 @@ import UIKit
 #Preview {
     SettingsView().environmentObject(MultiplayerViewModel.preview)
 }
-

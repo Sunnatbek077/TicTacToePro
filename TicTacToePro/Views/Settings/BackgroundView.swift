@@ -88,10 +88,10 @@ struct BackgroundView: View {
     @Environment(\.horizontalSizeClass) private var hSizeClass
     @Environment(\.verticalSizeClass) private var vSizeClass
     
-    // Saqlanadigan holatlar
-    @AppStorage("isStartViewEnabled") private var isStartViewEnabled: Bool = true
-    @AppStorage("isMultiplayerEnabled") private var isMultiplayerViewEnabled: Bool = true
-    @AppStorage("isSettingsEnabled") private var isSettingsViewEnabled: Bool = true
+    // Background enable/disable holatlar - har bir view uchun
+    @AppStorage("isStartViewBackgroundEnabled") private var isStartViewBackgroundEnabled: Bool = true
+    @AppStorage("isMultiplayerBackgroundEnabled") private var isMultiplayerBackgroundEnabled: Bool = true
+    @AppStorage("isSettingsBackgroundEnabled") private var isSettingsBackgroundEnabled: Bool = true
     
     @AppStorage("enableBackgroundBlur") private var isEnabledBlur: Bool = false
     @AppStorage("enableBackgroundAnimation") private var isEnabledAnimation: Bool = true
@@ -120,6 +120,26 @@ struct BackgroundView: View {
         SelectableColor(color: .green),
         SelectableColor(color: .orange)
     ]
+    
+    // Rang tanlanganida saqlash
+    private func saveColorSelection() {
+        let colorNames = ["pink", "blue", "purple", "cyan", "indigo", "red", "green", "orange"]
+        for (index, colorName) in colorNames.enumerated() {
+            if index < colors.count {
+                UserDefaults.standard.set(colors[index].isSelected, forKey: "selectedColor_\(colorName)")
+            }
+        }
+    }
+    
+    // Saqlangan ranglarni yuklash
+    private func loadColorSelection() {
+        let colorNames = ["pink", "blue", "purple", "cyan", "indigo", "red", "green", "orange"]
+        for (index, colorName) in colorNames.enumerated() {
+            if index < colors.count {
+                colors[index].isSelected = UserDefaults.standard.bool(forKey: "selectedColor_\(colorName)")
+            }
+        }
+    }
     
     private var isCompactHeightPhone: Bool {
 #if os(iOS)
@@ -156,6 +176,12 @@ struct BackgroundView: View {
                     .padding(.horizontal, isCompactHeightPhone ? 12 : 16)
                     .padding(.vertical, isCompactHeightPhone ? 16 : 24)
                     .frame(maxWidth: contentMaxWidth)
+                }
+                .onAppear {
+                    loadColorSelection()
+                }
+                .onChange(of: colors) { _ in
+                    saveColorSelection()
                 }
             }
         }
@@ -477,14 +503,14 @@ struct BackgroundView: View {
     
     // MARK: - Tabs Section
     private var tabsSection: some View {
-        SettingsCard(title: "Visible Tabs", icon: "square.grid.2x2.fill") {
+        SettingsCard(title: "Enable Background", icon: "square.grid.2x2.fill") {
             VStack(spacing: 0) {
                 SettingsToggleRow(
                     icon: "gamecontroller.fill",
                     title: "Start Menu",
-                    description: "Show main game menu",
+                    description: "Enable custom background for Start Menu",
                     iconColor: .green,
-                    isOn: $isStartViewEnabled
+                    isOn: $isStartViewBackgroundEnabled
                 )
                 
                 Divider()
@@ -493,9 +519,9 @@ struct BackgroundView: View {
                 SettingsToggleRow(
                     icon: "person.line.dotted.person.fill",
                     title: "Multiplayer",
-                    description: "Show online multiplayer",
+                    description: "Enable custom background for Multiplayer",
                     iconColor: .blue,
-                    isOn: $isMultiplayerViewEnabled
+                    isOn: $isMultiplayerBackgroundEnabled
                 )
                 
                 Divider()
@@ -504,9 +530,9 @@ struct BackgroundView: View {
                 SettingsToggleRow(
                     icon: "gear",
                     title: "Settings",
-                    description: "Show settings tab",
+                    description: "Enable custom background for Settings",
                     iconColor: .gray,
-                    isOn: $isSettingsViewEnabled
+                    isOn: $isSettingsBackgroundEnabled
                 )
             }
         }
@@ -532,7 +558,7 @@ struct BackgroundView: View {
                         geometry: geometry,
                         isAnimated: isEnabledAnimation,
                         animationSpeed: animationSpeed,
-                        mood: selectedMood // Uzatish
+                        mood: selectedMood
                     )
                 }
                 
