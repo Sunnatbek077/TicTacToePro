@@ -89,6 +89,18 @@ struct LanguageSelectorView: View {
             }
         }
         .animation(.easeInOut(duration: 0.3), value: showRestartScreen)
+        .animation(.easeInOut(duration: 0.3), value: showRestartScreen)
+            #if os(iOS)
+            .navigationBarTitleDisplayMode(.inline)
+            #endif
+            .alert("Restart Required", isPresented: $showConfirmAlert) {
+                Button("Cancel", role: .cancel) { }
+                Button("Restart Now", role: .destructive) {
+                    applyLanguageChange(tempSelection)
+                }
+            } message: {
+                Text("To apply the language change, the app needs to restart. Your progress will be saved.")
+            }
     }
     
     private var mainContent: some View {
@@ -113,8 +125,18 @@ struct LanguageSelectorView: View {
                 .frame(maxWidth: contentMaxWidth)
             }
         }
-        .navigationBarTitleDisplayMode(.inline)
-        .alert("Restart Required", isPresented: $showConfirmAlert) {
+        .animation(.easeInOut(duration: 0.3), value: showRestartScreen)
+            #if os(iOS)
+            .navigationBarTitleDisplayMode(.inline)
+            #endif
+            .alert("Restart Required", isPresented: $showConfirmAlert) {
+                Button("Cancel", role: .cancel) { }
+                Button("Restart Now", role: .destructive) {
+                    applyLanguageChange(tempSelection)
+                }
+            } message: {
+                Text("To apply the language change, the app needs to restart. Your progress will be saved.")
+            }        .alert("Restart Required", isPresented: $showConfirmAlert) {
             Button("Cancel", role: .cancel) { }
             Button("Restart Now", role: .destructive) {
                 applyLanguageChange(tempSelection)

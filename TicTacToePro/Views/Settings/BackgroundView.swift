@@ -334,6 +334,7 @@ struct BackgroundView: View {
                     
                     // Custom Slider
                     VStack(spacing: 8) {
+#if os(iOS)
                         Slider(value: $animationSpeed, in: 0.0...1.0)
                             .tint(
                                 LinearGradient(
@@ -342,6 +343,7 @@ struct BackgroundView: View {
                                     endPoint: .trailing
                                 )
                             )
+#endif
                         
                         HStack {
                             Image(systemName: "tortoise.fill")

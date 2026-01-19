@@ -3,6 +3,7 @@
 //
 //  Created by Sunnatbek on 20/09/25.
 //  Updated with enhanced design for both light and dark modes
+//  tvOS optimized for remote control navigation
 //
 
 import SwiftUI
@@ -63,52 +64,8 @@ struct ConfigurationCard: View {
         )
         .offset(x: baseOffset.width + dragOffset.width, y: baseOffset.height + dragOffset.height)
         .rotationEffect(.degrees(rotation))
-        .scaleEffect(isLongPressed ? 1.03 : 1.0) // Slightly increased scale for feedback
-        #if os(tvOS)
-        .focusable(true)
-        .onMoveCommand { direction in
-            switch direction {
-            case .left:
-                // Toggle to AI (or keep AI) and animate left swipe feel
-                withAnimation(.spring(response: 0.55, dampingFraction: 0.85)) {
-                    selectedGameMode = .ai
-                    baseOffset = CGSize(width: -300, height: 0)
-                    rotation = -6
-                }
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                    withAnimation(.spring()) {
-                        baseOffset = .zero
-                        rotation = 0.0
-                    }
-                }
-            case .right:
-                // Toggle to PvP (or keep PvP) and animate right swipe feel
-                withAnimation(.spring(response: 0.55, dampingFraction: 0.85)) {
-                    selectedGameMode = .pvp
-                    baseOffset = CGSize(width: 300, height: 0)
-                    rotation = 6
-                }
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                    withAnimation(.spring()) {
-                        baseOffset = .zero
-                        rotation = 0.0
-                    }
-                }
-            default:
-                break
-            }
-        }
-        .onLongPressGesture(
-            minimumDuration: 0.5,
-            pressing: { pressing in
-                withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) {
-                    isLongPressed = pressing
-                    glowRadius = pressing ? 12 : 0 // kept for state but no blur uses it
-                }
-            },
-            perform: { }
-        )
-        #else
+        .scaleEffect(isLongPressed ? 1.03 : 1.0)
+        #if !os(tvOS)
         .gesture(
             DragGesture()
                 .updating($dragOffset) { value, state, _ in
@@ -141,13 +98,13 @@ struct ConfigurationCard: View {
             pressing: { pressing in
                 withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) {
                     isLongPressed = pressing
-                    glowRadius = pressing ? 12 : 0 // kept for state but no blur uses it
+                    glowRadius = pressing ? 12 : 0
                 }
             },
             perform: {
             }
         )
-        .sensoryFeedback(.impact(flexibility: .soft), trigger: isLongPressed) // Added haptic feedback
+        .sensoryFeedback(.impact(flexibility: .soft), trigger: isLongPressed)
         #endif
         .transaction { transaction in
             transaction.animation = nil
@@ -159,6 +116,9 @@ struct ConfigurationCard: View {
 struct PlayerSelectionView: View {
     @Binding var selectedPlayer: PlayerOption
     @Environment(\.colorScheme) private var colorScheme
+    #if os(tvOS)
+    @FocusState private var focusedPlayer: PlayerOption?
+    #endif
     
     var body: some View {
         VStack(spacing: 8) {
@@ -173,6 +133,24 @@ struct PlayerSelectionView: View {
                             selectedPlayer = player
                         }
                     } label: {
+                        #if os(tvOS)
+                        // tvOS: optimized for remote control
+                        Text(player.rawValue)
+                            .font(.largeTitle.bold())
+                            .frame(width: 120, height: 120)
+                            .foregroundStyle(selectedPlayer == player ? .primary : .secondary)
+                            .background(
+                                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                                    .fill(Color.primary.opacity(0.1))
+                            )
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                                    .strokeBorder(selectedPlayer == player ? Color.primary : Color.clear, lineWidth: 4)
+                            )
+                            .scaleEffect(focusedPlayer == player ? 1.1 : 1.0)
+                            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: focusedPlayer)
+                        #else
+                        // iOS/macOS: rangli gradient
                         let selectedBG = LinearGradient(colors: [.pink.opacity(0.9), .purple.opacity(0.9)], startPoint: .top, endPoint: .bottom)
                         let unselectedBG = LinearGradient(colors: [Color.gray.opacity(colorScheme == .dark ? 0.3 : 0.2)], startPoint: .top, endPoint: .bottom)
                         Text(player.rawValue)
@@ -187,7 +165,12 @@ struct PlayerSelectionView: View {
                             )
                             .shadow(color: .purple.opacity(selectedPlayer == player ? (colorScheme == .dark ? 0.4 : 0.2) : 0), radius: 4)
                             .animation(nil, value: selectedPlayer)
+                        #endif
                     }
+                    #if os(tvOS)
+                    .buttonStyle(.card)
+                    .focused($focusedPlayer, equals: player)
+                    #endif
                     .accessibilityLabel("Select \(player.rawValue) as starting player")
                 }
             }
@@ -199,6 +182,9 @@ struct PlayerSelectionView: View {
 struct GameModeSelectionView: View {
     @Binding var selectedGameMode: GameMode
     @Environment(\.colorScheme) private var colorScheme
+    #if os(tvOS)
+    @FocusState private var focusedMode: GameMode?
+    #endif
     
     var body: some View {
         VStack(spacing: 8) {
@@ -213,6 +199,29 @@ struct GameModeSelectionView: View {
                             selectedGameMode = mode
                         }
                     } label: {
+                        #if os(tvOS)
+                        // tvOS: optimized for remote control
+                        VStack(spacing: 8) {
+                            Image(systemName: mode == .ai ? "cpu" : "person.2.fill")
+                                .font(.system(size: 40))
+                            Text(mode.rawValue)
+                                .font(.title3.bold())
+                        }
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 140)
+                        .foregroundStyle(selectedGameMode == mode ? .primary : .secondary)
+                        .background(
+                            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                                .fill(Color.primary.opacity(0.1))
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                                .strokeBorder(selectedGameMode == mode ? Color.primary : Color.clear, lineWidth: 4)
+                        )
+                        .scaleEffect(focusedMode == mode ? 1.08 : 1.0)
+                        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: focusedMode)
+                        #else
+                        // iOS/macOS: rangli
                         let selectedBG = LinearGradient(colors: [.purple.opacity(0.9), .blue.opacity(0.9)], startPoint: .top, endPoint: .bottom)
                         let unselectedBG = LinearGradient(colors: [Color.gray.opacity(colorScheme == .dark ? 0.3 : 0.2)], startPoint: .top, endPoint: .bottom)
                         Text(mode.rawValue)
@@ -228,7 +237,12 @@ struct GameModeSelectionView: View {
                             )
                             .shadow(color: .blue.opacity(selectedGameMode == mode ? (colorScheme == .dark ? 0.4 : 0.2) : 0), radius: 4)
                             .animation(nil, value: selectedGameMode)
+                        #endif
                     }
+                    #if os(tvOS)
+                    .buttonStyle(.card)
+                    .focused($focusedMode, equals: mode)
+                    #endif
                     .accessibilityLabel("Select \(mode.rawValue) game mode")
                 }
             }
@@ -240,6 +254,9 @@ struct GameModeSelectionView: View {
 struct DifficultySelectionView: View {
     @Binding var selectedDifficulty: DifficultyOption
     @Environment(\.colorScheme) private var colorScheme
+    #if os(tvOS)
+    @FocusState private var focusedDifficulty: DifficultyOption?
+    #endif
     
     var body: some View {
         VStack(spacing: 8) {
@@ -254,6 +271,29 @@ struct DifficultySelectionView: View {
                             selectedDifficulty = difficulty
                         }
                     } label: {
+                        #if os(tvOS)
+                        // tvOS: optimized for remote control
+                        VStack(spacing: 8) {
+                            difficultyIcon(for: difficulty)
+                                .font(.system(size: 35))
+                            Text(difficulty.rawValue)
+                                .font(.title3.bold())
+                        }
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 130)
+                        .foregroundStyle(selectedDifficulty == difficulty ? .primary : .secondary)
+                        .background(
+                            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                                .fill(Color.primary.opacity(0.1))
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                                .strokeBorder(selectedDifficulty == difficulty ? Color.primary : Color.clear, lineWidth: 4)
+                        )
+                        .scaleEffect(focusedDifficulty == difficulty ? 1.08 : 1.0)
+                        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: focusedDifficulty)
+                        #else
+                        // iOS/macOS: rangli
                         let selectedBG = LinearGradient(colors: [.blue.opacity(0.9), .cyan.opacity(0.9)], startPoint: .top, endPoint: .bottom)
                         let unselectedBG = LinearGradient(colors: [Color.gray.opacity(colorScheme == .dark ? 0.3 : 0.2)], startPoint: .top, endPoint: .bottom)
                         Text(difficulty.rawValue)
@@ -269,10 +309,27 @@ struct DifficultySelectionView: View {
                             )
                             .shadow(color: .cyan.opacity(selectedDifficulty == difficulty ? (colorScheme == .dark ? 0.4 : 0.2) : 0), radius: 4)
                             .animation(nil, value: selectedDifficulty)
+                        #endif
                     }
+                    #if os(tvOS)
+                    .buttonStyle(.card)
+                    .focused($focusedDifficulty, equals: difficulty)
+                    #endif
                     .accessibilityLabel("Select \(difficulty.rawValue) difficulty")
                 }
             }
+        }
+    }
+    
+    @ViewBuilder
+    private func difficultyIcon(for difficulty: DifficultyOption) -> some View {
+        switch difficulty {
+        case .easy:
+            Image(systemName: "hare.fill")
+        case .medium:
+            Image(systemName: "bolt.fill")
+        case .hard:
+            Image(systemName: "flame.fill")
         }
     }
 }
