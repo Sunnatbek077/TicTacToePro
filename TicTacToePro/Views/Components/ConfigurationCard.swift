@@ -344,3 +344,5 @@ struct DifficultySelectionView: View {
         cardBackground: AnyShapeStyle(.ultraThinMaterial)
     )
 }
+
+
