@@ -208,24 +208,7 @@ struct MultiplayerMenuView: View {
                     }
                 )
             }
-            .sheet(isPresented: $showBoardSizeSelector) {
-                BoardSizeSelectorView(
-                    selectedSize: $selectedBoardSize,
-                    onConfirm: {
-                        showBoardSizeSelector = false
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                            showTimeLimitSelector = true
-                        }
-                    },
-                    onCancel: {
-                        showBoardSizeSelector = false
-                    }
-                )
-                #if os(iOS)
-                .presentationDetents([.medium, .large])
-                .presentationDragIndicator(.visible)
-                #endif
-            }
+            
             .sheet(isPresented: $showTimeLimitSelector) {
                 TimeLimitSelectorView(
                     selectedTimeLimit: $selectedTimeLimit,

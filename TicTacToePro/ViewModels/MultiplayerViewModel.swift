@@ -152,12 +152,18 @@ class MultiplayerViewModel: ObservableObject {
             )
             
             // Initialize MultiplayerGame with all required properties
-            let game = MultiplayerGame(
+            var game = MultiplayerGame(
                 id: UUID().uuidString, // Temporary ID, will be updated by Firebase
                 player1: player,
                 player2: nil,
                 settings: settings
             )
+            
+            // Set private game properties
+            game.isPrivate = isPrivate
+            if isPrivate {
+                game.roomCode = GameRoom.generateRoomCode()
+            }
             
             // Create game in Firebase
             let gameId = try await firebaseManager.createGame(game)

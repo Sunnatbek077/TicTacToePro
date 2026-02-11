@@ -2113,6 +2113,9 @@
         }
       }
     },
+    "Board Size" : {
+
+    },
     "Board square" : {
       "localizations" : {
         "ar" : {
@@ -2394,6 +2397,7 @@
       }
     },
     "Choose Board Size" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -2814,6 +2818,7 @@
       }
     },
     "Continue" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -7154,6 +7159,7 @@
       }
     },
     "Select the grid size for your game" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -8286,6 +8292,9 @@
           }
         }
       }
+    },
+    "Time Limit" : {
+
     },
     "Time limit %@" : {
       "localizations" : {

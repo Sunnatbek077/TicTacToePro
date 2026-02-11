@@ -12,39 +12,45 @@ struct ConfigurationCard: View {
     @Binding var selectedPlayer: PlayerOption
     @Binding var selectedGameMode: GameMode
     @Binding var selectedDifficulty: DifficultyOption
+    @Binding var selectedBoardSize: BoardSize
+    @Binding var selectedTimeLimit: TimeLimitOption
     var isCompactHeightPhone: Bool
     var shadowColor: Color
     var cardBackground: AnyShapeStyle
     
-    @GestureState private var dragOffset: CGSize = .zero
-    @State private var baseOffset: CGSize = .zero
-    @State private var rotation: Double = 0.0
     @State private var isLongPressed = false
-    @State private var glowRadius: CGFloat = 0
-    @Namespace private var selectionNamespace
     @Environment(\.colorScheme) private var colorScheme
-    
-    private var accentGradient: LinearGradient {
-        LinearGradient(
-            colors: [Color.pink.opacity(0.9), Color.purple.opacity(0.9), Color.blue.opacity(0.9)],
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-        )
-    }
     
     var body: some View {
         let corner: CGFloat = 24
         
-        VStack(spacing: isCompactHeightPhone ? 16 : 24) {
-            PlayerSelectionView(selectedPlayer: $selectedPlayer)
-            
-            GameModeSelectionView(selectedGameMode: $selectedGameMode)
-            
-            if !selectedGameMode.isPVP {
-                DifficultySelectionView(selectedDifficulty: $selectedDifficulty)
+        TabView {
+            // Page 1: Game Settings
+            VStack(spacing: isCompactHeightPhone ? 16 : 24) {
+                PlayerSelectionView(selectedPlayer: $selectedPlayer)
+                
+                GameModeSelectionView(selectedGameMode: $selectedGameMode)
+                
+                if !selectedGameMode.isPVP {
+                    DifficultySelectionView(selectedDifficulty: $selectedDifficulty)
+                }
             }
+            .padding(isCompactHeightPhone ? 16 : 24)
+            .tag(0)
+            
+            // Page 2: Board Size
+            BoardSizeSelectionView(selectedSize: $selectedBoardSize, isCompactHeightPhone: isCompactHeightPhone)
+                .padding(isCompactHeightPhone ? 16 : 24)
+                .tag(1)
+            
+            // Page 3: Time Limit
+            TimeLimitSelectionView(selectedTimeLimit: $selectedTimeLimit)
+                .padding(isCompactHeightPhone ? 16 : 24)
+                .tag(2)
         }
-        .padding(isCompactHeightPhone ? 16 : 24)
+        .tabViewStyle(.page(indexDisplayMode: .always))
+        .indexViewStyle(.page(backgroundDisplayMode: .always))
+        .frame(height: isCompactHeightPhone ? 380 : 450) // Fixed height to accommodate content
         .background(
             RoundedRectangle(cornerRadius: corner, style: .continuous)
                 .fill(cardBackground)
@@ -62,43 +68,13 @@ struct ConfigurationCard: View {
                 .opacity(isLongPressed ? 1 : 0)
                 .animation(.spring(response: 0.35, dampingFraction: 0.85), value: isLongPressed)
         )
-        .offset(x: baseOffset.width + dragOffset.width, y: baseOffset.height + dragOffset.height)
-        .rotationEffect(.degrees(rotation))
         .scaleEffect(isLongPressed ? 1.03 : 1.0)
         #if !os(tvOS)
-        .gesture(
-            DragGesture()
-                .updating($dragOffset) { value, state, _ in
-                    state = value.translation
-                    rotation = Double(value.translation.width / 50)
-                }
-                .onEnded { value in
-                    let threshold: CGFloat = 100
-                    withAnimation(.spring(response: 0.55, dampingFraction: 0.85)) {
-                        if abs(value.translation.width) > threshold {
-                            selectedGameMode = selectedGameMode == .ai ? .pvp : .ai
-                            baseOffset = CGSize(width: value.translation.width > 0 ? 300 : -300, height: 0)
-                        } else {
-                            baseOffset = .zero
-                            rotation = 0.0
-                        }
-                    }
-                    if abs(value.translation.width) > threshold {
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                            withAnimation(.spring()) {
-                                baseOffset = .zero
-                                rotation = 0.0
-                            }
-                        }
-                    }
-                }
-        )
         .onLongPressGesture(
             minimumDuration: 0.5,
             pressing: { pressing in
                 withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) {
                     isLongPressed = pressing
-                    glowRadius = pressing ? 12 : 0
                 }
             },
             perform: {
@@ -334,15 +310,195 @@ struct DifficultySelectionView: View {
     }
 }
 
+// MARK: - Board Size Selection View (Internal)
+struct BoardSizeSelectionView: View {
+    @Binding var selectedSize: BoardSize
+    var isCompactHeightPhone: Bool
+    @Environment(\.colorScheme) private var colorScheme
+    
+    var body: some View {
+        VStack(spacing: 8) {
+            Text("Board Size")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.secondary)
+            
+            ScrollView(.vertical, showsIndicators: false) {
+                LazyVGrid(columns: [
+                    GridItem(.flexible(), spacing: 12),
+                    GridItem(.flexible(), spacing: 12)
+                ], spacing: 12) {
+                    ForEach(BoardSize.allCases) { size in
+                        BoardSizeItem(
+                            size: size,
+                            isSelected: selectedSize == size,
+                            colorScheme: colorScheme
+                        ) {
+                            withAnimation(.spring(duration: 0.3, bounce: 0.4)) {
+                                selectedSize = size
+                            }
+                            #if os(iOS)
+                            let impact = UIImpactFeedbackGenerator(style: .light)
+                            impact.impactOccurred()
+                            #endif
+                        }
+                    }
+                }
+                .padding(.horizontal, 4)
+                .padding(.bottom, 16)
+            }
+        }
+    }
+}
+
+struct BoardSizeItem: View {
+    let size: BoardSize
+    let isSelected: Bool
+    let colorScheme: ColorScheme
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 8) {
+                // Icon
+                Text(size.emoji)
+                    .font(.system(size: 24))
+                
+                // Title
+                Text(size.title)
+                    .font(.headline)
+                    .foregroundColor(isSelected ? size.color : .primary)
+                
+                // Difficulty badge
+                Text(size.difficulty)
+                    .font(.caption2.bold())
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(
+                        Capsule()
+                            .fill(size.color.opacity(0.2))
+                    )
+                    .foregroundColor(size.color)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 12)
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(colorScheme == .dark ? Color(white: 0.15) : .white)
+                    .shadow(color: isSelected ? size.color.opacity(0.3) : .black.opacity(0.05), radius: 8)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .strokeBorder(
+                        isSelected
+                        ? LinearGradient(colors: [size.color, size.color.opacity(0.6)], startPoint: .topLeading, endPoint: .bottomTrailing)
+                        : LinearGradient(colors: [.clear], startPoint: .topLeading, endPoint: .bottomTrailing),
+                        lineWidth: isSelected ? 2 : 0
+                    )
+            )
+            .scaleEffect(isSelected ? 1.05 : 1.0)
+            .animation(.spring(duration: 0.3, bounce: 0.4), value: isSelected)
+        }
+        .buttonStyle(.plain)
+    }
+}
+
 #Preview {
     ConfigurationCard(
         selectedPlayer: .constant(.x),
         selectedGameMode: .constant(.ai),
         selectedDifficulty: .constant(.easy),
+        selectedBoardSize: .constant(.small),
+        selectedTimeLimit: .constant(.tenMinutes),
         isCompactHeightPhone: false,
         shadowColor: .gray,
         cardBackground: AnyShapeStyle(.ultraThinMaterial)
     )
+}
+
+// MARK: - Time Limit Selection View (Internal)
+struct TimeLimitSelectionView: View {
+    @Binding var selectedTimeLimit: TimeLimitOption
+    @Environment(\.colorScheme) private var colorScheme
+    @State private var animateIn = false
+    
+    var body: some View {
+        VStack(spacing: 8) {
+            Text("Time Limit")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.secondary)
+            
+            ScrollView(.vertical, showsIndicators: false) {
+                LazyVGrid(columns: [
+                    GridItem(.flexible(), spacing: 12),
+                    GridItem(.flexible(), spacing: 12)
+                ], spacing: 12) {
+                    ForEach(TimeLimitOption.allCases) { option in
+                        TimeLimitItem(
+                            timeLimit: option,
+                            isSelected: selectedTimeLimit == option,
+                            colorScheme: colorScheme
+                        ) {
+                            withAnimation(.spring(duration: 0.3, bounce: 0.4)) {
+                                selectedTimeLimit = option
+                            }
+                            #if os(iOS)
+                            let impact = UIImpactFeedbackGenerator(style: .light)
+                            impact.impactOccurred()
+                            #endif
+                        }
+                    }
+                }
+                .padding(.horizontal, 4)
+                .padding(.bottom, 16)
+            }
+        }
+    }
+}
+
+struct TimeLimitItem: View {
+    let timeLimit: TimeLimitOption
+    let isSelected: Bool
+    let colorScheme: ColorScheme
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 8) {
+                // Icon
+                Text(timeLimit.emoji)
+                    .font(.system(size: 24))
+                
+                // Title
+                Text(timeLimit.title)
+                    .font(.headline)
+                    .foregroundColor(isSelected ? timeLimit.color : .primary)
+                
+                // Description
+                Text(timeLimit.description)
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 12)
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(colorScheme == .dark ? Color(white: 0.15) : .white)
+                    .shadow(color: isSelected ? timeLimit.color.opacity(0.3) : .black.opacity(0.05), radius: 8)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .strokeBorder(
+                        isSelected
+                        ? LinearGradient(colors: [timeLimit.color, timeLimit.color.opacity(0.6)], startPoint: .topLeading, endPoint: .bottomTrailing)
+                        : LinearGradient(colors: [.clear], startPoint: .topLeading, endPoint: .bottomTrailing),
+                        lineWidth: isSelected ? 2 : 0
+                    )
+            )
+            .scaleEffect(isSelected ? 1.05 : 1.0)
+            .animation(.spring(duration: 0.3, bounce: 0.4), value: isSelected)
+        }
+        .buttonStyle(.plain)
+    }
 }
 
 

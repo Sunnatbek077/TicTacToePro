@@ -11,63 +11,6 @@ import SwiftUI
 import CoreHaptics
 #endif
 
-// MARK: - Time Limit Options
-enum TimeLimitOption: Int, CaseIterable, Identifiable {
-    case fiveMinutes   = 5
-    case tenMinutes    = 10
-    case fifteenMinutes = 15
-    case twentyMinutes = 20
-    case thirtyMinutes = 30
-    case unlimited     = 0
-    
-    var id: Int { rawValue }
-    
-    var title: String {
-        rawValue == 0 ? "Unlimited" : "\(rawValue) min"
-    }
-    
-    var description: String {
-        switch self {
-        case .fiveMinutes:   return "Quick Match"
-        case .tenMinutes:    return "Standard"
-        case .fifteenMinutes: return "Moderate"
-        case .twentyMinutes: return "Extended"
-        case .thirtyMinutes: return "Long Play"
-        case .unlimited:     return "No Time Limit"
-        }
-    }
-    
-    var emoji: String {
-        switch self {
-        case .fiveMinutes:   return "⚡"
-        case .tenMinutes:    return "⏱️"
-        case .fifteenMinutes: return "⌛"
-        case .twentyMinutes: return "⏳"
-        case .thirtyMinutes: return "🕰️"
-        case .unlimited:     return "∞"
-        }
-    }
-    
-    var color: Color {
-        switch self {
-        case .fiveMinutes:   return .red
-        case .tenMinutes:    return .blue
-        case .fifteenMinutes: return .purple
-        case .twentyMinutes: return .orange
-        case .thirtyMinutes: return .green
-        case .unlimited:     return .cyan
-        }
-    }
-    
-    // Re-usable gradient for the selected border
-    var selectionGradient: LinearGradient {
-        LinearGradient(colors: [color, color.opacity(0.6)],
-                       startPoint: .topLeading,
-                       endPoint: .bottomTrailing)
-    }
-}
-
-
 
 // MARK: - Time Limit View
 struct TimeLimitView: View {
@@ -214,3 +157,4 @@ struct TimeLimitView_Previews: PreviewProvider {
     }
 }
 #endif
+

@@ -221,6 +221,8 @@ struct StartMenuView: View {
                                 selectedPlayer: $selectedPlayer,
                                 selectedGameMode: $selectedGameMode,
                                 selectedDifficulty: $selectedDifficulty,
+                                selectedBoardSize: $selectedBoardSize,
+                                selectedTimeLimit: $selectedTimeLimit,
                                 isCompactHeightPhone: isCompactHeightPhone,
                                 shadowColor: colorScheme == .dark ? .black : .gray,
                                 cardBackground: cardBackground
@@ -229,7 +231,7 @@ struct StartMenuView: View {
                             .background(RoundedRectangle(cornerRadius: 28).fill(cardBackground))
                             StartButton(isCompactHeightPhone: isCompactHeightPhone) {
                                 triggerHaptic()
-                                showBoardSizeSelector = true
+                                startGame()
                             }
                             .background(RoundedRectangle(cornerRadius: 20).fill(accentGradient.opacity(colorScheme == .dark ? 0.18 : 0.24)))
                             .overlay(
@@ -273,39 +275,6 @@ struct StartMenuView: View {
                         .onDisappear { appState.isGameOpen = false }
                     }
                 }
-            }
-            
-            .sheet(isPresented: $showBoardSizeSelector) {
-                BoardSizeSelectorView(
-                    selectedSize: $selectedBoardSize,
-                    onConfirm: {
-                        showBoardSizeSelector = false
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                            showTimeLimitSelector = true
-                        }
-                    },
-                    onCancel: {
-                        showBoardSizeSelector = false
-                    }
-                )
-                .presentationDetents([.medium, .large])
-                .presentationDragIndicator(.visible)
-            }
-            .sheet(isPresented: $showTimeLimitSelector) {
-                TimeLimitSelectorView(
-                    selectedTimeLimit: $selectedTimeLimit,
-                    onConfirm: {
-                        showTimeLimitSelector = false
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                            startGame()
-                        }
-                    },
-                    onCancel: {
-                        showTimeLimitSelector = false
-                    }
-                )
-                .presentationDetents([.medium, .large])
-                .presentationDragIndicator(.visible)
             }
         }
         .task {
@@ -398,194 +367,7 @@ struct StartMenuView: View {
     }
 }
 
-// MARK: - Board Size Selector View
-struct BoardSizeSelectorView: View {
-    @Binding var selectedSize: BoardSize
-    let onConfirm: () -> Void
-    let onCancel: () -> Void
-    
-    @Environment(\.colorScheme) private var colorScheme
-    @State private var animateIn = false
-    
-    var body: some View {
-        ZStack {
-            // Premium background
-            LinearGradient(
-                colors: colorScheme == .dark
-                ? [Color(red: 0.08, green: 0.08, blue: 0.10), Color(red: 0.11, green: 0.12, blue: 0.18)]
-                : [Color(red: 0.95, green: 0.96, blue: 0.99), Color(red: 0.90, green: 0.92, blue: 0.98)],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            .ignoresSafeArea()
-            
-            VStack(spacing: 24) {
-                // Header
-                VStack(spacing: 8) {
-                    Text("Choose Board Size")
-                        .font(.title2.bold())
-                        .foregroundStyle(
-                            LinearGradient(
-                                colors: [.pink, .purple, .blue],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
-                        )
-                    
-                    Text("Select the grid size for your game")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                }
-                .padding(.top, 20)
-                
-                // Board size options
-                ScrollView {
-                    LazyVGrid(columns: [
-                        GridItem(.flexible(), spacing: 12),
-                        GridItem(.flexible(), spacing: 12)
-                    ], spacing: 12) {
-                        ForEach(BoardSize.allCases) { size in
-                            BoardSizeCard(
-                                size: size,
-                                isSelected: selectedSize == size,
-                                colorScheme: colorScheme
-                            ) {
-                                withAnimation(.spring(duration: 0.3, bounce: 0.4)) {
-                                    selectedSize = size
-                                }
-#if os(iOS)
-                                let impact = UIImpactFeedbackGenerator(style: .light)
-                                impact.impactOccurred()
-#endif
-                            }
-                            .scaleEffect(animateIn ? 1 : 0.8)
-                            .opacity(animateIn ? 1 : 0)
-                            .animation(
-                                .spring(duration: 0.5, bounce: 0.4)
-                                .delay(Double(size.rawValue - 3) * 0.05),
-                                value: animateIn
-                            )
-                        }
-                    }
-                    .padding()
-                }
-                
-                // Action buttons
-                HStack(spacing: 12) {
-                    Button(action: onCancel) {
-                        Text("Cancel")
-                            .font(.headline)
-                            .foregroundColor(.secondary)
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(
-                                RoundedRectangle(cornerRadius: 16)
-                                    .fill(Color.gray.opacity(0.2))
-                            )
-                    }
-                    
-                    Button(action: onConfirm) {
-                        HStack {
-                            Text("Continue")
-                                .font(.headline.bold())
-                            Image(systemName: "arrow.right")
-                        }
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(
-                            LinearGradient(
-                                colors: [.pink, .purple, .blue],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
-                        )
-                        .clipShape(RoundedRectangle(cornerRadius: 16))
-                        .shadow(color: .purple.opacity(0.4), radius: 12, x: 0, y: 6)
-                    }
-                }
-                .padding(.horizontal)
-                .padding(.bottom, 20)
-            }
-        }
-        .onAppear {
-            animateIn = true
-        }
-    }
-}
 
-// MARK: - Board Size Card
-struct BoardSizeCard: View {
-    let size: BoardSize
-    let isSelected: Bool
-    let colorScheme: ColorScheme
-    let action: () -> Void
-    
-    var body: some View {
-        Button(action: action) {
-            VStack(spacing: 12) {
-                // Icon
-                ZStack {
-                    Circle()
-                        .fill(
-                            LinearGradient(
-                                colors: isSelected
-                                ? [size.color.opacity(0.8), size.color]
-                                : [Color.gray.opacity(0.3), Color.gray.opacity(0.2)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                        .frame(width: 60, height: 60)
-                        .shadow(color: isSelected ? size.color.opacity(0.5) : .clear, radius: 10)
-                    
-                    Text(size.emoji)
-                        .font(.system(size: 32))
-                }
-                
-                // Title
-                Text(size.title)
-                    .font(.title3.bold())
-                    .foregroundColor(isSelected ? size.color : .primary)
-                
-                // Description
-                Text(size.description)
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                
-                // Difficulty badge
-                Text(size.difficulty)
-                    .font(.caption2.bold())
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(
-                        Capsule()
-                            .fill(size.color.opacity(0.2))
-                    )
-                    .foregroundColor(size.color)
-            }
-            .frame(maxWidth: .infinity)
-            .padding()
-            .background(
-                RoundedRectangle(cornerRadius: 20)
-                    .fill(colorScheme == .dark ? Color(white: 0.15) : .white)
-                    .shadow(color: isSelected ? size.color.opacity(0.3) : .black.opacity(0.1), radius: 12)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 20)
-                    .strokeBorder(
-                        isSelected
-                        ? LinearGradient(colors: [size.color, size.color.opacity(0.6)], startPoint: .topLeading, endPoint: .bottomTrailing)
-                        : LinearGradient(colors: [.clear], startPoint: .topLeading, endPoint: .bottomTrailing),
-                        lineWidth: isSelected ? 3 : 0
-                    )
-            )
-            .scaleEffect(isSelected ? 1.05 : 1.0)
-            .animation(.spring(duration: 0.3, bounce: 0.4), value: isSelected)
-        }
-        .buttonStyle(.plain)
-    }
-}
 
 #Preview {
     StartMenuView()
