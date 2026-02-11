@@ -356,16 +356,34 @@ struct BoardSizeItem: View {
     let colorScheme: ColorScheme
     let action: () -> Void
     
+    private let cornerRadius: CGFloat = 16
+    
     var body: some View {
         Button(action: action) {
             VStack(spacing: 8) {
                 // Icon
-                Text(size.emoji)
-                    .font(.system(size: 24))
+                ZStack {
+                    Circle()
+                        .fill(
+                            LinearGradient(
+                                colors: isSelected
+                                    ? [size.color.opacity(0.8), size.color]
+                                    : [Color.gray.opacity(0.3), Color.gray.opacity(0.2)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .frame(width: 50, height: 50)
+                        .shadow(color: isSelected ? size.color.opacity(0.5) : .clear,
+                                radius: 8)
+                    
+                    Text(size.emoji)
+                        .font(.system(size: 24))
+                }
                 
                 // Title
                 Text(size.title)
-                    .font(.headline)
+                    .font(.body.bold())
                     .foregroundColor(isSelected ? size.color : .primary)
                 
                 // Difficulty badge
@@ -382,12 +400,12 @@ struct BoardSizeItem: View {
             .frame(maxWidth: .infinity)
             .padding(.vertical, 12)
             .background(
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(colorScheme == .dark ? Color(white: 0.15) : .white)
-                    .shadow(color: isSelected ? size.color.opacity(0.3) : .black.opacity(0.05), radius: 8)
+                RoundedRectangle(cornerRadius: cornerRadius)
+                    .fill(backgroundColor)
+                    .shadow(color: shadowColor, radius: 8)
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 16)
+                RoundedRectangle(cornerRadius: cornerRadius)
                     .strokeBorder(
                         isSelected
                         ? LinearGradient(colors: [size.color, size.color.opacity(0.6)], startPoint: .topLeading, endPoint: .bottomTrailing)
@@ -399,6 +417,14 @@ struct BoardSizeItem: View {
             .animation(.spring(duration: 0.3, bounce: 0.4), value: isSelected)
         }
         .buttonStyle(.plain)
+    }
+    
+    private var backgroundColor: Color {
+        colorScheme == .dark ? Color(white: 0.15) : .white
+    }
+    
+    private var shadowColor: Color {
+        isSelected ? size.color.opacity(0.3) : .black.opacity(0.1)
     }
 }
 
@@ -461,16 +487,34 @@ struct TimeLimitItem: View {
     let colorScheme: ColorScheme
     let action: () -> Void
     
+    private let cornerRadius: CGFloat = 16
+    
     var body: some View {
         Button(action: action) {
             VStack(spacing: 8) {
                 // Icon
-                Text(timeLimit.emoji)
-                    .font(.system(size: 24))
+                ZStack {
+                    Circle()
+                        .fill(
+                            LinearGradient(
+                                colors: isSelected
+                                    ? [timeLimit.color.opacity(0.8), timeLimit.color]
+                                    : [Color.gray.opacity(0.3), Color.gray.opacity(0.2)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .frame(width: 50, height: 50)
+                        .shadow(color: isSelected ? timeLimit.color.opacity(0.5) : .clear,
+                                radius: 8)
+                    
+                    Text(timeLimit.emoji)
+                        .font(.system(size: 24))
+                }
                 
                 // Title
                 Text(timeLimit.title)
-                    .font(.headline)
+                    .font(.body.bold())
                     .foregroundColor(isSelected ? timeLimit.color : .primary)
                 
                 // Description
@@ -481,12 +525,12 @@ struct TimeLimitItem: View {
             .frame(maxWidth: .infinity)
             .padding(.vertical, 12)
             .background(
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(colorScheme == .dark ? Color(white: 0.15) : .white)
-                    .shadow(color: isSelected ? timeLimit.color.opacity(0.3) : .black.opacity(0.05), radius: 8)
+                RoundedRectangle(cornerRadius: cornerRadius)
+                    .fill(backgroundColor)
+                    .shadow(color: shadowColor, radius: 8)
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 16)
+                RoundedRectangle(cornerRadius: cornerRadius)
                     .strokeBorder(
                         isSelected
                         ? LinearGradient(colors: [timeLimit.color, timeLimit.color.opacity(0.6)], startPoint: .topLeading, endPoint: .bottomTrailing)
@@ -498,6 +542,14 @@ struct TimeLimitItem: View {
             .animation(.spring(duration: 0.3, bounce: 0.4), value: isSelected)
         }
         .buttonStyle(.plain)
+    }
+    
+    private var backgroundColor: Color {
+        colorScheme == .dark ? Color(white: 0.15) : .white
+    }
+    
+    private var shadowColor: Color {
+        isSelected ? timeLimit.color.opacity(0.3) : .black.opacity(0.1)
     }
 }
 
