@@ -360,27 +360,7 @@ struct BoardSizeItem: View {
     
     var body: some View {
         Button(action: action) {
-            VStack(spacing: 8) {
-                // Icon
-                ZStack {
-                    Circle()
-                        .fill(
-                            LinearGradient(
-                                colors: isSelected
-                                    ? [size.color.opacity(0.8), size.color]
-                                    : [Color.gray.opacity(0.3), Color.gray.opacity(0.2)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                        .frame(width: 50, height: 50)
-                        .shadow(color: isSelected ? size.color.opacity(0.5) : .clear,
-                                radius: 8)
-                    
-                    Text(size.emoji)
-                        .font(.system(size: 24))
-                }
-                
+            VStack(spacing: 6) {
                 // Title
                 Text(size.title)
                     .font(.body.bold())
@@ -388,7 +368,7 @@ struct BoardSizeItem: View {
                 
                 // Difficulty badge
                 Text(size.difficulty)
-                    .font(.caption2.bold())
+                    .font(.caption.bold())
                     .padding(.horizontal, 6)
                     .padding(.vertical, 2)
                     .background(
@@ -398,7 +378,7 @@ struct BoardSizeItem: View {
                     .foregroundColor(size.color)
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 12)
+            .padding(.vertical, 10)
             .background(
                 RoundedRectangle(cornerRadius: cornerRadius)
                     .fill(backgroundColor)
@@ -491,27 +471,7 @@ struct TimeLimitItem: View {
     
     var body: some View {
         Button(action: action) {
-            VStack(spacing: 8) {
-                // Icon
-                ZStack {
-                    Circle()
-                        .fill(
-                            LinearGradient(
-                                colors: isSelected
-                                    ? [timeLimit.color.opacity(0.8), timeLimit.color]
-                                    : [Color.gray.opacity(0.3), Color.gray.opacity(0.2)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                        .frame(width: 50, height: 50)
-                        .shadow(color: isSelected ? timeLimit.color.opacity(0.5) : .clear,
-                                radius: 8)
-                    
-                    Text(timeLimit.emoji)
-                        .font(.system(size: 24))
-                }
-                
+            VStack(spacing: 6) {
                 // Title
                 Text(timeLimit.title)
                     .font(.body.bold())
@@ -519,11 +479,11 @@ struct TimeLimitItem: View {
                 
                 // Description
                 Text(timeLimit.description)
-                    .font(.caption2)
+                    .font(.caption)
                     .foregroundColor(.secondary)
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 12)
+            .padding(.vertical, 10)
             .background(
                 RoundedRectangle(cornerRadius: cornerRadius)
                     .fill(backgroundColor)
