@@ -123,6 +123,7 @@ struct StartMenuView: View {
     @State private var selectedBoardSize: BoardSize = .small
     @State private var selectedTimeLimit: TimeLimitOption = .tenMinutes
     @State private var showTimeLimitSelector = false
+    @State private var currentPage: Int = 0
     
     @StateObject private var viewModel = ViewModel()
     @StateObject private var ticTacToeModel = GameViewModel()
@@ -211,48 +212,49 @@ struct StartMenuView: View {
                 }
                 
                 ScrollView(showsIndicators: false) {
-                    VStack(spacing: isCompactHeightPhone ? 16 : 24) {
+                    VStack(spacing: isCompactHeightPhone ? 20 : 32) {
                         
-                        VStack {
-                            HeroHeader(isCompactHeightPhone: isCompactHeightPhone,
-                                       configurationSummary: configurationSummary)
+                        // Header and Configuration Card Group
+                        VStack(spacing: isCompactHeightPhone ? 12 : 16) {
+                            HeroHeader(
+                                isCompactHeightPhone: isCompactHeightPhone,
+                                configurationSummary: configurationSummary
+                            )
                             .font(headerFont)
+                            
                             ConfigurationCard(
                                 selectedPlayer: $selectedPlayer,
                                 selectedGameMode: $selectedGameMode,
                                 selectedDifficulty: $selectedDifficulty,
                                 selectedBoardSize: $selectedBoardSize,
                                 selectedTimeLimit: $selectedTimeLimit,
+                                currentPage: $currentPage,
                                 isCompactHeightPhone: isCompactHeightPhone,
                                 shadowColor: colorScheme == .dark ? .black : .gray,
                                 cardBackground: cardBackground
                             )
-                            .frame(maxWidth: 700)
-                            .background(RoundedRectangle(cornerRadius: 28).fill(cardBackground))
-                            StartButton(isCompactHeightPhone: isCompactHeightPhone) {
-                                triggerHaptic()
-                                startGame()
-                            }
-                            .background(RoundedRectangle(cornerRadius: 20).fill(accentGradient.opacity(colorScheme == .dark ? 0.18 : 0.24)))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 28)
-                                    .strokeBorder(
-                                        colorScheme == .dark
-                                        ? Color.white.opacity(0.06)
-                                        : Color.purple.opacity(0.08),
-                                        lineWidth: 1
-                                    )
-                            )
-                            .frame(maxWidth: 700)
-
                         }
-
+                        .frame(maxWidth: contentMaxWidth)
                         .shadow(color: premiumShadow.0, radius: premiumShadow.1, x: 0, y: premiumShadow.2)
-                        .padding(.top, isCompactHeightPhone ? 4 : 8)
-                        .transition(.scale.combined(with: .opacity))
                         
-                        
-                        .shadow(color: .purple.opacity(colorScheme == .dark ? 0.35 : 0.25), radius: 18, x: 0, y: 10)
+                        // Start/Next Button
+                        StartButton(
+                            isCompactHeightPhone: isCompactHeightPhone,
+                            action: {
+                                triggerHaptic()
+                                if currentPage < 2 {
+                                    withAnimation {
+                                        currentPage += 1
+                                    }
+                                } else {
+                                    startGame()
+                                }
+                            },
+                            buttonName: currentPage < 2 ? "Next" : "Start Game",
+                            showGameBinding: $showGame
+                        )
+                        .frame(maxWidth: contentMaxWidth)
+                        .padding(.horizontal, isCompactHeightPhone ? 8 : 12)
                         .sensoryFeedback(.success, trigger: showGame)
                     }
                     .padding(.horizontal, isCompactHeightPhone ? 12 : 16)

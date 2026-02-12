@@ -14,6 +14,7 @@ struct ConfigurationCard: View {
     @Binding var selectedDifficulty: DifficultyOption
     @Binding var selectedBoardSize: BoardSize
     @Binding var selectedTimeLimit: TimeLimitOption
+    @Binding var currentPage: Int
     var isCompactHeightPhone: Bool
     var shadowColor: Color
     var cardBackground: AnyShapeStyle
@@ -24,7 +25,7 @@ struct ConfigurationCard: View {
     var body: some View {
         let corner: CGFloat = 24
         
-        TabView {
+        TabView(selection: $currentPage) {
             // Page 1: Game Settings
             VStack(spacing: isCompactHeightPhone ? 16 : 24) {
                 PlayerSelectionView(selectedPlayer: $selectedPlayer)
@@ -50,7 +51,7 @@ struct ConfigurationCard: View {
         }
         .tabViewStyle(.page(indexDisplayMode: .always))
         .indexViewStyle(.page(backgroundDisplayMode: .always))
-        .frame(height: isCompactHeightPhone ? 380 : 450) // Fixed height to accommodate content
+        .frame(height: isCompactHeightPhone ? 360 : 420) // Improved height for better proportions
         .background(
             RoundedRectangle(cornerRadius: corner, style: .continuous)
                 .fill(cardBackground)
@@ -415,6 +416,7 @@ struct BoardSizeItem: View {
         selectedDifficulty: .constant(.easy),
         selectedBoardSize: .constant(.small),
         selectedTimeLimit: .constant(.tenMinutes),
+        currentPage: .constant(0),
         isCompactHeightPhone: false,
         shadowColor: .gray,
         cardBackground: AnyShapeStyle(.ultraThinMaterial)
