@@ -45,9 +45,10 @@ class MultiplayerViewModel: ObservableObject {
     }
     
     deinit {
-        // Wrap cleanup in a Task to ensure main actor isolation
-        Task { @MainActor in
-            self.cleanup()
+        // Call cleanup directly if already on MainActor
+        // Or use unstructured task without capturing self strongly
+        Task { [weak self] in
+            await self?.cleanup()
         }
     }
     
@@ -471,3 +472,4 @@ extension MultiplayerViewModel {
         return vm
     }
 }
+

@@ -188,9 +188,6 @@ extension GameBoardView {
             let isLargeGrid = ticTacToe.boardSize >= 8
             let minCell: CGFloat = isLargeGrid ? 32 : 44
             let adjustedSpacing = isLargeGrid ? max(4, spacing * 0.6) : spacing
-            let corner: CGFloat = isLargeGrid ? 10 : 16
-            
-            let useGPU = true
             
             // GRID START
             VStack(spacing: adjustedSpacing) {

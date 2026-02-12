@@ -310,8 +310,7 @@ struct MultiplayerGame: Codable, Identifiable {
     
     /// Vaqtni yangilash
     private mutating func updateTimeAfterMove() {
-        guard let totalLimit = settings.totalTimeLimit,
-              let lastMove = lastMoveTime,
+        guard settings.totalTimeLimit != nil,
               let turnStart = currentTurnStartTime else { return }
         
         let elapsed = Date().timeIntervalSince(turnStart)
@@ -567,3 +566,4 @@ extension MultiplayerGame {
         }
     }
 }
+

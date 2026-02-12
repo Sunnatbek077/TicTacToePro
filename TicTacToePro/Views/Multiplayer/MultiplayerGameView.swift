@@ -535,7 +535,6 @@ struct MultiplayerGameView: View {
     @ViewBuilder
     private func chatMessageView(message: ChatMessage) -> some View {
         let isMyMessage = message.playerId == multiplayerVM.currentPlayer?.id
-        let alignment: Alignment = isMyMessage ? .trailing : .leading
         
         let backgroundColor: Color = {
             if message.isSystemMessage {

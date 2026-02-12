@@ -144,11 +144,13 @@ struct GameBoardView: View {
                     setupGame()
                     startTimerIfNeeded()
                 }
-                .onChange(of: ticTacToe.gameOver) { isOver in
-                    handleGameOverChanged(isOver)
-                    if isOver { stopTimer() }
+                .onChange(of: ticTacToe.gameOver) {
+                    handleGameOverChanged(ticTacToe.gameOver)
+                    if ticTacToe.gameOver { stopTimer() }
                 }
-                .onChange(of: ticTacToe.playerToMove) { _ in handlePlayerToMoveChanged() }
+                .onChange(of: ticTacToe.playerToMove) {
+                    handlePlayerToMoveChanged()
+                }
                 .alert(Text(gameOverAlertTitle), isPresented: $ticTacToe.gameOver) {
                     Button("Play Again", action: resetForNextRound)
                     Button("Leave", action: exitToMenu)

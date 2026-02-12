@@ -180,7 +180,7 @@ struct BackgroundView: View {
                 .onAppear {
                     loadColorSelection()
                 }
-                .onChange(of: colors) { _ in
+                .onChange(of: colors) { oldValue, newValue in
                     saveColorSelection()
                 }
             }

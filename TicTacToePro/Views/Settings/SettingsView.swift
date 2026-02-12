@@ -361,8 +361,8 @@ struct SettingsView: View {
         ZStack {
             LinearGradient(
                 colors: colorScheme == .dark
-                    ? [Color(red: 0.08, green: 0.08, blue: 0.10), Color(red: 0.11, green: 0.12, blue: 0.18), Color(red: 0.03, green: 0.04, blue: 0.06)]
-                    : [Color(red: 0.98, green: 0.98, blue: 1.0), Color(red: 0.95, green: 0.96, blue: 0.99), Color(red: 0.90, green: 0.92, blue: 0.98)],
+                ? [Color(red: 0.08, green: 0.08, blue: 0.10), Color(red: 0.11, green: 0.12, blue: 0.18), Color(red: 0.03, green: 0.04, blue: 0.06)]
+                : [Color(red: 0.98, green: 0.98, blue: 1.0), Color(red: 0.95, green: 0.96, blue: 0.99), Color(red: 0.90, green: 0.92, blue: 0.98)],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
@@ -433,15 +433,21 @@ struct SettingsView: View {
     }
     
     private func rateApp() {
-        #if os(iOS)
-        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
-            SKStoreReviewController.requestReview(in: windowScene)
+#if os(iOS)
+        if #available(iOS 18.0, *) {
+            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
+                AppStore.requestReview(in: windowScene)
+            }
+        } else {
+            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
+                SKStoreReviewController.requestReview(in: windowScene)
+            }
         }
-        #endif
+#endif
     }
     
     private func shareApp() {
-        #if os(iOS)
+#if os(iOS)
         let appURLString = "https://apps.apple.com/uz/app/tictactoepro/id6755810923"
         let items: [Any] = ["Check out Tic Tac Pro!", URL(string: appURLString) as Any]
         let activityVC = UIActivityViewController(activityItems: items, applicationActivities: nil)
@@ -451,11 +457,11 @@ struct SettingsView: View {
            let rootVC = window.rootViewController {
             rootVC.present(activityVC, animated: true)
         }
-        #endif
+#endif
     }
     
     private func contactSupport() {
-        #if os(iOS)
+#if os(iOS)
         let email = "sunnatbekabdunabiyev@icloud.com"
         let subject = "Tic Tac Pro Support"
         
@@ -464,7 +470,7 @@ struct SettingsView: View {
         if let url = URL(string: "mailto:\(email)?subject=\(encodedSubject)") {
             UIApplication.shared.open(url)
         }
-        #endif
+#endif
     }
 }
 
@@ -510,8 +516,8 @@ struct SettingsCard<Content: View>: View {
                 .strokeBorder(
                     LinearGradient(
                         colors: colorScheme == .dark
-                            ? [Color.white.opacity(0.12), Color.white.opacity(0.04)]
-                            : [Color.black.opacity(0.08), Color.black.opacity(0.03)],
+                        ? [Color.white.opacity(0.12), Color.white.opacity(0.04)]
+                        : [Color.black.opacity(0.08), Color.black.opacity(0.03)],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     ),

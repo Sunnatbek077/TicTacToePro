@@ -20,7 +20,7 @@ struct ConfettiView: View {
             Canvas { ctx, size in
                 ctx.addFilter(.blur(radius: 2))
                 for i in particles.indices {
-                    var p = particles[i]
+                    let p = particles[i]
                     let x = p.startX * size.width + p.dx * t
                     let y = p.startY * size.height + p.dy * t + 0.5 * p.gravity * t * t
                     let rect = CGRect(x: x, y: y, width: p.size, height: p.size)
