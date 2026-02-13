@@ -121,11 +121,11 @@ extension GameBoardView {
             
             // Adaptive spacing based on board size
             let isLargeGrid = ticTacToe.boardSize >= 5
-            let baseSpacing: CGFloat = isLargeGrid ? 3 : 4
+            let baseSpacing: CGFloat = isLargeGrid ? 2 : 4
             let sideCells = CGFloat(ticTacToe.boardSize)
             
-            // Calculate cell size
-            let minCell: CGFloat = isLargeGrid ? 20 : 28
+            // Calculate cell size - increased minimum for better tap targets
+            let minCell: CGFloat = isLargeGrid ? 30 : 32
             let cellSize = max(minCell, (side - baseSpacing * (sideCells + 1)) / sideCells)
             
             VStack(spacing: baseSpacing) {
@@ -290,18 +290,16 @@ struct SquareButtonViewWatch: View {
                 // Symbol
                 if let square = dataSource, square != .empty {
                     symbolView(for: square)
-                        .frame(width: size * 0.6, height: size * 0.6)
+                        .frame(width: size * 0.65, height: size * 0.65)
                         .scaleEffect(isRecentlyPlaced ? 1.1 : 1.0)
                         .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isRecentlyPlaced)
                 }
             }
         }
         .frame(width: size, height: size)
+        .contentShape(Rectangle()) // Make entire frame tappable
         .buttonStyle(.plain)
-        .disabled({
-            guard let ds = dataSource else { return false }
-            return ds != .empty
-        }())
+        .allowsHitTesting(dataSource == nil || dataSource == .empty)
     }
     
     @ViewBuilder
@@ -309,20 +307,20 @@ struct SquareButtonViewWatch: View {
         switch value {
         case .x:
             Image(systemName: "xmark")
-                .font(.system(size: size * 0.4, weight: .bold, design: .rounded))
+                .font(.system(size: size * 0.45, weight: .bold, design: .rounded))
                 .foregroundStyle(
                     LinearGradient(
-                        colors: [.pink, .red],
+                        colors: [.pink, .purple],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     )
                 )
         case .o:
             Image(systemName: "circle")
-                .font(.system(size: size * 0.4, weight: .bold, design: .rounded))
+                .font(.system(size: size * 0.45, weight: .bold, design: .rounded))
                 .foregroundStyle(
                     LinearGradient(
-                        colors: [.blue, .cyan],
+                        colors: [.cyan, .blue],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     )
@@ -346,4 +344,3 @@ private extension View {
         }
     }
 }
-

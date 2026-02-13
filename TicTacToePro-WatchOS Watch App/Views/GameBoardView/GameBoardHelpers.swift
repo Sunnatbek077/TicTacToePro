@@ -71,16 +71,16 @@ extension GameBoardView {
         let scaleFactor: CGFloat = {
             switch ticTacToe.boardSize {
             case 3:
-                return 0.90 // Standard 3x3 can be larger
+                return 0.92 // Standard 3x3 can be larger
             case 4, 5:
-                return 0.85
+                return 0.90 // Larger scale for better tap targets
             case 6, 7:
-                return 0.80
+                return 0.85
             default:
-                return 0.75 // Large boards need more compact layout
+                return 0.80 // Large boards need more compact layout
             }
         }()
         
-        return min(180, max(140, minDimension * scaleFactor))
+        return min(200, max(160, minDimension * scaleFactor))
     }
 }

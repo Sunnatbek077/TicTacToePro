@@ -10,7 +10,7 @@ import SwiftUI
 import Combine
 import Foundation
 
-struct GameBoardView: View {
+    struct GameBoardView: View {
     var onExit: () -> Void
     
     @Environment(\.colorScheme) var colorScheme
