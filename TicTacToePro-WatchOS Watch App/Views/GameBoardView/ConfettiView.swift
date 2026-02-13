@@ -1,24 +1,26 @@
 //
 //  ConfettiView.swift
-//  TicTacToePro
+//  TicTacToePro watchOS
+//
+//  Refactored for watchOS by Claude
 //
 
 import SwiftUI
 
 struct ConfettiView: View {
-    let isSELikeSmallScreen: Bool
     @State private var particles: [ConfettiParticle]
     @State private var t: Double = 0.0
     
-    init(isSELikeSmallScreen: Bool) {
-        self.isSELikeSmallScreen = isSELikeSmallScreen
-        self._particles = State(initialValue: (0..<(isSELikeSmallScreen ? 20 : 40)).map { _ in ConfettiParticle.random() })
+    init() {
+        // Fewer particles for watchOS performance (15 instead of 40)
+        self._particles = State(initialValue: (0..<15).map { _ in ConfettiParticle.random() })
     }
     
     var body: some View {
         GeometryReader { geo in
             Canvas { ctx, size in
-                ctx.addFilter(.blur(radius: 2))
+                // Lighter blur for better performance
+                ctx.addFilter(.blur(radius: 1))
                 for i in particles.indices {
                     let p = particles[i]
                     let x = p.startX * size.width + p.dx * t
@@ -29,8 +31,8 @@ struct ConfettiView: View {
             }
             .ignoresSafeArea()
             .onAppear {
-                withAnimation(.easeOut(duration: 2.2)) {
-                    t = 2.2
+                withAnimation(.easeOut(duration: 2.0)) {
+                    t = 2.0
                 }
             }
         }
@@ -50,11 +52,15 @@ struct ConfettiParticle {
         ConfettiParticle(
             startX: Double.random(in: 0.1...0.9),
             startY: Double.random(in: -0.1...0.2),
-            dx: Double.random(in: -0.8...0.8) * 400,
-            dy: Double.random(in: 0.3...1.2) * 400,
-            gravity: Double.random(in: 150...500),
-            size: CGFloat.random(in: 8...20),
-            color: [Color.red, Color.green, Color.blue, Color.yellow, Color.purple, Color.orange, Color.pink, Color.cyan].randomElement() ?? Color.red
+            dx: Double.random(in: -0.6...0.6) * 300, // Reduced motion
+            dy: Double.random(in: 0.3...1.0) * 300,  // Reduced motion
+            gravity: Double.random(in: 120...400),    // Reduced gravity
+            size: CGFloat.random(in: 6...14),         // Smaller particles
+            color: [
+                Color.red, Color.green, Color.blue,
+                Color.yellow, Color.purple, Color.orange,
+                Color.pink, Color.cyan
+            ].randomElement() ?? Color.red
         )
     }
 }

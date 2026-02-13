@@ -72,7 +72,6 @@
       }
     },
     "%@" : {
-      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -141,6 +140,9 @@
           }
         }
       }
+    },
+    "%@ difficulty" : {
+
     },
     "%@ games" : {
       "extractionState" : "stale",
@@ -212,6 +214,9 @@
           }
         }
       }
+    },
+    "%@ mode" : {
+
     },
     "%@ turn" : {
       "localizations" : {
@@ -360,6 +365,7 @@
       }
     },
     "%@’s Turn" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -1142,6 +1148,7 @@
       }
     },
     "AI Difficulty" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -1211,7 +1218,11 @@
         }
       }
     },
+    "AI is thinking" : {
+
+    },
     "AI is thinking..." : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -1280,6 +1291,9 @@
           }
         }
       }
+    },
+    "AI thinking" : {
+
     },
     "Animation" : {
       "extractionState" : "stale",
@@ -2622,7 +2636,11 @@
         }
       }
     },
+    "Choose your setup" : {
+
+    },
     "Choose your setup and start a game." : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -3536,6 +3554,9 @@
           }
         }
       }
+    },
+    "Difficulty" : {
+
     },
     "Done" : {
       "localizations" : {
@@ -4950,6 +4971,7 @@
       }
     },
     "Mode" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -5655,6 +5677,7 @@
       }
     },
     "Opens board size selector and starts a new game" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -6077,6 +6100,7 @@
       }
     },
     "Ready to play?" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -6145,6 +6169,9 @@
           }
         }
       }
+    },
+    "Ready?" : {
+
     },
     "Rematch" : {
       "extractionState" : "stale",
@@ -6778,6 +6805,9 @@
         }
       }
     },
+    "Score" : {
+
+    },
     "Scoreboard" : {
       "localizations" : {
         "ar" : {
@@ -6919,6 +6949,7 @@
       }
     },
     "Select %@ difficulty" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -6989,6 +7020,7 @@
       }
     },
     "Select %@ game mode" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -7762,7 +7794,11 @@
         }
       }
     },
+    "Starts a new game" : {
+
+    },
     "Status" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -8341,6 +8377,7 @@
 
     },
     "Time limit %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {

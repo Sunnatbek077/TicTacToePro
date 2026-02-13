@@ -1,8 +1,9 @@
 //
 //  GameBoardLogic.swift
-//  TicTacToePro
+//  TicTacToePro watchOS
 //
-//  Created by Sunnatbek on 04/10/25.
+//  Refactored for watchOS by Claude
+//  Original by Sunnatbek on 04/10/25
 //
 
 import SwiftUI
@@ -19,7 +20,11 @@ extension GameBoardView {
     func makeMove(at index: Int) {
         guard ticTacToe.squares.indices.contains(index) else { return }
         withAnimation(.spring(response: 0.35, dampingFraction: 0.82)) {
-            _ = ticTacToe.makeMove(index: index, gameTypeIsPVP: gameTypeIsPVP, difficulty: difficulty)
+            _ = ticTacToe.makeMove(
+                index: index,
+                gameTypeIsPVP: gameTypeIsPVP,
+                difficulty: difficulty
+            )
         }
         bannerShowTemporarily()
     }
@@ -54,29 +59,36 @@ extension GameBoardView {
         else { return }
         
         aiThinking = true
-        let delay: TimeInterval = isSESmallScreen ? 0.3 : 0.45
+        // Shorter delay for watchOS
+        let delay: TimeInterval = 0.3
         DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
             let boardMoves = ticTacToe.boardArray
             let testBoard = Board(position: boardMoves, turn: .x)
             let answer = testBoard.bestMove(difficulty: difficulty)
             if answer >= 0 {
-                _ = ticTacToe.makeMove(index: answer, gameTypeIsPVP: false, difficulty: difficulty)
+                _ = ticTacToe.makeMove(
+                    index: answer,
+                    gameTypeIsPVP: false,
+                    difficulty: difficulty
+                )
                 recentlyPlacedIndex = answer
             }
-            withAnimation { aiThinking = false }
+            withAnimation {
+                aiThinking = false
+            }
         }
     }
     
     func handleGameOverChanged(_ isOver: Bool) {
-        
-        
         if ticTacToe.winner != .empty {
             withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
                 showConfetti = true
                 animateWinningGlow = true
             }
             DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
-                withAnimation(.easeOut) { showConfetti = false }
+                withAnimation(.easeOut) {
+                    showConfetti = false
+                }
             }
         }
         
@@ -85,17 +97,26 @@ extension GameBoardView {
     
     func handlePlayerToMoveChanged() {
         if !gameTypeIsPVP && ticTacToe.playerToMove == ticTacToe.aiPlays {
-            withAnimation(.spring()) { aiThinking = true }
+            withAnimation(.spring()) {
+                aiThinking = true
+            }
         } else {
-            withAnimation(.spring()) { aiThinking = false }
+            withAnimation(.spring()) {
+                aiThinking = false
+            }
         }
     }
     
     func bannerShowTemporarily() {
-        let duration: TimeInterval = isSESmallScreen ? 1.0 : 1.4
-        withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) { showTurnBanner = true }
+        // Shorter duration for watchOS
+        let duration: TimeInterval = 1.2
+        withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+            showTurnBanner = true
+        }
         DispatchQueue.main.asyncAfter(deadline: .now() + duration) {
-            withAnimation(.easeOut) { showTurnBanner = false }
+            withAnimation(.easeOut) {
+                showTurnBanner = false
+            }
         }
     }
     
@@ -108,4 +129,3 @@ extension GameBoardView {
         return []
     }
 }
-

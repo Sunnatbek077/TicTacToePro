@@ -1,204 +1,145 @@
 //
 //  GameBoardComponents.swift
-//  TicTacToePro
+//  TicTacToePro watchOS
 //
-//  Created by Sunnatbek on 04/10/25.
+//  Refactored for watchOS by Claude
+//  Original by Sunnatbek on 04/10/25.
 //
 
 import SwiftUI
 
 extension GameBoardView {
+    
+    // MARK: - Background (Simplified for watchOS)
     var premiumBackground: some View {
         ZStack {
+            // Simpler gradient for better performance on watch
             LinearGradient(
                 colors: colorScheme == .dark
-                    ? [Color(red: 0.08, green: 0.08, blue: 0.10), Color(red: 0.11, green: 0.12, blue: 0.18), Color(red: 0.03, green: 0.04, blue: 0.06)]
-                    : [Color(red: 0.98, green: 0.98, blue: 1.0), Color(red: 0.95, green: 0.96, blue: 0.99), Color(red: 0.90, green: 0.92, blue: 0.98)],
+                    ? [Color(red: 0.08, green: 0.08, blue: 0.10), Color(red: 0.11, green: 0.12, blue: 0.18)]
+                    : [Color(red: 0.95, green: 0.96, blue: 0.99), Color(red: 0.90, green: 0.92, blue: 0.98)],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
             .ignoresSafeArea()
             
-            Rectangle()
-                .fill(LinearGradient(colors: [
-                    Color.white.opacity(colorScheme == .dark ? 0.02 : 0.08),
-                    Color.black.opacity(colorScheme == .dark ? 0.02 : 0.01)
-                ], startPoint: .topLeading, endPoint: .bottomTrailing))
-                .blendMode(.overlay)
-                .opacity(0.6)
-                .ignoresSafeArea()
-            
-            LinearGradient(
-                colors: [Color.black.opacity(colorScheme == .dark ? 0.35 : 0.15), .clear, Color.black.opacity(colorScheme == .dark ? 0.35 : 0.15)],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .ignoresSafeArea()
-            
+            // Reduced ambient orbs for performance
             GeometryReader { geo in
-                let scaleFactor: CGFloat = isSESmallScreen ? 0.6 : 1.0
-                let baseWidth = geo.size.width
-                let baseHeight = geo.size.height
                 ZStack {
-                    Circle().fill(colorScheme == .dark ? Color.pink : Color.pink.opacity(0.25))
-                        .frame(width: 220 * scaleFactor).blur(radius: 60 * scaleFactor).offset(x: -140 * scaleFactor, y: -180 * scaleFactor)
-                    Circle().fill(colorScheme == .dark ? Color.blue : Color.blue.opacity(0.22))
-                        .frame(width: 260 * scaleFactor).blur(radius: 70 * scaleFactor).offset(x: 160 * scaleFactor, y: -120 * scaleFactor)
-                    Circle().fill(colorScheme == .dark ? Color.purple : Color.purple.opacity(0.24))
-                        .frame(width: 280 * scaleFactor).blur(radius: 80 * scaleFactor).offset(x: 120 * scaleFactor, y: 220 * scaleFactor)
-                    Circle().fill(colorScheme == .dark ? Color.cyan.opacity(0.8) : Color.cyan.opacity(0.18))
-                        .frame(width: 150 * scaleFactor).blur(radius: 50 * scaleFactor).offset(x: -80 * scaleFactor, y: 180 * scaleFactor)
+                    Circle()
+                        .fill(colorScheme == .dark ? Color.pink.opacity(0.3) : Color.pink.opacity(0.15))
+                        .frame(width: 80)
+                        .blur(radius: 30)
+                        .offset(x: -40, y: -60)
+                    
+                    Circle()
+                        .fill(colorScheme == .dark ? Color.purple.opacity(0.3) : Color.purple.opacity(0.15))
+                        .frame(width: 100)
+                        .blur(radius: 40)
+                        .offset(x: 50, y: 70)
                 }
-                .frame(width: baseWidth, height: baseHeight)
+                .frame(width: geo.size.width, height: geo.size.height)
             }
-            .transition(.opacity)
-            .animation(.easeInOut(duration: 2).repeatForever(autoreverses: true), value: animateBoardEntrance)
         }
     }
     
+    // MARK: - Main Content Layout
     var content: some View {
-        Group {
-            if isWide {
-                HStack(spacing: 24) {
-                    board
-                    rightPanel
-                        .frame(minWidth: 220, maxWidth: 320)
-                }
-                .padding(.horizontal, 24)
-                .padding(.vertical, 16)
-            } else {
-                VStack(spacing: isSESmallScreen ? 4 : (isCompactHeight ? 6 : 16)) {
-                    header
-                        .padding(.top, isSESmallScreen ? 0 : (isCompactHeight ? 2 : 0))
-                    GameScoreView(
-                        xWins: xWins,
-                        oWins: oWins,
-                        ties: ties,
-                        currentTurn: currentPlayer
-                    )
-                    .padding(.horizontal, isSESmallScreen ? 4 : (isCompactHeight ? 8 : 16))
-                    board
-                        .padding(.horizontal, isSESmallScreen ? 4 : (isCompactHeight ? 8 : 16))
-                    footer
-                        .padding(.bottom, isSESmallScreen ? 2 : (isCompactHeight ? 6 : 12))
-                }
-                .padding(.top, isSESmallScreen ? 0 : (isCompactHeight ? 4 : 12))
-                .padding(.bottom, isSESmallScreen ? 0 : (isCompactHeight ? 4 : 12))
+        ScrollView {
+            VStack(spacing: 8) {
+                // Compact header
+                headerWatchOS
+                
+                // Score display
+                GameScoreView(
+                    xWins: xWins,
+                    oWins: oWins,
+                    ties: ties,
+                    currentTurn: currentPlayer
+                )
+                .padding(.horizontal, 4)
+                
+                // Game board
+                board
+                    .padding(.horizontal, 4)
+                    .padding(.vertical, 8)
+                
+                // Action buttons
+                footerWatchOS
             }
+            .padding(.vertical, 8)
         }
+        .focusable() // Enable Digital Crown scrolling
     }
     
-    var leftPanel: some View {
-        VStack {
-            
-        }
-    }
-    
-    var rightPanel: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            header
-            
-            GameScoreView(
-                xWins: xWins,
-                oWins: oWins,
-                ties: ties,
-                currentTurn: currentPlayer
-            )
-            statusCard
-            footerButtonsOnly
-            Spacer(minLength: 0)
-        }
-        .frame(maxHeight: .infinity, alignment: .top)
-    }
-    
-    var statusCard: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Status")
-                .font(.system(.headline, design: .rounded).weight(.bold))
-                .foregroundStyle(LinearGradient(colors: [.pink, .purple], startPoint: .leading, endPoint: .trailing))
-            Text(headerSubtitle)
-                .font(.title3.weight(.semibold))
-                .foregroundStyle(.secondary)
-            
-            Divider()
-            
-            Text("Mode")
-                .font(.system(.headline, design: .rounded).weight(.bold))
-                .foregroundStyle(LinearGradient(colors: [.purple, .blue], startPoint: .leading, endPoint: .trailing))
-            Text(modeBadgeText)
-                .font(.footnote.weight(.semibold))
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
-                .background(.ultraThinMaterial, in: Capsule())
-                .overlay(Capsule().strokeBorder(LinearGradient(colors: [.purple, .blue], startPoint: .top, endPoint: .bottom), lineWidth: 1))
-                .foregroundStyle(.primary)
-        }
-        .padding(16)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .strokeBorder(LinearGradient(colors: [.pink.opacity(0.3), .purple.opacity(0.3)], startPoint: .top, endPoint: .bottom), lineWidth: 1)
-        )
-        .shadow(color: Color.purple.opacity(colorScheme == .dark ? 0.4 : 0.2), radius: 8, x: 0, y: 4)
-    }
-    
-    var header: some View {
-        VStack(spacing: isSESmallScreen ? 2 : (isCompactHeight ? 4 : 8)) {
+    // MARK: - Header (watchOS optimized)
+    var headerWatchOS: some View {
+        VStack(spacing: 4) {
             Text(headerTitle)
-                .font(isSESmallScreen ? .system(.title2, design: .rounded).weight(.black) :
-                      (isCompactHeight ? .system(.title, design: .rounded).weight(.black) : .system(.largeTitle, design: .rounded).weight(.black)))
-                .foregroundStyle(LinearGradient(colors: [.pink, .purple, .blue], startPoint: .leading, endPoint: .trailing))
+                .font(.system(.headline, design: .rounded).weight(.bold))
+                .foregroundStyle(LinearGradient(
+                    colors: [.pink, .purple],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                ))
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
                 .accessibilityAddTraits(.isHeader)
             
             Text(headerSubtitle)
-                .font(isSESmallScreen ? .caption : (isCompactHeight ? .headline : .title3.weight(.semibold)))
+                .font(.caption2)
                 .foregroundStyle(.secondary)
+                .lineLimit(1)
             
+            // Mode badge
             Text(modeBadgeText)
-                .font(.caption.weight(.semibold))
-                .padding(.horizontal, isSESmallScreen ? 4 : (isCompactHeight ? 8 : 12))
-                .padding(.vertical, isSESmallScreen ? 2 : (isCompactHeight ? 4 : 6))
+                .font(.system(size: 9).weight(.semibold))
+                .padding(.horizontal, 6)
+                .padding(.vertical, 3)
                 .background(.ultraThinMaterial, in: Capsule())
-                .overlay(Capsule().strokeBorder(LinearGradient(colors: [.purple, .blue], startPoint: .top, endPoint: .bottom), lineWidth: 1))
-                .foregroundStyle(.primary)
+                .overlay(
+                    Capsule()
+                        .strokeBorder(
+                            LinearGradient(
+                                colors: [.purple.opacity(0.5), .blue.opacity(0.5)],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            ),
+                            lineWidth: 0.5
+                        )
+                )
         }
-        .padding(.horizontal, isSESmallScreen ? 4 : 8)
-        .padding(.vertical, isSESmallScreen ? 2 : 4)
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(.ultraThinMaterial)
-                .shadow(color: .gray.opacity(0.1), radius: 6)
-        )
+        .padding(.horizontal, 4)
     }
     
+    // MARK: - Game Board (watchOS optimized)
     var board: some View {
         GeometryReader { proxy in
-            let winning = detectWinningIndices()
-            let horizontalMargin: CGFloat = isSESmallScreen ? 8 : (isCompactHeight ? 12 : 16)
-            let availableWidth = max(0, proxy.size.width - horizontalMargin * 2)
-            let maxSide = min(availableWidth, proxy.size.height)
-            let side = min(maxSide, preferredBoardSide(for: proxy.size))
-            let spacing: CGFloat = isSESmallScreen ? max(5, side * 0.012) : (isCompactHeight ? max(6, side * 0.015) : max(8, side * 0.02))
+            let winningArray = detectWinningIndices()
+            let winning: Set<Int> = Set(winningArray)
+            let side = min(proxy.size.width, proxy.size.height)
+            
+            // Adaptive spacing based on board size
+            let isLargeGrid = ticTacToe.boardSize >= 5
+            let baseSpacing: CGFloat = isLargeGrid ? 3 : 4
             let sideCells = CGFloat(ticTacToe.boardSize)
             
-            let isLargeGrid = ticTacToe.boardSize >= 8
-            let minCell: CGFloat = isLargeGrid ? 32 : 44
-            let adjustedSpacing = isLargeGrid ? max(4, spacing * 0.6) : spacing
+            // Calculate cell size
+            let minCell: CGFloat = isLargeGrid ? 20 : 28
+            let cellSize = max(minCell, (side - baseSpacing * (sideCells + 1)) / sideCells)
             
-            // GRID START
-            VStack(spacing: adjustedSpacing) {
+            VStack(spacing: baseSpacing) {
                 ForEach(0..<ticTacToe.boardSize, id: \.self) { row in
-                    HStack(spacing: adjustedSpacing) {
+                    HStack(spacing: baseSpacing) {
                         ForEach(0..<ticTacToe.boardSize, id: \.self) { column in
                             let index = row * ticTacToe.boardSize + column
                             if ticTacToe.squares.indices.contains(index) {
-                                let cellSize = max(minCell, (side - adjustedSpacing * (sideCells - 1)) / sideCells)
-                                SquareButtonView(
+                                SquareButtonViewWatch(
                                     dataSource: ticTacToe.squares[index],
+                                    index: index,
                                     size: cellSize,
                                     winningIndices: winning,
                                     isRecentlyPlaced: recentlyPlacedIndex == index,
-                                    isSELikeSmallScreen: isSESmallScreen,
                                     action: {
                                         if let handler = onCellTap {
                                             handler(index)
@@ -208,102 +149,201 @@ extension GameBoardView {
                                         }
                                     }
                                 )
-                                .shadow(color: (colorScheme == .dark ? Color.black.opacity(0.22) : Color.purple.opacity(0.14)), radius: 4, x: 1, y: 1)
-                                .if(isLargeGrid) { view in
-                                    view.compositingGroup().drawingGroup(opaque: false, colorMode: .extendedLinear)
-                                }
                             } else {
-                                let cellSize = max(minCell, (side - adjustedSpacing * (sideCells - 1)) / sideCells)
                                 Color.clear.frame(width: cellSize, height: cellSize)
                             }
                         }
                     }
                 }
             }
-            .compositingGroup()
-            .drawingGroup(opaque: false, colorMode: .extendedLinear)
-            .transaction { txn in
-                if isLargeGrid {
-                    txn.disablesAnimations = true
-                }
-            }
-            .padding(adjustedSpacing)
             .frame(width: side, height: side)
-            .aspectRatio(1, contentMode: .fit)
             .position(x: proxy.size.width / 2, y: proxy.size.height / 2)
-            .shadow(color: Color.purple.opacity(colorScheme == .dark ? 0.3 : 0.15), radius: 8, x: 0, y: 4)
-            .scaleEffect(animateBoardEntrance ? 1.0 : 0.9)
+            .scaleEffect(animateBoardEntrance ? 1.0 : 0.95)
             .opacity(animateBoardEntrance ? 1.0 : 0.0)
-            .animation(.spring(response: 0.6, dampingFraction: 0.8), value: animateBoardEntrance)
-            .accessibilityElement(children: .contain)
+            .animation(.spring(response: 0.5, dampingFraction: 0.8), value: animateBoardEntrance)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+        .frame(maxWidth: .infinity)
+        .aspectRatio(1, contentMode: .fit)
     }
     
-    var footer: some View {
-        HStack(spacing: isSESmallScreen ? 4 : (isCompactHeight ? 8 : 12)) {
-            
-        }
-        .padding(.horizontal, isSESmallScreen ? 6 : (isCompactHeight ? 12 : 16))
-        .padding(.vertical, isSESmallScreen ? 2 : (isCompactHeight ? 2 : 6))
-    }
-    
-    var footerButtonsOnly: some View {
-        VStack(alignment: .leading, spacing: 12) {
+    // MARK: - Footer Actions (watchOS)
+    var footerWatchOS: some View {
+        VStack(spacing: 8) {
+            // Restart button
             Button(action: resetForNextRound) {
-                Label("Restart", systemImage: "arrow.counterclockwise.circle.fill")
-                    .font(.headline)
-                    .padding(.vertical, 12)
-                    .frame(maxWidth: .infinity)
+                HStack(spacing: 4) {
+                    Image(systemName: "arrow.counterclockwise")
+                        .font(.caption)
+                    Text("Restart")
+                        .font(.caption.weight(.semibold))
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 8)
             }
             .buttonStyle(.borderedProminent)
-            .tint(LinearGradient(colors: [.pink, .purple], startPoint: .top, endPoint: .bottom))
+            .tint(.purple)
+            .cornerRadius(20)
             
+            // Exit button
             Button(role: .destructive, action: exitToMenu) {
-                Label("Exit", systemImage: "xmark.circle.fill")
-                    .font(.headline)
-                    .padding(.vertical, 12)
-                    .frame(maxWidth: .infinity)
+                HStack(spacing: 4) {
+                    Image(systemName: "xmark")
+                        .font(.caption)
+                    Text("Exit")
+                        .font(.caption.weight(.semibold))
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 8)
             }
             .buttonStyle(.bordered)
             .tint(.red)
-            
+            .cornerRadius(20)
         }
-        .padding(.top, 8)
+        .padding(.horizontal, 8)
     }
     
+    // MARK: - Status Banner (watchOS)
     var turnBanner: some View {
         HStack {
             if ticTacToe.playerToMove == ticTacToe.aiPlays && !gameTypeIsPVP {
-                Label("AI is thinking...", systemImage: "brain.head.profile")
-                    .font(.system((isSESmallScreen ? .caption2 : .subheadline), design: .rounded).weight(.semibold))
-                    .padding(.vertical, isSESmallScreen ? 4 : 8)
-                    .padding(.horizontal, isSESmallScreen ? 6 : 12)
+                Label("AI thinking", systemImage: "brain")
+                    .font(.system(size: 10, design: .rounded).weight(.semibold))
+                    .padding(.vertical, 4)
+                    .padding(.horizontal, 8)
                     .background(.ultraThinMaterial, in: Capsule())
-                    .overlay(Capsule().stroke(LinearGradient(colors: [.purple, .blue], startPoint: .top, endPoint: .bottom), lineWidth: 1))
-                    .shadow(color: .purple.opacity(colorScheme == .dark ? 0.3 : 0.15), radius: 4)
-                    .accessibilityLabel("AI is thinking...")
+                    .accessibilityLabel("AI is thinking")
             } else {
-                Label("\(currentPlayer)’s Turn", systemImage: ticTacToe.playerToMove == .x ? "xmark" : "circle")
-                    .font(.system((isSESmallScreen ? .caption2 : .subheadline), design: .rounded).weight(.semibold))
-                    .padding(.vertical, isSESmallScreen ? 4 : 8)
-                    .padding(.horizontal, isSESmallScreen ? 6 : 12)
+                Label("\(currentPlayer)", systemImage: ticTacToe.playerToMove == .x ? "xmark" : "circle")
+                    .font(.system(size: 10, design: .rounded).weight(.semibold))
+                    .padding(.vertical, 4)
+                    .padding(.horizontal, 8)
                     .background(.ultraThinMaterial, in: Capsule())
-                    .overlay(Capsule().stroke(LinearGradient(colors: [.pink, .purple], startPoint: .top, endPoint: .bottom), lineWidth: 1))
-                    .shadow(color: .purple.opacity(colorScheme == .dark ? 0.3 : 0.15), radius: 4)
                     .accessibilityLabel("\(currentPlayer) turn")
             }
         }
-        .padding(.horizontal, isSESmallScreen ? 8 : 20)
-        .padding(.bottom, isSESmallScreen ? 8 : 18)
         .frame(maxWidth: .infinity)
-        .frame(height: isSESmallScreen ? 32 : 44)
     }
 }
 
+// MARK: - Simplified Square Button for watchOS
+struct SquareButtonViewWatch: View {
+    private let dataSource: SquareStatus?
+    let index: Int
+    let size: CGFloat
+    let winningIndices: Set<Int>
+    let isRecentlyPlaced: Bool
+    let action: () -> Void
+    
+    // Allow passing either SquareStatus? or Square? to avoid mismatches
+    init(dataSource: SquareStatus?, index: Int, size: CGFloat, winningIndices: Set<Int>, isRecentlyPlaced: Bool, action: @escaping () -> Void) {
+        self.dataSource = dataSource
+        self.index = index
+        self.size = size
+        self.winningIndices = winningIndices
+        self.isRecentlyPlaced = isRecentlyPlaced
+        self.action = action
+    }
+    
+    init(dataSource: Square?, index: Int, size: CGFloat, winningIndices: Set<Int>, isRecentlyPlaced: Bool, action: @escaping () -> Void) {
+        // Map Square? to SquareStatus? if types differ in the project
+        if let ds = dataSource as? SquareStatus { self.dataSource = ds } else {
+            // Fallback mapping based on common case names
+            if let ds = dataSource {
+                switch String(describing: ds) {
+                case "x", "X", "cross": self.dataSource = .x
+                case "o", "O", "nought", "circle": self.dataSource = .o
+                default: self.dataSource = .empty
+                }
+            } else {
+                self.dataSource = nil
+            }
+        }
+        self.index = index
+        self.size = size
+        self.winningIndices = winningIndices
+        self.isRecentlyPlaced = isRecentlyPlaced
+        self.action = action
+    }
+    
+    @Environment(\.colorScheme) private var colorScheme
+    
+    private var isWinning: Bool {
+        return winningIndices.contains(index)
+    }
+    
+    var body: some View {
+        Button(action: action) {
+            ZStack {
+                // Background
+                RoundedRectangle(cornerRadius: size * 0.18, style: .continuous)
+                    .fill(.ultraThinMaterial)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: size * 0.18, style: .continuous)
+                            .strokeBorder(
+                                isWinning
+                                    ? LinearGradient(colors: [.green, .mint], startPoint: .top, endPoint: .bottom)
+                                    : LinearGradient(colors: [.purple.opacity(0.3), .blue.opacity(0.3)], startPoint: .top, endPoint: .bottom),
+                                lineWidth: isWinning ? 2 : 1
+                            )
+                    )
+                
+                // Symbol
+                if let square = dataSource, square != .empty {
+                    symbolView(for: square)
+                        .frame(width: size * 0.6, height: size * 0.6)
+                        .scaleEffect(isRecentlyPlaced ? 1.1 : 1.0)
+                        .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isRecentlyPlaced)
+                }
+            }
+        }
+        .frame(width: size, height: size)
+        .buttonStyle(.plain)
+        .disabled({
+            guard let ds = dataSource else { return false }
+            return ds != .empty
+        }())
+    }
+    
+    @ViewBuilder
+    private func symbolView(for value: SquareStatus) -> some View {
+        switch value {
+        case .x:
+            Image(systemName: "xmark")
+                .font(.system(size: size * 0.4, weight: .bold, design: .rounded))
+                .foregroundStyle(
+                    LinearGradient(
+                        colors: [.pink, .red],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+        case .o:
+            Image(systemName: "circle")
+                .font(.system(size: size * 0.4, weight: .bold, design: .rounded))
+                .foregroundStyle(
+                    LinearGradient(
+                        colors: [.blue, .cyan],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+        case .empty:
+            EmptyView()
+        @unknown default:
+            EmptyView()
+        }
+    }
+}
+
+// MARK: - Helper Extension
 private extension View {
     @ViewBuilder
     func `if`<Content: View>(_ condition: Bool, transform: (Self) -> Content) -> some View {
-        if condition { transform(self) } else { self }
+        if condition {
+            transform(self)
+        } else {
+            self
+        }
     }
 }
+

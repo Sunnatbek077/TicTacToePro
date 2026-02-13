@@ -1,12 +1,9 @@
 //
 //  GameBoardView.swift
-//  TicTacToePro
+//  TicTacToePro watchOS
 //
-//  Created by Sunnatbek on 20/09/25.
-//  Updated with enhanced premium design on 01/10/25
-//  Optimized for small 16:9 iPhones (e.g., iPhone SE 2nd/3rd gen) on 02/10/25
-//  Fixed scope and range errors on 02/10/25
-//  Enlarged board size for SE on 02/10/25
+//  Refactored for watchOS by Claude
+//  Original by Sunnatbek on 20/09/25
 //
 
 import SwiftUI
@@ -17,8 +14,6 @@ struct GameBoardView: View {
     var onExit: () -> Void
     
     @Environment(\.colorScheme) var colorScheme
-    @Environment(\.horizontalSizeClass) var hSizeClass
-    @Environment(\.verticalSizeClass) var vSizeClass
     
     @ObservedObject var viewModel: ViewModel
     @ObservedObject var ticTacToe: GameViewModel
@@ -27,8 +22,6 @@ struct GameBoardView: View {
     let difficulty: AIDifficulty
     let startingPlayerIsO: Bool
     let timeLimit: TimeLimitOption?
-    // Optional external tap handler (e.g., multiplayer). When provided, cell taps
-    // will be routed to this handler instead of mutating the local board state.
     var onCellTap: ((Int) -> Void)? = nil
     
     // Local (session-only) scoreboard
@@ -66,31 +59,24 @@ struct GameBoardView: View {
         return String(format: "%d:%02d", minutes, seconds)
     }
     
-    // MARK: - Header Reaction Emojis (12 holatli)
+    // MARK: - Header Reaction Emojis
     private var headerReactions: [String] {
-        // O'yin tugagan bo'lsa
         if ticTacToe.gameOver {
             if ticTacToe.winner == .empty {
-                // 1. Durrang: Chalg'igan
                 return ["🤷", "😐"]
             } else {
                 if !gameTypeIsPVP && ticTacToe.winner == ticTacToe.aiPlays {
-                    // 2. AI yutdi
                     return ["🤖", "😎"]
                 } else {
-                    // 3. Siz yutdingiz!
                     return ["🎉", "🏆"]
                 }
             }
         }
         
-        // AI o'ylayapti
         if !gameTypeIsPVP && ticTacToe.playerToMove == ticTacToe.aiPlays {
-            // 4. AI o'ylayapti
             return ["🤔", "🧠"]
         }
         
-        // Xavfli vaziyatlarni tekshirish
         let statuses = ticTacToe.squares.map { $0.squareStatus }
         let boardNow = Board(position: statuses, turn: ticTacToe.playerToMove)
         let canWinNow = boardNow.legalMoves.contains { boardNow.move($0).isWin }
@@ -99,33 +85,24 @@ struct GameBoardView: View {
         let opponentCanWinNow = opponentBoard.legalMoves.contains { opponentBoard.move($0).isWin }
         
         if canWinNow && opponentCanWinNow {
-            // 5. Ikkalasi ham yutishi mumkin: Juda xavfli!
             return ["⚠️", "💀"]
         } else if canWinNow {
-            // 6. Siz yutishingiz mumkin: Zo'r imkoniyat!
             return ["🔥", "💪"]
         } else if opponentCanWinNow {
-            // 7. Raqib yutishi mumkin: Xavf!
             return ["😰", "☠️"]
         }
         
-        // O'yin bosqichiga qarab
         let moveCount = statuses.filter { $0 != .empty }.count
         
         if moveCount == 0 {
-            // 8. O'yin boshlanmagan: Tayyor
             return ["🎮", "✨"]
         } else if moveCount <= 2 {
-            // 9. Boshlanish: Tinch
             return ["😊", "👍"]
         } else if moveCount <= 4 {
-            // 10. O'rta bosqich: Qiziq
-            return ["🎯", "😏"]
+            return ["🎯", "😀"]
         } else if moveCount <= 6 {
-            // 11. Murakkab vaziyat: Diqqat
             return ["👀", "🤨"]
         } else {
-            // 12. Oxirgi bosqich: Tarang
             return ["😬", "⚡"]
         }
     }
@@ -157,7 +134,7 @@ struct GameBoardView: View {
                 }
             
             if showConfetti {
-                ConfettiView(isSELikeSmallScreen: isSESmallScreen)
+                ConfettiView()
                     .transition(.opacity)
                     .zIndex(3)
             }
@@ -167,8 +144,6 @@ struct GameBoardView: View {
                     .transition(.move(edge: .top).combined(with: .opacity))
                     .zIndex(2)
             }
-
-           
         }
     }
     
@@ -176,25 +151,22 @@ struct GameBoardView: View {
     private var toolbarContent: some ToolbarContent {
         ToolbarItem(placement: .topBarLeading) {
             Button(action: exitToMenu) {
-                Label("Leave", systemImage: "xmark")
+                Image(systemName: "xmark")
+                    .font(.caption)
             }
             .accessibilityLabel("Leave")
         }
+        
         ToolbarItem(placement: .topBarTrailing) {
-            HStack(spacing: 8) {
+            HStack(spacing: 4) {
                 if let timeLimit {
-                    Text(timeLimit.title)
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(timeLimit.color)
-                        .padding(.trailing, 4)
-                        .accessibilityLabel("Time limit \(timeLimit.title)")
+                    Text(timeLimit.emoji)
+                        .font(.caption2)
                 }
-                HStack(spacing: 4) {
-                    ForEach(headerReactions, id: \.self) { emoji in
-                        Text(emoji)
-                            .font(.title2)
-                            .transition(.scale.combined(with: .opacity))
-                    }
+                ForEach(headerReactions, id: \.self) { emoji in
+                    Text(emoji)
+                        .font(.body)
+                        .transition(.scale.combined(with: .opacity))
                 }
             }
             .animation(.spring(response: 0.4, dampingFraction: 0.7), value: headerReactions)
@@ -226,20 +198,13 @@ struct GameBoardView: View {
         }
         remainingSeconds -= 1
         if remainingSeconds <= 0 {
-            // Time's up: end game as a tie for now
             stopTimer()
             endGameDueToTimeLimit()
         }
     }
 
     private func endGameDueToTimeLimit() {
-        // Decide outcome when time runs out. For now, treat as tie.
         ticTacToe.winner = .empty
         ticTacToe.gameOver = true
     }
-}
-
-#Preview {
-    StartMenuView()
-        .environmentObject(AppState())
 }

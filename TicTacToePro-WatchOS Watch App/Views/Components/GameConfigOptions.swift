@@ -1,8 +1,9 @@
 //
 //  GameConfigOptions.swift
-//  TicTacToePro
+//  TicTacToePro watchOS
 //
 //  Created by Sunnatbek on 20/09/25.
+//  watchOS compatible - no changes needed
 //
 
 import SwiftUI
@@ -44,17 +45,17 @@ enum TimeLimitOption: Int, CaseIterable, Identifiable {
     var id: Int { rawValue }
     
     var title: String {
-        rawValue == 0 ? "Unlimited" : "\(rawValue) min"
+        rawValue == 0 ? "∞" : "\(rawValue)m"
     }
     
     var description: String {
         switch self {
-        case .fiveMinutes:   return "Quick Match"
+        case .fiveMinutes:   return "Quick"
         case .tenMinutes:    return "Standard"
         case .fifteenMinutes: return "Moderate"
         case .twentyMinutes: return "Extended"
-        case .thirtyMinutes: return "Long Play"
-        case .unlimited:     return "No Time Limit"
+        case .thirtyMinutes: return "Long"
+        case .unlimited:     return "No Limit"
         }
     }
     
@@ -80,10 +81,11 @@ enum TimeLimitOption: Int, CaseIterable, Identifiable {
         }
     }
     
-    // Re-usable gradient for the selected border
     var selectionGradient: LinearGradient {
-        LinearGradient(colors: [color, color.opacity(0.6)],
-                       startPoint: .topLeading,
-                       endPoint: .bottomTrailing)
+        LinearGradient(
+            colors: [color, color.opacity(0.6)],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
     }
 }

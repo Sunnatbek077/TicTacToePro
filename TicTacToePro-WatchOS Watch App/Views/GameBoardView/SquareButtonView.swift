@@ -1,6 +1,8 @@
 //
 //  SquareButtonView.swift
-//  TicTacToePro
+//  TicTacToePro watchOS
+//
+//  Refactored for watchOS by Claude
 //
 
 import SwiftUI
@@ -13,10 +15,8 @@ struct SquareButtonView: View {
     let size: CGFloat
     let winningIndices: [Int]
     let isRecentlyPlaced: Bool
-    let isSELikeSmallScreen: Bool
+    let isSELikeSmallScreen: Bool // Not used on watchOS but kept for compatibility
     let action: () -> Void
-    
-    @State private var isPressed: Bool = false
     
     var body: some View {
         Button(action: handleTap) {
@@ -28,17 +28,6 @@ struct SquareButtonView: View {
             .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
         }
         .buttonStyle(.plain)
-        // DragGesture is unavailable on tvOS; only attach on supported platforms
-        #if os(iOS) || os(macOS) || os(watchOS)
-        .gesture(DragGesture(minimumDistance: 0)
-            .onChanged { _ in isPressed = true }
-            .onEnded { _ in isPressed = false }
-        )
-        .sensoryFeedback(.impact(flexibility: .soft), trigger: isPressed)
-        #else
-        // On tvOS, omit the drag gesture and keep default button behavior.
-        // Optionally, you could add focus-based visuals here if desired.
-        #endif
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Board square")
         .accessibilityValue(accessibilityValue)
@@ -61,12 +50,11 @@ struct SquareButtonView: View {
                 RoundedRectangle(cornerRadius: cornerRadius)
                     .stroke(borderGradient, lineWidth: borderWidth)
             )
-            .opacity(isPressed ? 0.8 : 1.0) // Subtle opacity change for press feedback
-            .animation(.easeInOut(duration: 0.15), value: isPressed) // Shorter duration
             .shadow(
-                color: Color.black.opacity(colorScheme == .dark ? 0.15 : 0.1),
-                radius: 3,
-                x: 0, y: 1
+                color: Color.black.opacity(colorScheme == .dark ? 0.12 : 0.08),
+                radius: 2,
+                x: 0,
+                y: 1
             )
     }
     
@@ -74,14 +62,14 @@ struct SquareButtonView: View {
     /// Renders the symbol (X or O) with conditional styling
     private var symbolView: some View {
         Text(symbol)
-            .font(.system(size: size * (isSELikeSmallScreen ? 0.5 : 0.55), weight: .bold, design: .rounded))
+            .font(.system(size: size * 0.5, weight: .bold, design: .rounded))
             .foregroundStyle(symbolGradient)
             .shadow(
-                color: winningGlowActive ? Color.yellow.opacity(0.5) : Color.black.opacity(0.15),
-                radius: winningGlowActive ? 5 : 2
+                color: winningGlowActive ? Color.yellow.opacity(0.4) : Color.black.opacity(0.12),
+                radius: winningGlowActive ? 4 : 1
             )
             .scaleEffect(isRecentlyPlaced ? 1.05 : 1.0)
-            .animation(.easeInOut(duration: 0.25), value: isRecentlyPlaced) // Shorter duration
+            .animation(.easeInOut(duration: 0.2), value: isRecentlyPlaced)
     }
     
     // MARK: - Symbol Logic
@@ -105,13 +93,29 @@ struct SquareButtonView: View {
     private var symbolGradient: LinearGradient {
         switch dataSource.squareStatus {
         case .xw, .ow:
-            return LinearGradient(colors: [.green, .teal], startPoint: .topLeading, endPoint: .bottomTrailing)
+            return LinearGradient(
+                colors: [.green, .teal],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
         case .x:
-            return LinearGradient(colors: [.pink, .purple], startPoint: .topLeading, endPoint: .bottomTrailing)
+            return LinearGradient(
+                colors: [.pink, .purple],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
         case .o:
-            return LinearGradient(colors: [.cyan, .blue], startPoint: .topLeading, endPoint: .bottomTrailing)
+            return LinearGradient(
+                colors: [.cyan, .blue],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
         default:
-            return LinearGradient(colors: [.gray.opacity(0.3)], startPoint: .topLeading, endPoint: .bottomTrailing)
+            return LinearGradient(
+                colors: [.gray.opacity(0.3)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
         }
     }
     
@@ -138,8 +142,8 @@ struct SquareButtonView: View {
     }
     
     // MARK: - Styling Constants
-    private var borderWidth: CGFloat { 0.8 } // Reduced for lighter rendering
-    private var cornerRadius: CGFloat { size * 0.1 }
+    private var borderWidth: CGFloat { 0.6 } // Thinner for watchOS
+    private var cornerRadius: CGFloat { size * 0.15 } // Slightly more rounded
     
     // MARK: - Accessibility Value
     /// Provides accessibility value based on square status

@@ -1,8 +1,9 @@
 //
 //  GameScoreView.swift
-//  TicTacToePro
+//  TicTacToePro watchOS
 //
-//  Created by Sunnatbek on 01/10/25.
+//  Refactored for watchOS by Claude
+//  Original by Sunnatbek on 01/10/25
 //
 
 import SwiftUI
@@ -16,19 +17,19 @@ struct GameScoreView: View {
     let currentTurn: String // "X" or "O"
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 6) {
             HStack(alignment: .firstTextBaseline) {
-                Text("Scoreboard")
-                    .font(.headline)
+                Text("Score")
+                    .font(.caption.weight(.semibold))
                 Spacer()
-                HStack(spacing: 8) {
+                HStack(spacing: 4) {
                     Text("Turn")
-                        .font(.caption)
+                        .font(.system(size: 9))
                         .foregroundStyle(.secondary)
                     Text(currentTurn)
-                        .font(.subheadline.weight(.semibold))
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 4)
+                        .font(.system(size: 10).weight(.semibold))
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
                         .background(.thinMaterial, in: Capsule())
                         .foregroundStyle(.primary)
                         .accessibilityLabel("Current turn")
@@ -36,19 +37,19 @@ struct GameScoreView: View {
                 }
             }
 
-            HStack(spacing: 12) {
+            HStack(spacing: 6) {
                 scorePill(title: "X", value: xWins, gradient: xGradient)
                 scorePill(title: "Tie", value: ties, gradient: tieGradient)
                 scorePill(title: "O", value: oWins, gradient: oGradient)
             }
         }
-        .padding(16)
+        .padding(8)
         .background(
             .ultraThinMaterial,
-            in: RoundedRectangle(cornerRadius: 16, style: .continuous)
+            in: RoundedRectangle(cornerRadius: 12, style: .continuous)
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .strokeBorder(
                     LinearGradient(
                         colors: colorScheme == .dark
@@ -56,7 +57,7 @@ struct GameScoreView: View {
                             : [Color.black.opacity(0.08), Color.black.opacity(0.03)],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
-                    ), lineWidth: 1
+                    ), lineWidth: 0.5
                 )
         )
         .accessibilityElement(children: .contain)
@@ -66,20 +67,20 @@ struct GameScoreView: View {
     // MARK: - Subviews
 
     private func scorePill(title: String, value: Int, gradient: LinearGradient) -> some View {
-        VStack(spacing: 6) {
+        VStack(spacing: 3) {
             Text(title)
-                .font(.caption2.weight(.semibold))
+                .font(.system(size: 9).weight(.semibold))
                 .foregroundStyle(.secondary)
             Text("\(value)")
-                .font(.title3.weight(.bold))
+                .font(.body.weight(.bold))
                 .foregroundStyle(gradient)
                 .minimumScaleFactor(0.7)
                 .lineLimit(1)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 10)
+        .padding(.vertical, 6)
         .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
                 .fill(
                     LinearGradient(
                         colors: colorScheme == .dark
@@ -91,7 +92,7 @@ struct GameScoreView: View {
                 )
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
                 .strokeBorder(
                     LinearGradient(
                         colors: colorScheme == .dark
@@ -99,7 +100,7 @@ struct GameScoreView: View {
                             : [Color.black.opacity(0.06), Color.black.opacity(0.03)],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
-                    ), lineWidth: 0.8
+                    ), lineWidth: 0.5
                 )
         )
         .accessibilityElement(children: .ignore)
@@ -123,12 +124,11 @@ struct GameScoreView: View {
 }
 
 #Preview {
-    VStack(spacing: 16) {
-        GameScoreView(xWins: 3, oWins: 2, ties: 1, currentTurn: "X")
-        GameScoreView(xWins: 10, oWins: 12, ties: 4, currentTurn: "O")
+    ScrollView {
+        VStack(spacing: 12) {
+            GameScoreView(xWins: 3, oWins: 2, ties: 1, currentTurn: "X")
+            GameScoreView(xWins: 10, oWins: 12, ties: 4, currentTurn: "O")
+        }
+        .padding()
     }
-    .padding()
-    .background(
-        LinearGradient(colors: [.black, .purple.opacity(0.25), .blue.opacity(0.2)], startPoint: .topLeading, endPoint: .bottomTrailing)
-    )
 }

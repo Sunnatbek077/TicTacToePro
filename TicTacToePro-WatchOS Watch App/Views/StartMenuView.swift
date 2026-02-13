@@ -217,7 +217,6 @@ struct StartMenuView: View {
                         // Header and Configuration Card Group
                         VStack(spacing: isCompactHeightPhone ? 12 : 16) {
                             HeroHeader(
-                                isCompactHeightPhone: isCompactHeightPhone,
                                 configurationSummary: configurationSummary
                             )
                             .font(headerFont)
@@ -227,11 +226,7 @@ struct StartMenuView: View {
                                 selectedGameMode: $selectedGameMode,
                                 selectedDifficulty: $selectedDifficulty,
                                 selectedBoardSize: $selectedBoardSize,
-                                selectedTimeLimit: $selectedTimeLimit,
-                                currentPage: $currentPage,
-                                isCompactHeightPhone: isCompactHeightPhone,
-                                shadowColor: colorScheme == .dark ? .black : .gray,
-                                cardBackground: cardBackground
+                                selectedTimeLimit: $selectedTimeLimit
                             )
                         }
                         .frame(maxWidth: contentMaxWidth)
@@ -239,7 +234,6 @@ struct StartMenuView: View {
                         
                         // Start/Next Button
                         StartButton(
-                            isCompactHeightPhone: isCompactHeightPhone,
                             action: {
                                 triggerHaptic()
                                 if currentPage < 2 {
@@ -372,3 +366,4 @@ struct StartMenuView: View {
     StartMenuView()
         .environmentObject(AppState())
 }
+

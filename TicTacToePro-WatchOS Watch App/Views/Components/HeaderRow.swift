@@ -1,8 +1,9 @@
 //
 //  HeaderRow.swift
-//  TicTacToePro
+//  TicTacToePro watchOS
 //
 //  Created by Sunnatbek on 20/09/25.
+//  watchOS compatible
 //
 
 import SwiftUI
@@ -13,10 +14,11 @@ struct HeaderRow: View {
     
     var body: some View {
         HStack {
-            Text(title).font(.headline)
+            Text(title)
+                .font(.caption.weight(.semibold))
             Spacer()
             Text(value)
-                .font(.subheadline.weight(.semibold))
+                .font(.caption)
                 .foregroundStyle(.secondary)
                 .accessibilityHidden(true)
         }
