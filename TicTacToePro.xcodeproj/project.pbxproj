@@ -12,9 +12,17 @@
 		6E435A672EA521C900D97180 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 6E435A662EA521C900D97180 /* FirebaseAuth */; };
 		6E435A692EA521C900D97180 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 6E435A682EA521C900D97180 /* FirebaseFirestore */; };
 		6E435A6B2EA521C900D97180 /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = 6E435A6A2EA521C900D97180 /* FirebaseMessaging */; };
+		6E4DCB8F2F3F227F005C9326 /* RealityKitContent in Frameworks */ = {isa = PBXBuildFile; productRef = 6E4DCB8E2F3F227F005C9326 /* RealityKitContent */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		6E4DCB9C2F3F2280005C9326 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 6E7467D02E7F17FE00A3ABD9 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 6E4DCB892F3F227F005C9326;
+			remoteInfo = "TicTacToePro-VisionOS";
+		};
 		6EC7D8882F3B3BAB00DBFEEC /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 6E7467D02E7F17FE00A3ABD9 /* Project object */;
@@ -38,6 +46,9 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		6E4DCB8A2F3F227F005C9326 /* TicTacToePro-VisionOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "TicTacToePro-VisionOS.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		6E4DCB8D2F3F227F005C9326 /* RealityKitContent */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = RealityKitContent; sourceTree = "<group>"; };
+		6E4DCB9B2F3F2280005C9326 /* TicTacToePro-VisionOSTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "TicTacToePro-VisionOSTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		6E7467D82E7F17FE00A3ABD9 /* TicTacToePro.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TicTacToePro.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		6EC7D8822F3B3BAB00DBFEEC /* TicTacToeProUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TicTacToeProUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -53,6 +64,16 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		6E4DCB8B2F3F227F005C9326 /* TicTacToePro-VisionOS */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "TicTacToePro-VisionOS";
+			sourceTree = "<group>";
+		};
+		6E4DCB9E2F3F2280005C9326 /* TicTacToePro-VisionOSTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "TicTacToePro-VisionOSTests";
+			sourceTree = "<group>";
+		};
 		6E7467DA2E7F17FE00A3ABD9 /* TicTacToePro */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
@@ -69,6 +90,21 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		6E4DCB872F3F227F005C9326 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6E4DCB8F2F3F227F005C9326 /* RealityKitContent in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6E4DCB982F3F2280005C9326 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		6E7467D52E7F17FE00A3ABD9 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -91,11 +127,22 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		6E4DCB8C2F3F227F005C9326 /* Packages */ = {
+			isa = PBXGroup;
+			children = (
+				6E4DCB8D2F3F227F005C9326 /* RealityKitContent */,
+			);
+			path = Packages;
+			sourceTree = "<group>";
+		};
 		6E7467CF2E7F17FE00A3ABD9 = {
 			isa = PBXGroup;
 			children = (
 				6E7467DA2E7F17FE00A3ABD9 /* TicTacToePro */,
 				6EC7D8832F3B3BAB00DBFEEC /* TicTacToeProUITests */,
+				6E4DCB8B2F3F227F005C9326 /* TicTacToePro-VisionOS */,
+				6E4DCB8C2F3F227F005C9326 /* Packages */,
+				6E4DCB9E2F3F2280005C9326 /* TicTacToePro-VisionOSTests */,
 				6E7467D92E7F17FE00A3ABD9 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -105,6 +152,8 @@
 			children = (
 				6E7467D82E7F17FE00A3ABD9 /* TicTacToePro.app */,
 				6EC7D8822F3B3BAB00DBFEEC /* TicTacToeProUITests.xctest */,
+				6E4DCB8A2F3F227F005C9326 /* TicTacToePro-VisionOS.app */,
+				6E4DCB9B2F3F2280005C9326 /* TicTacToePro-VisionOSTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -112,6 +161,52 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		6E4DCB892F3F227F005C9326 /* TicTacToePro-VisionOS */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 6E4DCBA62F3F2280005C9326 /* Build configuration list for PBXNativeTarget "TicTacToePro-VisionOS" */;
+			buildPhases = (
+				6E4DCB862F3F227F005C9326 /* Sources */,
+				6E4DCB872F3F227F005C9326 /* Frameworks */,
+				6E4DCB882F3F227F005C9326 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				6E4DCB8B2F3F227F005C9326 /* TicTacToePro-VisionOS */,
+			);
+			name = "TicTacToePro-VisionOS";
+			packageProductDependencies = (
+				6E4DCB8E2F3F227F005C9326 /* RealityKitContent */,
+			);
+			productName = "TicTacToePro-VisionOS";
+			productReference = 6E4DCB8A2F3F227F005C9326 /* TicTacToePro-VisionOS.app */;
+			productType = "com.apple.product-type.application";
+		};
+		6E4DCB9A2F3F2280005C9326 /* TicTacToePro-VisionOSTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 6E4DCBA72F3F2280005C9326 /* Build configuration list for PBXNativeTarget "TicTacToePro-VisionOSTests" */;
+			buildPhases = (
+				6E4DCB972F3F2280005C9326 /* Sources */,
+				6E4DCB982F3F2280005C9326 /* Frameworks */,
+				6E4DCB992F3F2280005C9326 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				6E4DCB9D2F3F2280005C9326 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				6E4DCB9E2F3F2280005C9326 /* TicTacToePro-VisionOSTests */,
+			);
+			name = "TicTacToePro-VisionOSTests";
+			packageProductDependencies = (
+			);
+			productName = "TicTacToePro-VisionOSTests";
+			productReference = 6E4DCB9B2F3F2280005C9326 /* TicTacToePro-VisionOSTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 		6E7467D72E7F17FE00A3ABD9 /* TicTacToePro */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 6E7467E32E7F17FF00A3ABD9 /* Build configuration list for PBXNativeTarget "TicTacToePro" */;
@@ -173,6 +268,13 @@
 				LastSwiftUpdateCheck = 2620;
 				LastUpgradeCheck = 2620;
 				TargetAttributes = {
+					6E4DCB892F3F227F005C9326 = {
+						CreatedOnToolsVersion = 26.2;
+					};
+					6E4DCB9A2F3F2280005C9326 = {
+						CreatedOnToolsVersion = 26.2;
+						TestTargetID = 6E4DCB892F3F227F005C9326;
+					};
 					6E7467D72E7F17FE00A3ABD9 = {
 						CreatedOnToolsVersion = 26.0;
 					};
@@ -212,11 +314,27 @@
 			targets = (
 				6E7467D72E7F17FE00A3ABD9 /* TicTacToePro */,
 				6EC7D8812F3B3BAB00DBFEEC /* TicTacToeProUITests */,
+				6E4DCB892F3F227F005C9326 /* TicTacToePro-VisionOS */,
+				6E4DCB9A2F3F2280005C9326 /* TicTacToePro-VisionOSTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		6E4DCB882F3F227F005C9326 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6E4DCB992F3F2280005C9326 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		6E7467D62E7F17FE00A3ABD9 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -234,6 +352,20 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		6E4DCB862F3F227F005C9326 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6E4DCB972F3F2280005C9326 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		6E7467D42E7F17FE00A3ABD9 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -251,6 +383,11 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		6E4DCB9D2F3F2280005C9326 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 6E4DCB892F3F227F005C9326 /* TicTacToePro-VisionOS */;
+			targetProxy = 6E4DCB9C2F3F2280005C9326 /* PBXContainerItemProxy */;
+		};
 		6EC7D8892F3B3BAB00DBFEEC /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 6E7467D72E7F17FE00A3ABD9 /* TicTacToePro */;
@@ -259,6 +396,118 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		6E4DCBA12F3F2280005C9326 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 62JGKCCD59;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "$(TARGET_NAME)/Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.avarageDeveloper.TicTacToePro-VisionOS";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = xros;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "xros xrsimulator";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 7;
+				XROS_DEPLOYMENT_TARGET = 26.2;
+			};
+			name = Debug;
+		};
+		6E4DCBA22F3F2280005C9326 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 62JGKCCD59;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "$(TARGET_NAME)/Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.avarageDeveloper.TicTacToePro-VisionOS";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = xros;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "xros xrsimulator";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 7;
+				VALIDATE_PRODUCT = YES;
+				XROS_DEPLOYMENT_TARGET = 26.2;
+			};
+			name = Release;
+		};
+		6E4DCBA32F3F2280005C9326 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 62JGKCCD59;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.avarageDeveloper.TicTacToePro-VisionOSTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = xros;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SUPPORTED_PLATFORMS = "xros xrsimulator";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 7;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/TicTacToePro-VisionOS.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/TicTacToePro-VisionOS";
+				XROS_DEPLOYMENT_TARGET = 26.2;
+			};
+			name = Debug;
+		};
+		6E4DCBA42F3F2280005C9326 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 62JGKCCD59;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.avarageDeveloper.TicTacToePro-VisionOSTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = xros;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SUPPORTED_PLATFORMS = "xros xrsimulator";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 7;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/TicTacToePro-VisionOS.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/TicTacToePro-VisionOS";
+				VALIDATE_PRODUCT = YES;
+				XROS_DEPLOYMENT_TARGET = 26.2;
+			};
+			name = Release;
+		};
 		6E7467E12E7F17FF00A3ABD9 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -539,6 +788,24 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		6E4DCBA62F3F2280005C9326 /* Build configuration list for PBXNativeTarget "TicTacToePro-VisionOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				6E4DCBA12F3F2280005C9326 /* Debug */,
+				6E4DCBA22F3F2280005C9326 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		6E4DCBA72F3F2280005C9326 /* Build configuration list for PBXNativeTarget "TicTacToePro-VisionOSTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				6E4DCBA32F3F2280005C9326 /* Debug */,
+				6E4DCBA42F3F2280005C9326 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		6E7467D32E7F17FE00A3ABD9 /* Build configuration list for PBXProject "TicTacToePro" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -604,6 +871,10 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 6E435A612EA521C900D97180 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseMessaging;
+		};
+		6E4DCB8E2F3F227F005C9326 /* RealityKitContent */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = RealityKitContent;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
