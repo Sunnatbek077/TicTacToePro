@@ -212,6 +212,7 @@
       }
     },
     "%@ turn" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -358,6 +359,7 @@
       }
     },
     "%@’s Turn" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -8508,6 +8510,9 @@
           }
         }
       }
+    },
+    "TURN" : {
+
     },
     "Type message..." : {
       "localizations" : {

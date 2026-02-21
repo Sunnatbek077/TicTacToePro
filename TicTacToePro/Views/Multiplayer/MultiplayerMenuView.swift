@@ -40,6 +40,7 @@ struct MultiplayerMenuView: View {
     @State private var animateBackground = false
     @State private var showDeleteConfirmation = false
     @State private var gameToDelete: GameListItem?
+    @State private var autoRefreshTimer: Timer?
     
 #if os(iOS)
     @State private var hapticsEngine: CHHapticEngine?
@@ -260,6 +261,20 @@ struct MultiplayerMenuView: View {
 #if os(iOS)
             prepareHaptics()
 #endif
+            // View ochilganda darhol fetch qilish
+            await multiplayerVM.refreshGames()
+            
+            // Har 30 soniyada avtomatik refresh
+            autoRefreshTimer = Timer.scheduledTimer(withTimeInterval: 30, repeats: true) { _ in
+                Task {
+                    await multiplayerVM.refreshGames()
+                }
+            }
+        }
+        .onDisappear {
+            // View yopilganda timerni to'xtatish
+            autoRefreshTimer?.invalidate()
+            autoRefreshTimer = nil
         }
     }
     
