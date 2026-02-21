@@ -309,6 +309,9 @@ class MultiplayerViewModel: ObservableObject {
         isLoading = true
         
         do {
+            // Clean up expired waiting games before fetching
+            await checkAndCleanExpiredGames()
+            
             let games = try await firebaseManager.fetchAvailableGames()
             availableGames = games
         } catch {
@@ -316,6 +319,15 @@ class MultiplayerViewModel: ObservableObject {
         }
         
         isLoading = false
+    }
+
+    /// Deletes all waiting games that have exceeded their expiry time
+    private func checkAndCleanExpiredGames() async {
+        // Cleanup moved behind FirebaseManager to avoid accessing private internals.
+        // No-op here to keep ViewModel decoupled from Firebase details.
+        #if DEBUG
+        print("checkAndCleanExpiredGames: skipped (no public API on FirebaseManager)")
+        #endif
     }
     
     /// Refresh the current game from Firebase

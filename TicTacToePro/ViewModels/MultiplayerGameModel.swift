@@ -204,7 +204,7 @@ struct MultiplayerGame: Codable, Identifiable {
     var moveHistory: [GameMove]
     var chatMessages: [ChatMessage]
     
-    // Vaqt boshqaruvi
+    // Time management
     var startTime: Date?
     var endTime: Date?
     var lastMoveTime: Date?
@@ -212,21 +212,30 @@ struct MultiplayerGame: Codable, Identifiable {
     var player2TimeRemaining: TimeInterval?
     var currentTurnStartTime: Date?
     
-    // Qo'shimcha ma'lumotlar
+    // Additional info
     var spectatorCount: Int
     var roomCode: String?
     var isPrivate: Bool
     
+    // Waiting time management
+    var createdAt: Date
+    var waitExpiresAt: Date
+    
+    var isWaitExpired: Bool {
+        status == .waiting && Date() > waitExpiresAt
+    }
+    
     init(id: String = UUID().uuidString,
          player1: Player,
          player2: Player? = nil,
-         settings: MultiplayerGameSettings = MultiplayerGameSettings()) {
+         settings: MultiplayerGameSettings = MultiplayerGameSettings(),
+         waitTimeout: TimeInterval = 300) { // default 5 minutes
         self.id = id
         self.player1 = player1
         self.player2 = player2
         self.settings = settings
         
-        // Board yaratish
+        // Create board
         let totalSquares = settings.boardSize * settings.boardSize
         self.boardState = Array(repeating: .empty, count: totalSquares)
         
@@ -246,26 +255,29 @@ struct MultiplayerGame: Codable, Identifiable {
         self.spectatorCount = 0
         self.roomCode = nil
         self.isPrivate = false
+        
+        self.createdAt = Date()
+        self.waitExpiresAt = Date().addingTimeInterval(waitTimeout)
     }
     
     // MARK: - Game Logic Integration
     
-    /// Board obyektini olish
+    /// Returns the current board object
     func getBoard() -> Board {
         return Board(position: boardState, turn: currentTurn)
     }
     
-    /// Harakat qilish
+    /// Makes a move for the given player at the specified index
     mutating func makeMove(playerId: String, index: Int) -> Bool {
         guard status == .active else { return false }
         guard boardState.indices.contains(index) else { return false }
         guard boardState[index] == .empty else { return false }
         
-        // To'g'ri o'yinchini tekshirish
+        // Validate it's the correct player's turn
         let currentPlayer = (currentTurn == player1.symbol) ? player1 : player2
         guard currentPlayer?.id == playerId else { return false }
         
-        // Harakatni amalga oshirish
+        // Apply the move
         boardState[index] = currentTurn
         let move = GameMove(playerId: playerId,
                            index: index,
@@ -274,17 +286,17 @@ struct MultiplayerGame: Codable, Identifiable {
         moveHistory.append(move)
         lastMoveTime = Date()
         
-        // Vaqtni yangilash
+        // Update remaining time
         updateTimeAfterMove()
         
-        // G'olibni tekshirish
+        // Check for winner
         let board = getBoard()
         if board.isWin {
             status = .finished
             result = currentTurn == player1.symbol ? .player1Won : .player2Won
             endTime = Date()
             
-            // Skor yangilash
+            // Update scores
             if currentTurn == player1.symbol {
                 player1.score += 1
             } else if let _ = player2 {
@@ -293,7 +305,7 @@ struct MultiplayerGame: Codable, Identifiable {
             return true
         }
         
-        // Durang tekshirish
+        // Check for draw
         if board.isDraw {
             status = .finished
             result = .draw
@@ -301,14 +313,14 @@ struct MultiplayerGame: Codable, Identifiable {
             return true
         }
         
-        // Navbatni almashtirish
+        // Switch turns
         currentTurn = (currentTurn == .x) ? .o : .x
         currentTurnStartTime = Date()
         
         return true
     }
     
-    /// Vaqtni yangilash
+    /// Deducts elapsed time from the current player's remaining time
     private mutating func updateTimeAfterMove() {
         guard settings.totalTimeLimit != nil,
               let turnStart = currentTurnStartTime else { return }
@@ -326,7 +338,7 @@ struct MultiplayerGame: Codable, Identifiable {
         }
     }
     
-    /// Chat xabar qo'shish
+    /// Adds a chat message from the given player
     mutating func addChatMessage(playerId: String, message: String) {
         guard settings.allowChat else { return }
         
@@ -345,7 +357,7 @@ struct MultiplayerGame: Codable, Identifiable {
         chatMessages.append(chatMsg)
     }
     
-    /// System xabar qo'shish
+    /// Adds a system-generated message to the chat
     mutating func addSystemMessage(_ message: String) {
         let systemMsg = ChatMessage(playerId: "system",
                                    playerUsername: "System",
@@ -354,7 +366,7 @@ struct MultiplayerGame: Codable, Identifiable {
         chatMessages.append(systemMsg)
     }
     
-    /// O'yinni boshlash
+    /// Starts the game when both players are ready
     mutating func startGame() {
         guard status == .ready, player2 != nil else { return }
         status = .active
@@ -363,7 +375,7 @@ struct MultiplayerGame: Codable, Identifiable {
         addSystemMessage("Game started!")
     }
     
-    /// O'yinni tark etish
+    /// Forfeits the game for the given player
     mutating func forfeit(playerId: String) {
         status = .finished
         if playerId == player1.id {
@@ -376,7 +388,7 @@ struct MultiplayerGame: Codable, Identifiable {
         endTime = Date()
     }
     
-    /// Vaqt tugashi
+    /// Ends the game due to the given player running out of time
     mutating func handleTimeout(playerId: String) {
         status = .finished
         if playerId == player1.id {
@@ -386,6 +398,13 @@ struct MultiplayerGame: Codable, Identifiable {
             result = .timeoutPlayer2
             player1.score += 1
         }
+        endTime = Date()
+    }
+    
+    /// Marks the game as abandoned if the waiting period has expired
+    mutating func handleWaitTimeout() {
+        guard isWaitExpired else { return }
+        status = .abandoned
         endTime = Date()
     }
 }
@@ -398,20 +417,27 @@ struct GameRoom: Codable, Identifiable {
     var settings: MultiplayerGameSettings
     var isPrivate: Bool
     var createdAt: Date
+    var expiresAt: Date              // ← YANGI
     var playersInRoom: [Player]
     var maxPlayers: Int
+    
+    var isExpired: Bool {            // ← YANGI
+        Date() > expiresAt
+    }
     
     init(id: String = UUID().uuidString,
          roomCode: String = generateRoomCode(),
          hostId: String,
          settings: MultiplayerGameSettings = MultiplayerGameSettings(),
-         isPrivate: Bool = false) {
+         isPrivate: Bool = false,
+         waitTimeout: TimeInterval = 300) {  // ← YANGI (default 5 daqiqa)
         self.id = id
         self.roomCode = roomCode
         self.hostId = hostId
         self.settings = settings
         self.isPrivate = isPrivate
         self.createdAt = Date()
+        self.expiresAt = Date().addingTimeInterval(waitTimeout)  // ← YANGI
         self.playersInRoom = []
         self.maxPlayers = 2
     }
