@@ -78,11 +78,21 @@
 			);
 			target = 6E7467D72E7F17FE00A3ABD9 /* TicTacToePro */;
 		};
+		6EA942B92F49C8AA00400DF3 /* Exceptions for "TicTacToePro-VisionOS" folder in "TicTacToePro-VisionOS" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 6E4DCB892F3F227F005C9326 /* TicTacToePro-VisionOS */;
+		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		6E4DCB8B2F3F227F005C9326 /* TicTacToePro-VisionOS */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				6EA942B92F49C8AA00400DF3 /* Exceptions for "TicTacToePro-VisionOS" folder in "TicTacToePro-VisionOS" target */,
+			);
 			path = "TicTacToePro-VisionOS";
 			sourceTree = "<group>";
 		};

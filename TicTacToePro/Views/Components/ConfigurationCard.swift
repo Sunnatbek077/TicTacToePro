@@ -385,7 +385,12 @@ struct ConfigurationCard: View {
 // MARK: - Preview
 #Preview("Configuration Card") {
     ZStack {
+#if os(tvOS)
+        // tvOS doesn't have systemGroupedBackground; use a neutral fallback
+        Color.black.opacity(0.9).ignoresSafeArea()
+#else
         Color(.systemGroupedBackground).ignoresSafeArea()
+#endif
         ConfigurationCard(
             selectedPlayer: .constant(.x),
             selectedGameMode: .constant(.ai),
@@ -400,3 +405,4 @@ struct ConfigurationCard: View {
         .padding(24)
     }
 }
+
