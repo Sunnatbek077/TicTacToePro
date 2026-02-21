@@ -6809,6 +6809,7 @@
       }
     },
     "Select %@ as starting player" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -6879,6 +6880,7 @@
       }
     },
     "Select %@ difficulty" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -6949,6 +6951,7 @@
       }
     },
     "Select %@ game mode" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
