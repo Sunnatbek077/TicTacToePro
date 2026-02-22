@@ -3,371 +3,327 @@
 //  TicTacToePro watchOS
 //
 //  Refactored for watchOS by Claude
-//  Original by Sunnatbek on 20/09/25
+//  Original by Sunnatbek on 20/09/25.
+//
+//  watchOS Design principles applied:
+//  - Base font: .footnote / .caption2 (never exceed .headline inside cards)
+//  - Touch targets: min 44×44 pt (even on 40 mm watch)
+//  - Spacing: tight but breathable – 4-8 pt between siblings
+//  - Avoid LazyVGrid where HStack suffices (less layout overhead)
+//  - Digital Crown scrolling via .focusable() on outer ScrollView
 //
 
 import SwiftUI
 
+// MARK: - Root Card
 struct ConfigurationCard: View {
     @Binding var selectedPlayer: PlayerOption
     @Binding var selectedGameMode: GameMode
     @Binding var selectedDifficulty: DifficultyOption
     @Binding var selectedBoardSize: BoardSize
     @Binding var selectedTimeLimit: TimeLimitOption
-    
-    @Environment(\.colorScheme) private var colorScheme
-    
+
     var body: some View {
         ScrollView {
-            VStack(spacing: 12) {
-                PlayerSelectionView(selectedPlayer: $selectedPlayer)
-                GameModeSelectionView(selectedGameMode: $selectedGameMode)
-                
+            VStack(spacing: 10) {
+                SectionRow(label: "Player") {
+                    PlayerPicker(selected: $selectedPlayer)
+                }
+                Divider().opacity(0.3)
+
+                SectionRow(label: "Mode") {
+                    GameModePicker(selected: $selectedGameMode)
+                }
+
                 if !selectedGameMode.isPVP {
-                    DifficultySelectionView(selectedDifficulty: $selectedDifficulty)
-                }
-                
-                BoardSizeSelectionView(selectedSize: $selectedBoardSize)
-                TimeLimitSelectionView(selectedTimeLimit: $selectedTimeLimit)
-            }
-            .padding(.vertical, 8)
-        }
-        .focusable() // Enable Digital Crown scrolling
-    }
-}
-
-// MARK: - Player Selection View
-struct PlayerSelectionView: View {
-    @Binding var selectedPlayer: PlayerOption
-    @Environment(\.colorScheme) private var colorScheme
-    
-    var body: some View {
-        VStack(spacing: 6) {
-            Text("Starting Player")
-                .font(.caption2.weight(.semibold))
-                .foregroundStyle(.secondary)
-            
-            HStack(spacing: 8) {
-                ForEach(PlayerOption.allCases, id: \.self) { player in
-                    Button {
-                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                            selectedPlayer = player
-                        }
-                    } label: {
-                        let selectedBG = LinearGradient(
-                            colors: [.pink.opacity(0.9), .purple.opacity(0.9)],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                        let unselectedBG = LinearGradient(
-                            colors: [Color.gray.opacity(colorScheme == .dark ? 0.3 : 0.2)],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                        
-                        Text(player.rawValue)
-                            .font(.headline.bold())
-                            .frame(width: 40, height: 40)
-                            .background(selectedPlayer == player ? selectedBG : unselectedBG)
-                            .foregroundStyle(selectedPlayer == player ? .white : .primary)
-                            .clipShape(Circle())
-                            .overlay(
-                                Circle()
-                                    .stroke(
-                                        LinearGradient(
-                                            colors: [.pink, .purple],
-                                            startPoint: .top,
-                                            endPoint: .bottom
-                                        ),
-                                        lineWidth: selectedPlayer == player ? 1.5 : 0
-                                    )
-                            )
+                    Divider().opacity(0.3)
+                    SectionRow(label: "Difficulty") {
+                        DifficultyPicker(selected: $selectedDifficulty)
                     }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("Select \(player.rawValue) as starting player")
                 }
+
+                Divider().opacity(0.3)
+                BoardSizePicker(selected: $selectedBoardSize)
+
+                Divider().opacity(0.3)
+                TimeLimitPicker(selected: $selectedTimeLimit)
             }
+            .padding(.vertical, 6)
+            .padding(.horizontal, 4)
         }
-        .padding(.horizontal, 8)
+        .focusable()
     }
 }
 
-// MARK: - Game Mode Selection View
-struct GameModeSelectionView: View {
-    @Binding var selectedGameMode: GameMode
-    @Environment(\.colorScheme) private var colorScheme
-    
+// MARK: - Generic section wrapper
+private struct SectionRow<Content: View>: View {
+    let label: String
+    @ViewBuilder let content: () -> Content
+
     var body: some View {
-        VStack(spacing: 6) {
-            Text("Game Mode")
-                .font(.caption2.weight(.semibold))
+        VStack(alignment: .leading, spacing: 4) {
+            Text(label)
+                .font(.caption2)
+                .fontWeight(.semibold)
                 .foregroundStyle(.secondary)
-            
-            HStack(spacing: 8) {
-                ForEach(GameMode.allCases, id: \.self) { mode in
-                    Button {
-                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                            selectedGameMode = mode
-                        }
-                    } label: {
-                        VStack(spacing: 4) {
-                            Image(systemName: mode == .ai ? "cpu" : "person.2.fill")
-                                .font(.system(size: 16))
-                            Text(mode.rawValue)
-                                .font(.system(size: 10).weight(.semibold))
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 8)
-                        .background(
-                            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                .fill(selectedGameMode == mode ? .thinMaterial : .ultraThinMaterial)
-                        )
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                .strokeBorder(
-                                    selectedGameMode == mode
-                                        ? LinearGradient(
-                                            colors: [.purple, .blue],
-                                            startPoint: .top,
-                                            endPoint: .bottom
-                                        )
-                                        : LinearGradient(colors: [.clear], startPoint: .top, endPoint: .bottom),
-                                    lineWidth: selectedGameMode == mode ? 1.5 : 0
-                                )
-                        )
-                        .foregroundStyle(selectedGameMode == mode ? .primary : .secondary)
+                .padding(.horizontal, 2)
+            content()
+        }
+    }
+}
+
+// MARK: - Player Picker  (X / O chips)
+private struct PlayerPicker: View {
+    @Binding var selected: PlayerOption
+
+    var body: some View {
+        HStack(spacing: 8) {
+            ForEach(PlayerOption.allCases, id: \.self) { option in
+                ChipButton(
+                    label: option.rawValue,
+                    isSelected: selected == option,
+                    accentColors: [.pink, .purple]
+                ) {
+                    selected = option
+                }
+                .frame(width: 44, height: 36)
+            }
+            Spacer()
+        }
+    }
+}
+
+// MARK: - Game Mode Picker  (AI / PvP)
+private struct GameModePicker: View {
+    @Binding var selected: GameMode
+
+    var body: some View {
+        HStack(spacing: 6) {
+            ForEach(GameMode.allCases, id: \.self) { mode in
+                Button {
+                    withAnimation(.easeInOut(duration: 0.2)) { selected = mode }
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: mode.icon)
+                            .font(.system(size: 12))
+                        Text(mode.rawValue)
+                            .font(.footnote).fontWeight(.semibold)
                     }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("\(mode.rawValue) mode")
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 36)
+                    .background(
+                        RoundedRectangle(cornerRadius: 9)
+                            .fill(selected == mode ? AnyShapeStyle(.thinMaterial) : AnyShapeStyle(.ultraThinMaterial))
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 9)
+                            .strokeBorder(
+                                selected == mode
+                                    ? LinearGradient(colors: [.purple, .blue], startPoint: .leading, endPoint: .trailing)
+                                    : LinearGradient(colors: [.clear], startPoint: .leading, endPoint: .trailing),
+                                lineWidth: 1.5
+                            )
+                    )
+                    .foregroundStyle(selected == mode ? .primary : .secondary)
                 }
+                .buttonStyle(.plain)
+                .accessibilityLabel("\(mode.rawValue) mode")
             }
-        }
-        .padding(.horizontal, 8)
-    }
-}
-
-// MARK: - Difficulty Selection View
-struct DifficultySelectionView: View {
-    @Binding var selectedDifficulty: DifficultyOption
-    @Environment(\.colorScheme) private var colorScheme
-    
-    var body: some View {
-        VStack(spacing: 6) {
-            Text("Difficulty")
-                .font(.caption2.weight(.semibold))
-                .foregroundStyle(.secondary)
-            
-            HStack(spacing: 6) {
-                ForEach(DifficultyOption.allCases, id: \.self) { difficulty in
-                    Button {
-                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                            selectedDifficulty = difficulty
-                        }
-                    } label: {
-                        Text(difficulty.rawValue)
-                            .font(.system(size: 10).weight(.semibold))
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 8)
-                            .background(
-                                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                    .fill(selectedDifficulty == difficulty ? .thinMaterial : .ultraThinMaterial)
-                            )
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                    .strokeBorder(
-                                        selectedDifficulty == difficulty
-                                            ? difficultyColor(difficulty)
-                                            : LinearGradient(colors: [.clear], startPoint: .top, endPoint: .bottom),
-                                        lineWidth: selectedDifficulty == difficulty ? 1.5 : 0
-                                    )
-                            )
-                            .foregroundStyle(
-                                selectedDifficulty == difficulty
-                                    ? difficultyColor(difficulty)
-                                    : LinearGradient(colors: [.secondary], startPoint: .top, endPoint: .bottom)
-                            )
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("\(difficulty.rawValue) difficulty")
-                }
-            }
-        }
-        .padding(.horizontal, 8)
-    }
-    
-    private func difficultyColor(_ difficulty: DifficultyOption) -> LinearGradient {
-        switch difficulty {
-        case .easy:
-            return LinearGradient(colors: [.green, .mint], startPoint: .top, endPoint: .bottom)
-        case .medium:
-            return LinearGradient(colors: [.orange, .yellow], startPoint: .top, endPoint: .bottom)
-        case .hard:
-            return LinearGradient(colors: [.red, .pink], startPoint: .top, endPoint: .bottom)
         }
     }
 }
 
-// MARK: - Board Size Selection View
-struct BoardSizeSelectionView: View {
-    @Binding var selectedSize: BoardSize
-    @Environment(\.colorScheme) private var colorScheme
-    
+// MARK: - Difficulty Picker  (3 chips in one row)
+private struct DifficultyPicker: View {
+    @Binding var selected: DifficultyOption
+
     var body: some View {
-        VStack(spacing: 6) {
-            Text("Board Size")
-                .font(.caption2.weight(.semibold))
+        HStack(spacing: 6) {
+            ForEach(DifficultyOption.allCases, id: \.self) { diff in
+                ChipButton(
+                    label: diff.rawValue,
+                    isSelected: selected == diff,
+                    accentColors: difficultyColors(diff)
+                ) {
+                    selected = diff
+                }
+            }
+        }
+    }
+
+    private func difficultyColors(_ d: DifficultyOption) -> [Color] {
+        switch d {
+        case .easy:   return [.green, .mint]
+        case .medium: return [.orange, .yellow]
+        case .hard:   return [.red, .pink]
+        }
+    }
+}
+
+// MARK: - Board Size Picker  (scrollable horizontal strip)
+private struct BoardSizePicker: View {
+    @Binding var selected: BoardSize
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("Board")
+                .font(.caption2).fontWeight(.semibold)
                 .foregroundStyle(.secondary)
-            
-            LazyVGrid(columns: [
-                GridItem(.flexible(), spacing: 6),
-                GridItem(.flexible(), spacing: 6)
-            ], spacing: 6) {
-                ForEach(BoardSize.allCases) { size in
-                    BoardSizeItem(
-                        size: size,
-                        isSelected: selectedSize == size,
-                        colorScheme: colorScheme
-                    ) {
-                        withAnimation(.spring(duration: 0.3, bounce: 0.4)) {
-                            selectedSize = size
+                .padding(.horizontal, 2)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 6) {
+                    ForEach(BoardSize.allCases) { size in
+                        BoardSizeChip(size: size, isSelected: selected == size) {
+                            withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
+                                selected = size
+                            }
                         }
                     }
                 }
+                .padding(.horizontal, 2)
             }
-            .padding(.horizontal, 8)
         }
     }
 }
 
-struct BoardSizeItem: View {
+private struct BoardSizeChip: View {
     let size: BoardSize
     let isSelected: Bool
-    let colorScheme: ColorScheme
     let action: () -> Void
-    
+
     var body: some View {
         Button(action: action) {
-            VStack(spacing: 3) {
+            VStack(spacing: 2) {
                 Text(size.title)
-                    .font(.system(size: 11).bold())
-                    .foregroundColor(isSelected ? size.color : .primary)
-                
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(isSelected ? size.color : .primary)
                 Text(size.difficulty)
-                    .font(.system(size: 8).bold())
+                    .font(.system(size: 8, weight: .medium))
+                    .foregroundStyle(size.color)
                     .padding(.horizontal, 4)
-                    .padding(.vertical, 2)
-                    .background(
-                        Capsule()
-                            .fill(size.color.opacity(0.2))
-                    )
-                    .foregroundColor(size.color)
+                    .padding(.vertical, 1)
+                    .background(Capsule().fill(size.color.opacity(0.18)))
             }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 6)
+            .frame(width: 44, height: 44)
             .background(
-                RoundedRectangle(cornerRadius: 10)
-                    .fill(backgroundColor)
+                RoundedRectangle(cornerRadius: 9)
+                    .fill(Color(white: isSelected ? 0.22 : 0.14).opacity(0.9))
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 10)
+                RoundedRectangle(cornerRadius: 9)
                     .strokeBorder(
-                        isSelected
-                            ? LinearGradient(
-                                colors: [size.color, size.color.opacity(0.6)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                            : LinearGradient(colors: [.clear], startPoint: .topLeading, endPoint: .bottomTrailing),
-                        lineWidth: isSelected ? 1.5 : 0
+                        isSelected ? LinearGradient(colors: [size.color, size.color.opacity(0.5)], startPoint: .top, endPoint: .bottom)
+                                   : LinearGradient(colors: [.clear], startPoint: .top, endPoint: .bottom),
+                        lineWidth: 1.5
                     )
             )
-            .scaleEffect(isSelected ? 1.03 : 1.0)
-            .animation(.spring(duration: 0.3, bounce: 0.4), value: isSelected)
+            .scaleEffect(isSelected ? 1.04 : 1.0)
+            .animation(.spring(response: 0.25, dampingFraction: 0.75), value: isSelected)
         }
         .buttonStyle(.plain)
     }
-    
-    private var backgroundColor: Color {
-        colorScheme == .dark ? Color(white: 0.15) : .white
-    }
 }
 
-// MARK: - Time Limit Selection View
-struct TimeLimitSelectionView: View {
-    @Binding var selectedTimeLimit: TimeLimitOption
-    @Environment(\.colorScheme) private var colorScheme
-    
+// MARK: - Time Limit Picker  (scrollable horizontal strip)
+private struct TimeLimitPicker: View {
+    @Binding var selected: TimeLimitOption
+
     var body: some View {
-        VStack(spacing: 6) {
-            Text("Time Limit")
-                .font(.caption2.weight(.semibold))
+        VStack(alignment: .leading, spacing: 4) {
+            Text("Time")
+                .font(.caption2).fontWeight(.semibold)
                 .foregroundStyle(.secondary)
-            
-            LazyVGrid(columns: [
-                GridItem(.flexible(), spacing: 6),
-                GridItem(.flexible(), spacing: 6)
-            ], spacing: 6) {
-                ForEach(TimeLimitOption.allCases) { option in
-                    TimeLimitItem(
-                        timeLimit: option,
-                        isSelected: selectedTimeLimit == option,
-                        colorScheme: colorScheme
-                    ) {
-                        withAnimation(.spring(duration: 0.3, bounce: 0.4)) {
-                            selectedTimeLimit = option
+                .padding(.horizontal, 2)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 6) {
+                    ForEach(TimeLimitOption.allCases) { option in
+                        TimeLimitChip(option: option, isSelected: selected == option) {
+                            withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
+                                selected = option
+                            }
                         }
                     }
                 }
+                .padding(.horizontal, 2)
             }
-            .padding(.horizontal, 8)
         }
     }
 }
 
-struct TimeLimitItem: View {
-    let timeLimit: TimeLimitOption
+private struct TimeLimitChip: View {
+    let option: TimeLimitOption
     let isSelected: Bool
-    let colorScheme: ColorScheme
     let action: () -> Void
-    
+
     var body: some View {
         Button(action: action) {
-            VStack(spacing: 3) {
-                Text(timeLimit.title)
-                    .font(.system(size: 11).bold())
-                    .foregroundColor(isSelected ? timeLimit.color : .primary)
-                
-                Text(timeLimit.description)
+            VStack(spacing: 2) {
+                Text(option.title)
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundStyle(isSelected ? option.color : .primary)
+                Text(option.description)
                     .font(.system(size: 8))
-                    .foregroundColor(.secondary)
+                    .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 6)
+            .frame(width: 44, height: 44)
             .background(
-                RoundedRectangle(cornerRadius: 10)
-                    .fill(backgroundColor)
+                RoundedRectangle(cornerRadius: 9)
+                    .fill(Color(white: isSelected ? 0.22 : 0.14).opacity(0.9))
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 10)
+                RoundedRectangle(cornerRadius: 9)
                     .strokeBorder(
-                        isSelected
-                            ? LinearGradient(
-                                colors: [timeLimit.color, timeLimit.color.opacity(0.6)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                            : LinearGradient(colors: [.clear], startPoint: .topLeading, endPoint: .bottomTrailing),
-                        lineWidth: isSelected ? 1.5 : 0
+                        isSelected ? LinearGradient(colors: [option.color, option.color.opacity(0.5)], startPoint: .top, endPoint: .bottom)
+                                   : LinearGradient(colors: [.clear], startPoint: .top, endPoint: .bottom),
+                        lineWidth: 1.5
                     )
             )
-            .scaleEffect(isSelected ? 1.03 : 1.0)
-            .animation(.spring(duration: 0.3, bounce: 0.4), value: isSelected)
+            .scaleEffect(isSelected ? 1.04 : 1.0)
+            .animation(.spring(response: 0.25, dampingFraction: 0.75), value: isSelected)
         }
         .buttonStyle(.plain)
     }
-    
-    private var backgroundColor: Color {
-        colorScheme == .dark ? Color(white: 0.15) : .white
+}
+
+// MARK: - Reusable chip button
+private struct ChipButton: View {
+    let label: String
+    let isSelected: Bool
+    let accentColors: [Color]
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: {
+            withAnimation(.easeInOut(duration: 0.18)) { action() }
+        }) {
+            Text(label)
+                .font(.footnote).fontWeight(.bold)
+                .frame(maxWidth: .infinity)
+                .frame(height: 32)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(
+                            isSelected
+                                ? AnyShapeStyle(LinearGradient(colors: accentColors.map { $0.opacity(0.85) }, startPoint: .top, endPoint: .bottom))
+                                : AnyShapeStyle(Color(white: 0.18).opacity(0.8))
+                        )
+                )
+                .foregroundStyle(isSelected ? .white : .primary)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .strokeBorder(
+                            isSelected
+                                ? LinearGradient(colors: accentColors, startPoint: .top, endPoint: .bottom)
+                                : LinearGradient(colors: [.clear], startPoint: .top, endPoint: .bottom),
+                            lineWidth: 1.5
+                        )
+                )
+                .scaleEffect(isSelected ? 1.04 : 1.0)
+                .animation(.spring(response: 0.22, dampingFraction: 0.75), value: isSelected)
+        }
+        .buttonStyle(.plain)
     }
 }

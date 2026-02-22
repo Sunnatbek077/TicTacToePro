@@ -1,34 +1,42 @@
 //
 //  ContentView.swift
-//  TicTacToePro
+//  TicTacToePro watchOS
 //
-//  Created by Sunnatbek on 22/09/25.
+//  Refactored for watchOS by Claude
+//  Original by Sunnatbek on 22/09/25.
+//
+//  watchOS navigation pattern:
+//  - .tabViewStyle(.page) → horizontal swipe between tabs
+//  - Tab indicators shown as dots at the bottom (system default)
+//  - NavigationStack inside each page keeps push-navigation working
+//  - No tabItem labels (watchOS page-style doesn't support them)
 //
 
 import SwiftUI
 
 struct ContentView: View {
     @EnvironmentObject private var appState: AppState
-    
+    @State private var selectedTab: Tab = .start
+
+    enum Tab { case start, settings }
+
     var body: some View {
-        TabView {
+        TabView(selection: $selectedTab) {
+
+            // ── Page 1: Start / Game ───────────────────────────────────
             NavigationStack {
                 StartMenuView()
             }
-            .tabItem {
-                if appState.isGameOpen {
-                    Label("Board", systemImage: "square.grid.3x3.fill")
-                } else {
-                    Label("Start", systemImage: "gamecontroller")
-                }
-            }
+            .tag(Tab.start)
+
+            // ── Page 2: Settings ───────────────────────────────────────
             NavigationStack {
                 SettingsView()
             }
-            .tabItem {
-                Label("Settings", systemImage: "gear")
-            }
+            .tag(Tab.settings)
         }
+        .tabViewStyle(.page)                   // horizontal swipe navigation
+        .indexViewStyle(.page(backgroundDisplayMode: .automatic))
     }
 }
 
@@ -36,4 +44,3 @@ struct ContentView: View {
     ContentView()
         .environmentObject(AppState())
 }
-

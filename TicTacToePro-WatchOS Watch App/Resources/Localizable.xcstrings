@@ -141,9 +141,6 @@
         }
       }
     },
-    "%@ difficulty" : {
-
-    },
     "%@ games" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -647,6 +644,9 @@
         }
       }
     },
+    "%lld%%" : {
+
+    },
     "%lldx%lld" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -867,6 +867,7 @@
       }
     },
     "A modern take on the classic game with stunning visuals, multiplayer support, and AI opponents." : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -1008,6 +1009,7 @@
       }
     },
     "About" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -1078,6 +1080,7 @@
       }
     },
     "Add Text Color" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -1295,6 +1298,9 @@
     "AI thinking" : {
 
     },
+    "All settings will return to defaults." : {
+
+    },
     "Animation" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1367,6 +1373,7 @@
       }
     },
     "Animation Moods" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -1437,6 +1444,7 @@
       }
     },
     "Animation Speed" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -1506,7 +1514,11 @@
         }
       }
     },
+    "App needs to restart to apply this change." : {
+
+    },
     "App will restart in a moment..." : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -1576,7 +1588,11 @@
         }
       }
     },
+    "Apply" : {
+
+    },
     "Applying Language" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -1860,6 +1876,7 @@
       }
     },
     "Background" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -1930,6 +1947,7 @@
       }
     },
     "Background Settings" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -2140,9 +2158,6 @@
         }
       }
     },
-    "Board Size" : {
-
-    },
     "Board square" : {
       "localizations" : {
         "ar" : {
@@ -2283,7 +2298,11 @@
         }
       }
     },
+    "Change Language?" : {
+
+    },
     "Changing the language will require the app to restart. Your game progress and settings will be preserved." : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -2567,6 +2586,7 @@
       }
     },
     "Choose your preferred language" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -2710,7 +2730,11 @@
         }
       }
     },
+    "Classic game with stunning visuals, multiplayer & AI." : {
+
+    },
     "Close" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -2994,6 +3018,7 @@
       }
     },
     "Created with passion by" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -3204,6 +3229,7 @@
       }
     },
     "Customize your app appearance" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -3274,6 +3300,7 @@
       }
     },
     "Customize your experience" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -3344,6 +3371,7 @@
       }
     },
     "Dark" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -3554,9 +3582,6 @@
           }
         }
       }
-    },
-    "Difficulty" : {
-
     },
     "Done" : {
       "localizations" : {
@@ -4194,6 +4219,7 @@
       }
     },
     "Game Mode" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -4619,6 +4645,7 @@
       }
     },
     "Language" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -4687,6 +4714,12 @@
           }
         }
       }
+    },
+    "Language change requires app restart." : {
+
+    },
+    "Language updated!" : {
+
     },
     "Leave" : {
       "localizations" : {
@@ -4830,6 +4863,7 @@
       }
     },
     "Light" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -4969,6 +5003,9 @@
           }
         }
       }
+    },
+    "Made with ❤️ by" : {
+
     },
     "Mode" : {
       "extractionState" : "stale",
@@ -5325,6 +5362,7 @@
       }
     },
     "Note" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -5888,7 +5926,11 @@
         }
       }
     },
+    "Please restart the app to apply changes." : {
+
+    },
     "Please select your language" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -6315,6 +6357,7 @@
       }
     },
     "Reset All Settings" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -6385,6 +6428,7 @@
       }
     },
     "Reset All Settings?" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -6453,6 +6497,12 @@
           }
         }
       }
+    },
+    "Reset Settings" : {
+
+    },
+    "Reset Settings?" : {
+
     },
     "Restart" : {
       "localizations" : {
@@ -6525,6 +6575,7 @@
       }
     },
     "Restart Now" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -6595,6 +6646,7 @@
       }
     },
     "Restart Required" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -6665,6 +6717,7 @@
       }
     },
     "Restore default values" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -6805,6 +6858,9 @@
         }
       }
     },
+    "Save" : {
+
+    },
     "Score" : {
 
     },
@@ -6879,6 +6935,7 @@
       }
     },
     "Select %@ as starting player" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -7091,6 +7148,7 @@
       }
     },
     "Select one mood at a time" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -7373,6 +7431,7 @@
       }
     },
     "Settings" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -7512,6 +7571,9 @@
           }
         }
       }
+    },
+    "Speed" : {
+
     },
     "Start" : {
       "localizations" : {
@@ -7725,6 +7787,7 @@
       }
     },
     "Starting Player" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -8021,6 +8084,7 @@
       }
     },
     "System" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -8161,6 +8225,7 @@
       }
     },
     "Theme" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -8231,6 +8296,7 @@
       }
     },
     "This will reset all settings to their default values. This action cannot be undone." : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -8303,6 +8369,9 @@
     "Tic Tac Pro" : {
       "shouldTranslate" : false
     },
+    "TicTacToe" : {
+
+    },
     "Ties" : {
       "localizations" : {
         "ar" : {
@@ -8373,7 +8442,7 @@
         }
       }
     },
-    "Time Limit" : {
+    "Time" : {
 
     },
     "Time limit %@" : {
@@ -8448,6 +8517,7 @@
       }
     },
     "To apply the language change, the app needs to restart. Your progress will be saved." : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -9013,6 +9083,7 @@
       }
     },
     "Welcome!" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {

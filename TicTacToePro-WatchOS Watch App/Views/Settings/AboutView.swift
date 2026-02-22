@@ -1,149 +1,126 @@
 //
 //  AboutView.swift
-//  TicTacToePro
+//  TicTacToePro watchOS
 //
-//  Created by Sunnatbek on 04/11/2025.
-//  Improved & Enhanced on 04/11/2025
+//  Refactored for watchOS by Claude
+//  Original by Sunnatbek on 04/11/2025.
+//
+//  Changes from iOS version:
+//  - FeatureRow (iOS SettingsView component) → inline WatchFeatureRow
+//  - NavigationStack removed (parent provides one)
+//  - Toolbar xmark button removed (watchOS back swipe handles dismiss)
+//  - .largeTitle → .headline, spacing tightened
+//  - backgroundGradient removed (transparent, parent bg shows through)
+//  - padding reduced for small screen
 //
 
 import SwiftUI
 
 // MARK: - About View
 struct AboutView: View {
-    @Environment(\.dismiss) private var dismiss
-    @Environment(\.colorScheme) private var colorScheme
-    
-    private var backgroundGradient: LinearGradient {
-        // tvOS-safe colors
-        let startColor: Color
-        let endColor: Color
-        if colorScheme == .dark {
-            startColor = Color.black.opacity(0.85)
-            endColor = Color.black.opacity(0.65)
-        } else {
-            startColor = Color.white
-            endColor = Color(white: 0.94)
-        }
-        
-        return LinearGradient(
-            colors: [startColor, endColor],
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-        )
-    }
-    
+
+    private let features: [(icon: String, title: String, desc: String)] = [
+        ("brain.head.profile", "Smart AI",        "3 difficulty levels"),
+        ("person.2.fill",      "Multiplayer",     "Play with friends"),
+        ("square.grid.3x3",    "Custom Boards",   "3×3 up to 9×9"),
+        ("paintbrush.fill",    "Premium Design",  "Beautiful UI/UX"),
+    ]
+
     var body: some View {
-        NavigationStack {
-            ZStack {
-                // Dynamic Background
-                backgroundGradient
-                    .ignoresSafeArea()
-                
-                ScrollView {
-                    VStack(spacing: 28) {
-                        // App Name & Version
-                        VStack(spacing: 4) {
-                            Text("Tic Tac Pro")
-                                .font(.largeTitle.bold())
-                                .foregroundColor(.primary)
-                            
-                            Text("Version 1.2.2")
-                                .font(.subheadline)
-                                .foregroundColor(.secondary)
-                        }
-                        
-                        // Tagline
-                        Text("A modern take on the classic game with stunning visuals, multiplayer support, and AI opponents.")
-                            .font(.body)
-                            .foregroundColor(.secondary)
-                            .multilineTextAlignment(.center)
-                            .padding(.horizontal, 32)
-                            .lineSpacing(4)
-                        
-                        // Features Section
-                        VStack(alignment: .leading, spacing: 16) {
-                            ForEach(features, id: \.title) { feature in
-                                FeatureRow(
-                                    icon: feature.icon,
-                                    title: feature.title,
-                                    description: feature.description
-                                )
+        ScrollView {
+            VStack(spacing: 10) {
+
+                // ── Header ───────────────────────────────────────────
+                WatchHeader(icon: "info.circle.fill", title: "About")
+
+                // ── App info ─────────────────────────────────────────
+                VStack(spacing: 2) {
+                    Text("Tic Tac Pro")
+                        .font(.footnote.bold())
+                        .foregroundStyle(.primary)
+                    Text("Version 1.2.2")
+                        .font(.system(size: 9))
+                        .foregroundStyle(.secondary)
+                }
+
+                // ── Tagline ──────────────────────────────────────────
+                Text("Classic game with stunning visuals, multiplayer & AI.")
+                    .font(.system(size: 9))
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 4)
+
+                // ── Features ─────────────────────────────────────────
+                WatchCard(title: "Features") {
+                    VStack(spacing: 0) {
+                        ForEach(Array(features.enumerated()), id: \.offset) { idx, f in
+                            WatchFeatureRow(icon: f.icon, title: f.title, desc: f.desc)
+                            if idx < features.count - 1 {
+                                WatchDivider()
                             }
                         }
-                        .padding(24)
-                        .background(
-                            RoundedRectangle(cornerRadius: 20)
-                                .fill(.ultraThinMaterial)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 20)
-                                        .strokeBorder(.quaternary, lineWidth: 0.5)
-                                )
+                    }
+                    .padding(.bottom, 4)
+                }
+
+                // ── Credits ──────────────────────────────────────────
+                VStack(spacing: 2) {
+                    Text("Made with ❤️ by")
+                        .font(.system(size: 9))
+                        .foregroundStyle(.secondary)
+                    Text("Sunnatbek")
+                        .font(.footnote.bold())
+                        .foregroundStyle(
+                            LinearGradient(colors: [.pink, .purple],
+                                           startPoint: .leading, endPoint: .trailing)
                         )
-                        .padding(.horizontal)
-                        
-                        // Credits
-                        VStack(spacing: 8) {
-                            Text("Created with passion by")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                            
-                            Text("Sunnatbek")
-                                .font(.title3.bold())
-                                .foregroundColor(.primary)
-                        }
-                        .padding(.top, 20)
-                        
-                        Spacer(minLength: 40)
-                    }
-                    .padding(.bottom, 40)
                 }
+                .padding(.bottom, 8)
             }
-            .navigationTitle("About")
-            // Not available on tvOS
-            #if !os(tvOS)
-            .navigationBarTitleDisplayMode(.inline)
-            #endif
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        withAnimation {
-                            dismiss()
-                        }
-                    } label: {
-                        Image(systemName: "xmark.circle.fill")
-                            .font(.title3)
-                            .foregroundStyle(.secondary)
-                    }
-                    .accessibilityLabel("Close")
-                }
-            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
         }
+        .focusable()
     }
-    
-    // MARK: - Features Data
-    private let features = [
-        FeatureData(icon: "brain.head.profile", title: "Smart AI", description: "Three difficulty levels"),
-        FeatureData(icon: "person.2.fill", title: "Multiplayer", description: "Play with friends online"),
-        FeatureData(icon: "square.grid.3x3.fill", title: "Custom Boards", description: "3×3 up to 9×9 grids"),
-        FeatureData(icon: "paintbrush.fill", title: "Beautiful Design", description: "Premium UI/UX experience")
-    ]
 }
 
-// MARK: - Feature Data Model
-private struct FeatureData: Identifiable {
-    let id = UUID()
-    let icon: String
+// MARK: - Watch Feature Row (local, replaces iOS FeatureRow)
+private struct WatchFeatureRow: View {
+    let icon:  String
     let title: String
-    let description: String
+    let desc:  String
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: icon)
+                .font(.system(size: 12))
+                .foregroundStyle(.white)
+                .frame(width: 24, height: 24)
+                .background(
+                    RoundedRectangle(cornerRadius: 6)
+                        .fill(
+                            LinearGradient(colors: [.pink, .purple],
+                                           startPoint: .topLeading, endPoint: .bottomTrailing)
+                        )
+                )
+
+            VStack(alignment: .leading, spacing: 1) {
+                Text(title)
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(.primary)
+                Text(desc)
+                    .font(.system(size: 9))
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer()
+        }
+        .padding(.horizontal, 10)
+        .frame(minHeight: 38)
+    }
 }
 
 // MARK: - Preview
 #Preview {
-    AboutView()
-        .preferredColorScheme(.light)
-}
-
-#Preview("Dark Mode") {
-    AboutView()
-        .preferredColorScheme(.dark)
+    NavigationStack { AboutView() }
 }

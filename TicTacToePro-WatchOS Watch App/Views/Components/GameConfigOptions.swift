@@ -2,8 +2,8 @@
 //  GameConfigOptions.swift
 //  TicTacToePro watchOS
 //
-//  Created by Sunnatbek on 20/09/25.
-//  watchOS compatible - no changes needed
+//  Refactored for watchOS by Claude
+//  Original by Sunnatbek on 20/09/25.
 //
 
 import SwiftUI
@@ -14,78 +14,107 @@ enum PlayerOption: String, CaseIterable {
 }
 
 enum DifficultyOption: String, CaseIterable {
-    case easy = "Easy"
-    case medium = "Medium"
-    case hard = "Hard"
-    
+    case easy   = "Easy"
+    case medium = "Med"
+    case hard   = "Hard"
+
     var mapped: AIDifficulty {
         switch self {
-        case .easy: return .easy
+        case .easy:   return .easy
         case .medium: return .medium
-        case .hard: return .hard
+        case .hard:   return .hard
         }
     }
 }
 
 enum GameMode: String, CaseIterable {
-    case ai = "AI"
-    case pvp = "P v P"
-    
+    case ai  = "vs AI"
+    case pvp = "PvP"
+
     var isPVP: Bool { self == .pvp }
+    var icon: String { self == .ai ? "cpu" : "person.2.fill" }
 }
 
-enum TimeLimitOption: Int, CaseIterable, Identifiable {
-    case fiveMinutes   = 5
-    case tenMinutes    = 10
-    case fifteenMinutes = 15
-    case twentyMinutes = 20
-    case thirtyMinutes = 30
-    case unlimited     = 0
-    
+// MARK: - BoardSize
+enum BoardSize: Int, CaseIterable, Identifiable {
+    case small   = 3
+    case medium  = 4
+    case large   = 5
+    case xlarge  = 6
+    case xxlarge = 7
+    case huge    = 8
+    case massive = 9
+
     var id: Int { rawValue }
-    
-    var title: String {
-        rawValue == 0 ? "∞" : "\(rawValue)m"
-    }
-    
-    var description: String {
+
+    var title: String { "\(rawValue)×\(rawValue)" }
+
+    var difficulty: String {
         switch self {
-        case .fiveMinutes:   return "Quick"
-        case .tenMinutes:    return "Standard"
-        case .fifteenMinutes: return "Moderate"
-        case .twentyMinutes: return "Extended"
-        case .thirtyMinutes: return "Long"
-        case .unlimited:     return "No Limit"
+        case .small:           return "Easy"
+        case .medium:          return "Med"
+        case .large:           return "Hard"
+        case .xlarge, .xxlarge: return "V.Hard"
+        case .huge, .massive:  return "Extreme"
         }
     }
-    
-    var emoji: String {
-        switch self {
-        case .fiveMinutes:   return "⚡"
-        case .tenMinutes:    return "⏱️"
-        case .fifteenMinutes: return "⌛"
-        case .twentyMinutes: return "⏳"
-        case .thirtyMinutes: return "🕰️"
-        case .unlimited:     return "∞"
-        }
-    }
-    
+
     var color: Color {
         switch self {
-        case .fiveMinutes:   return .red
-        case .tenMinutes:    return .blue
-        case .fifteenMinutes: return .purple
-        case .twentyMinutes: return .orange
-        case .thirtyMinutes: return .green
-        case .unlimited:     return .cyan
+        case .small:   return .green
+        case .medium:  return .blue
+        case .large:   return .purple
+        case .xlarge:  return .orange
+        case .xxlarge: return .red
+        case .huge:    return .pink
+        case .massive: return .indigo
         }
     }
-    
-    var selectionGradient: LinearGradient {
-        LinearGradient(
-            colors: [color, color.opacity(0.6)],
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-        )
+}
+
+// MARK: - TimeLimitOption
+enum TimeLimitOption: Int, CaseIterable, Identifiable {
+    case fiveMinutes    = 5
+    case tenMinutes     = 10
+    case fifteenMinutes = 15
+    case twentyMinutes  = 20
+    case thirtyMinutes  = 30
+    case unlimited      = 0
+
+    var id: Int { rawValue }
+
+    var title: String { rawValue == 0 ? "∞" : "\(rawValue)m" }
+
+    var description: String {
+        switch self {
+        case .fiveMinutes:    return "Quick"
+        case .tenMinutes:     return "Standard"
+        case .fifteenMinutes: return "Moderate"
+        case .twentyMinutes:  return "Extended"
+        case .thirtyMinutes:  return "Long"
+        case .unlimited:      return "No Limit"
+        }
+    }
+
+    var emoji: String {
+        switch self {
+        case .fiveMinutes:    return "⚡"
+        case .tenMinutes:     return "⏱️"
+        case .fifteenMinutes: return "⌛"
+        case .twentyMinutes:  return "⏳"
+        case .thirtyMinutes:  return "🕰️"
+        case .unlimited:      return "∞"
+        }
+    }
+
+    var color: Color {
+        switch self {
+        case .fiveMinutes:    return .red
+        case .tenMinutes:     return .blue
+        case .fifteenMinutes: return .purple
+        case .twentyMinutes:  return .orange
+        case .thirtyMinutes:  return .green
+        case .unlimited:      return .cyan
+        }
     }
 }

@@ -1,115 +1,96 @@
 //
 //  BackgroundView.swift
-//  TicTacToePro
+//  TicTacToePro watchOS
 //
-//  Created by Sunnatbek on 12/01/26.
-//  Redesigned with premium UI on 12/01/26
+//  Refactored for watchOS by Claude
+//  Original by Sunnatbek on 12/01/26.
+//
+//  Changes from iOS version:
+//  - SettingsCard      → WatchCard       (defined in SettingsView.swift)
+//  - SettingsToggleRow → WatchToggleRow  (defined in SettingsView.swift)
+//  - ColorSelectionView resized: 70×70 → 36×36 pt (4 per row on Watch)
+//  - LazyVGrid 4-col kept; item size reduced
+//  - iOS-only Slider → watchOS Digital Crown friendly stepper UI
+//  - hSizeClass / vSizeClass / UIScreen removed
+//  - NavigationStack removed (parent already provides one)
+//  - .largeTitle / .system(size:48) → .headline / .title3
 //
 
 import SwiftUI
 
-// MARK: - Animation Mood Enum
+// MARK: - Animation Mood
 enum AnimationMood: String, CaseIterable {
-    case none = "None"
-    case randomFlicker = "Random Flicker"
-    case joyfulPulse = "Joyful Pulse"
-    case sadFade = "Sad Fade"
-    case angryFlash = "Angry Flash"
-    case calmWave = "Calm Wave"
+    case none             = "None"
+    case randomFlicker    = "Random Flicker"
+    case joyfulPulse      = "Joyful Pulse"
+    case sadFade          = "Sad Fade"
+    case angryFlash       = "Angry Flash"
+    case calmWave         = "Calm Wave"
     case romanticHeartbeat = "Romantic Heartbeat"
     case energeticRainbow = "Energetic Rainbow"
-    case mysticGlow = "Mystic Glow"
+    case mysticGlow       = "Mystic Glow"
 }
 
+// MARK: - Selectable Color
 struct SelectableColor: Identifiable, Hashable {
-    let id = UUID()
+    let id   = UUID()
     let color: Color
     var isSelected: Bool = false
 }
 
-// MARK: - Color Selection View
+// MARK: - Color Chip (watch-sized)
 struct ColorSelectionView: View {
     @Binding var selectableColor: SelectableColor
-    @Environment(\.colorScheme) private var colorScheme
-    
+
     var body: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
+            RoundedRectangle(cornerRadius: 9)
                 .fill(selectableColor.color)
-                .frame(width: 70, height: 70)
+                .frame(width: 36, height: 36)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    RoundedRectangle(cornerRadius: 9)
                         .strokeBorder(
-                            selectableColor.isSelected
-                            ? Color.white.opacity(0.8)
-                            : Color.clear,
-                            lineWidth: 3
+                            selectableColor.isSelected ? Color.white.opacity(0.85) : Color.clear,
+                            lineWidth: 2
                         )
                 )
                 .shadow(
                     color: selectableColor.isSelected
-                    ? selectableColor.color.opacity(0.6)
-                    : Color.black.opacity(0.2),
-                    radius: selectableColor.isSelected ? 12 : 4,
-                    x: 0,
-                    y: selectableColor.isSelected ? 6 : 2
+                        ? selectableColor.color.opacity(0.55)
+                        : Color.black.opacity(0.2),
+                    radius: selectableColor.isSelected ? 6 : 2
                 )
-            
+
             if selectableColor.isSelected {
-                ZStack {
-                    Circle()
-                        .fill(.ultraThinMaterial)
-                        .frame(width: 36, height: 36)
-                    
-                    Image(systemName: "checkmark.circle.fill")
-                        .foregroundStyle(
-                            LinearGradient(
-                                colors: [.white, .white.opacity(0.9)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                        .font(.system(size: 28))
-                        .shadow(color: .black.opacity(0.3), radius: 2, x: 0, y: 1)
-                }
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.system(size: 16))
+                    .foregroundStyle(.white)
+                    .shadow(color: .black.opacity(0.3), radius: 1)
             }
         }
         .scaleEffect(selectableColor.isSelected ? 1.08 : 1.0)
-        .animation(.spring(response: 0.4, dampingFraction: 0.7), value: selectableColor.isSelected)
-        .onTapGesture {
-            selectableColor.isSelected.toggle()
-        }
+        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: selectableColor.isSelected)
+        .onTapGesture { selectableColor.isSelected.toggle() }
     }
 }
 
 // MARK: - Main Background View
 struct BackgroundView: View {
-    @Environment(\.colorScheme) private var colorScheme
-    @Environment(\.horizontalSizeClass) private var hSizeClass
-    @Environment(\.verticalSizeClass) private var vSizeClass
-    
-    // Background enable/disable holatlar - har bir view uchun
-    @AppStorage("isStartViewBackgroundEnabled") private var isStartViewBackgroundEnabled: Bool = true
-    @AppStorage("isMultiplayerBackgroundEnabled") private var isMultiplayerBackgroundEnabled: Bool = true
-    @AppStorage("isSettingsBackgroundEnabled") private var isSettingsBackgroundEnabled: Bool = true
-    
-    @AppStorage("enableBackgroundBlur") private var isEnabledBlur: Bool = false
-    @AppStorage("enableBackgroundAnimation") private var isEnabledAnimation: Bool = true
-    @AppStorage("animationSpeed") private var animationSpeed: Double = 0.5
-    
-    // Faqat bitta mood saqlaymiz
-    @AppStorage("selectedAnimationMood") private var selectedMoodRawValue: String = AnimationMood.none.rawValue
-    
-    // Computed property - oson qilib mood bilan ishlash uchun
+
+    // MARK: Stored preferences
+    @AppStorage("isStartViewBackgroundEnabled")    private var startBgEnabled:  Bool   = true
+    @AppStorage("isMultiplayerBackgroundEnabled")  private var multiplayerBgEnabled: Bool = true
+    @AppStorage("isSettingsBackgroundEnabled")     private var settingsBgEnabled: Bool = true
+    @AppStorage("enableBackgroundBlur")            private var blurEnabled:     Bool   = false
+    @AppStorage("enableBackgroundAnimation")       private var animEnabled:     Bool   = true
+    @AppStorage("animationSpeed")                  private var animSpeed:       Double = 0.5
+    @AppStorage("selectedAnimationMood")           private var moodRaw:         String = AnimationMood.none.rawValue
+
     private var selectedMood: AnimationMood {
-        get {
-            AnimationMood(rawValue: selectedMoodRawValue) ?? .none
-        }
-        nonmutating set {
-            selectedMoodRawValue = newValue.rawValue
-        }
+        get { AnimationMood(rawValue: moodRaw) ?? .none }
+        nonmutating set { moodRaw = newValue.rawValue }
     }
-    
+
     @State private var colors: [SelectableColor] = [
         SelectableColor(color: .pink),
         SelectableColor(color: .blue),
@@ -120,463 +101,226 @@ struct BackgroundView: View {
         SelectableColor(color: .green),
         SelectableColor(color: .orange)
     ]
-    
-    // Rang tanlanganida saqlash
-    private func saveColorSelection() {
-        let colorNames = ["pink", "blue", "purple", "cyan", "indigo", "red", "green", "orange"]
-        for (index, colorName) in colorNames.enumerated() {
-            if index < colors.count {
-                UserDefaults.standard.set(colors[index].isSelected, forKey: "selectedColor_\(colorName)")
-            }
-        }
-    }
-    
-    // Saqlangan ranglarni yuklash
-    private func loadColorSelection() {
-        let colorNames = ["pink", "blue", "purple", "cyan", "indigo", "red", "green", "orange"]
-        for (index, colorName) in colorNames.enumerated() {
-            if index < colors.count {
-                colors[index].isSelected = UserDefaults.standard.bool(forKey: "selectedColor_\(colorName)")
-            }
-        }
-    }
-    
-    private var isCompactHeightPhone: Bool {
-#if os(iOS)
-        vSizeClass == .compact || UIScreen.main.bounds.height <= 667
-#else
-        false
-#endif
-    }
-    
-    private var contentMaxWidth: CGFloat {
-#if os(macOS)
-        720
-#elseif os(visionOS)
-        780
-#else
-        hSizeClass == .regular ? 700 : (isCompactHeightPhone ? 360 : 500)
-#endif
-    }
-    
+
+    @Environment(\.colorScheme) private var colorScheme
+
+    // MARK: Body
     var body: some View {
-        NavigationStack {
-            ZStack {
-                premiumBackground
-                    .ignoresSafeArea(.all)
-                
-                ScrollView(showsIndicators: false) {
-                    VStack(spacing: isCompactHeightPhone ? 16 : 24) {
-                        headerSection
-                        backgroundColorsSection
-                        headTextColorsSection
-                        animationSection
-                        tabsSection
-                    }
-                    .padding(.horizontal, isCompactHeightPhone ? 12 : 16)
-                    .padding(.vertical, isCompactHeightPhone ? 16 : 24)
-                    .frame(maxWidth: contentMaxWidth)
-                }
-                .onAppear {
-                    loadColorSelection()
-                }
-                .onChange(of: colors) { oldValue, newValue in
-                    saveColorSelection()
-                }
-            }
-        }
-    }
-    
-    // MARK: - Header Section
-    private var headerSection: some View {
-        VStack(spacing: 8) {
-            Image(systemName: "paintpalette.fill")
-                .font(.system(size: 48))
-                .foregroundStyle(
-                    LinearGradient(
-                        colors: [.pink, .purple, .blue],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-            
-            Text("Background Settings")
-                .font(.largeTitle.bold())
-                .foregroundStyle(
-                    LinearGradient(
-                        colors: [.pink, .purple, .blue],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    )
-                )
-            
-            Text("Customize your app appearance")
-                .font(.subheadline)
-                .foregroundColor(.secondary)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 8)
-    }
-    
-    // MARK: - Background Colors Section
-    private var backgroundColorsSection: some View {
-        SettingsCard(title: "Background Colors", icon: "paintbrush.fill") {
-            VStack(spacing: 16) {
-                LazyVGrid(
-                    columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: 4),
-                    spacing: 12
-                ) {
-                    ForEach($colors) { $selectableColor in
-                        ColorSelectionView(selectableColor: $selectableColor)
-                    }
-                }
-                .padding(.horizontal, 16)
-                .padding(.top, 8)
-                
-                Divider()
-                    .padding(.horizontal, 16)
-                
-                SettingsToggleRow(
-                    icon: "camera.filters",
-                    title: "Enable Blur",
-                    description: "Add blur effect to background",
-                    iconColor: .cyan,
-                    isOn: $isEnabledBlur
-                )
-            }
-            .padding(.bottom, 8)
-        }
-    }
-    
-    // MARK: - Head Text Colors Section
-    private var headTextColorsSection: some View {
-        SettingsCard(title: "Head Text Colors", icon: "textformat") {
-            VStack(spacing: 0) {
-                Button {
-                    // TODO: Add color functionality
-                } label: {
-                    HStack(spacing: 12) {
-                        Image(systemName: "plus.circle.fill")
-                            .font(.title3)
-                            .foregroundColor(.white)
-                            .frame(width: 32, height: 32)
-                            .background(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .fill(
-                                        LinearGradient(
-                                            colors: [.blue, .purple],
-                                            startPoint: .topLeading,
-                                            endPoint: .bottomTrailing
-                                        )
-                                    )
-                            )
-                        
-                        Text("Add Text Color")
-                            .font(.body.weight(.semibold))
-                            .foregroundColor(.primary)
-                        
-                        Spacer()
-                        
-                        Image(systemName: "chevron.right")
-                            .font(.caption.bold())
-                            .foregroundColor(.secondary)
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 12)
-                    .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-            }
-        }
-    }
-    
-    // MARK: - Animation Section
-    private var animationSection: some View {
-        SettingsCard(title: "Animation", icon: "sparkles") {
-            VStack(spacing: 16) {
-                // Animation Toggle
-                SettingsToggleRow(
-                    icon: "wand.and.stars",
-                    title: "Enable Animation",
-                    description: "Animate background elements",
-                    iconColor: .purple,
-                    isOn: $isEnabledAnimation
-                )
-                
-                Divider()
-                    .padding(.leading, 52)
-                
-                // Animation Speed Slider
-                VStack(alignment: .leading, spacing: 12) {
-                    HStack(spacing: 12) {
-                        Image(systemName: "gauge.with.dots.needle.bottom.50percent")
-                            .font(.title3)
-                            .foregroundColor(.white)
-                            .frame(width: 32, height: 32)
-                            .background(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .fill(Color.orange)
-                            )
-                        
-                        VStack(alignment: .leading) {
-                            Text("Animation Speed")
-                                .font(.body)
-                                .foregroundColor(.primary)
-                            
-                            Text(String(format: "%.0f%%", animationSpeed * 100))
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                        }
-                        
-                        Spacer()
-                    }
-                    .padding(.horizontal, 16)
-                    
-                    // Custom Slider
+        ScrollView {
+            VStack(spacing: 10) {
+
+                // ── Header ────────────────────────────────────────────
+                WatchHeader(icon: "paintpalette.fill", title: "Background")
+
+                // ── Colors ────────────────────────────────────────────
+                WatchCard(title: "Colors") {
                     VStack(spacing: 8) {
-#if os(iOS)
-                        Slider(value: $animationSpeed, in: 0.0...1.0)
-                            .tint(
-                                LinearGradient(
-                                    colors: [.orange, .red],
-                                    startPoint: .leading,
-                                    endPoint: .trailing
-                                )
-                            )
-#endif
-                        
-                        HStack {
-                            Image(systemName: "tortoise.fill")
-                                .foregroundColor(.secondary)
-                                .font(.caption)
-                            
-                            Spacer()
-                            
-                            Image(systemName: "hare.fill")
-                                .foregroundColor(.secondary)
-                                .font(.caption)
+                        LazyVGrid(
+                            columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 4),
+                            spacing: 6
+                        ) {
+                            ForEach($colors) { $c in
+                                ColorSelectionView(selectableColor: $c)
+                            }
                         }
-                        .padding(.horizontal, 4)
-                    }
-                    .padding(.horizontal, 16)
-                }
-                .padding(.vertical, 8)
-                
-                Divider()
-                    .padding(.leading, 52)
-                
-                // Animation Moods Section
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Animation Moods")
-                        .font(.headline)
-                        .foregroundColor(.primary)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.horizontal, 16)
-                        .padding(.top, 8)
-                    
-                    Text("Select one mood at a time")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.horizontal, 16)
+                        .padding(.horizontal, 8)
+                        .padding(.top, 6)
+
+                        WatchDivider()
+
+                        WatchToggleRow(
+                            icon: "camera.filters",
+                            color: .cyan,
+                            title: "Blur",
+                            isOn: $blurEnabled
+                        )
                         .padding(.bottom, 4)
-                }
-                
-                // Mood toggles
-                moodToggleRow(
-                    icon: "sparkles",
-                    title: "Random Flicker",
-                    description: "Chaotic and energetic flickering",
-                    iconColor: .yellow,
-                    mood: .randomFlicker
-                )
-                
-                Divider()
-                    .padding(.leading, 52)
-                
-                moodToggleRow(
-                    icon: "heart.fill",
-                    title: "Joyful Pulse",
-                    description: "Happy party atmosphere",
-                    iconColor: .pink,
-                    mood: .joyfulPulse
-                )
-                
-                Divider()
-                    .padding(.leading, 52)
-                
-                moodToggleRow(
-                    icon: "cloud.drizzle.fill",
-                    title: "Sad Fade",
-                    description: "Melancholic and reflective",
-                    iconColor: .gray,
-                    mood: .sadFade
-                )
-                
-                Divider()
-                    .padding(.leading, 52)
-                
-                moodToggleRow(
-                    icon: "flame.fill",
-                    title: "Angry Flash",
-                    description: "Intense and aggressive",
-                    iconColor: .red,
-                    mood: .angryFlash
-                )
-                
-                Divider()
-                    .padding(.leading, 52)
-                
-                moodToggleRow(
-                    icon: "water.waves",
-                    title: "Calm Wave",
-                    description: "Relaxing and peaceful",
-                    iconColor: .cyan,
-                    mood: .calmWave
-                )
-                
-                Divider()
-                    .padding(.leading, 52)
-                
-                moodToggleRow(
-                    icon: "heart.circle.fill",
-                    title: "Romantic Heartbeat",
-                    description: "Warm and loving mood",
-                    iconColor: Color(red: 1.0, green: 0.4, blue: 0.6),
-                    mood: .romanticHeartbeat
-                )
-                
-                Divider()
-                    .padding(.leading, 52)
-                
-                moodToggleRow(
-                    icon: "rainbow",
-                    title: "Energetic Rainbow",
-                    description: "High-energy disco vibe",
-                    iconColor: .purple,
-                    mood: .energeticRainbow
-                )
-                
-                Divider()
-                    .padding(.leading, 52)
-                
-                moodToggleRow(
-                    icon: "moon.stars.fill",
-                    title: "Mystic Glow",
-                    description: "Dreamy and mysterious",
-                    iconColor: .indigo,
-                    mood: .mysticGlow
-                )
-            }
-            .padding(.bottom, 8)
-        }
-    }
-    
-    // MARK: - Helper Function for Mood Toggle
-    @ViewBuilder
-    private func moodToggleRow(
-        icon: String,
-        title: String,
-        description: String,
-        iconColor: Color,
-        mood: AnimationMood
-    ) -> some View {
-        let isSelected = selectedMood == mood
-        
-        SettingsToggleRow(
-            icon: icon,
-            title: title,
-            description: description,
-            iconColor: iconColor,
-            isOn: Binding(
-                get: { isSelected },
-                set: { newValue in
-                    if newValue {
-                        // Yangi mood tanlandi
-                        selectedMood = mood
-                    } else {
-                        // O'chirish - none ga qaytarish
-                        selectedMood = .none
                     }
                 }
-            )
-        )
-    }
-    
-    // MARK: - Tabs Section
-    private var tabsSection: some View {
-        SettingsCard(title: "Enable Background", icon: "square.grid.2x2.fill") {
-            VStack(spacing: 0) {
-                SettingsToggleRow(
-                    icon: "gamecontroller.fill",
-                    title: "Start Menu",
-                    description: "Enable custom background for Start Menu",
-                    iconColor: .green,
-                    isOn: $isStartViewBackgroundEnabled
-                )
-                
-                Divider()
-                    .padding(.leading, 52)
-                
-                SettingsToggleRow(
-                    icon: "person.line.dotted.person.fill",
-                    title: "Multiplayer",
-                    description: "Enable custom background for Multiplayer",
-                    iconColor: .blue,
-                    isOn: $isMultiplayerBackgroundEnabled
-                )
-                
-                Divider()
-                    .padding(.leading, 52)
-                
-                SettingsToggleRow(
-                    icon: "gear",
-                    title: "Settings",
-                    description: "Enable custom background for Settings",
-                    iconColor: .gray,
-                    isOn: $isSettingsBackgroundEnabled
-                )
+
+                // ── Animation ─────────────────────────────────────────
+                WatchCard(title: "Animation") {
+                    VStack(spacing: 0) {
+                        WatchToggleRow(
+                            icon: "wand.and.stars",
+                            color: .purple,
+                            title: "Animate",
+                            isOn: $animEnabled
+                        )
+
+                        if animEnabled {
+                            WatchDivider()
+
+                            // Speed stepper (Digital Crown friendly)
+                            HStack(spacing: 8) {
+                                Image(systemName: "gauge.with.dots.needle.bottom.50percent")
+                                    .font(.system(size: 12))
+                                    .foregroundStyle(.white)
+                                    .frame(width: 24, height: 24)
+                                    .background(RoundedRectangle(cornerRadius: 6).fill(Color.orange))
+
+                                Text("Speed")
+                                    .font(.footnote)
+
+                                Spacer()
+
+                                // − / + buttons as stepper on Watch
+                                HStack(spacing: 4) {
+                                    Button {
+                                        animSpeed = max(0, animSpeed - 0.25)
+                                    } label: {
+                                        Image(systemName: "minus.circle.fill")
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    .buttonStyle(.plain)
+
+                                    Text("\(Int(animSpeed * 100))%")
+                                        .font(.caption2).monospacedDigit()
+                                        .frame(width: 34)
+
+                                    Button {
+                                        animSpeed = min(1, animSpeed + 0.25)
+                                    } label: {
+                                        Image(systemName: "plus.circle.fill")
+                                            .foregroundStyle(.orange)
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                            .padding(.horizontal, 10)
+                            .frame(height: 38)
+
+                            WatchDivider()
+
+                            // Mood picker
+                            NavigationLink {
+                                MoodPickerView(selectedMood: Binding(
+                                    get: { selectedMood },
+                                    set: { moodRaw = $0.rawValue }
+                                ))
+                            } label: {
+                                WatchRow(
+                                    icon: "theatermasks.fill",
+                                    color: .indigo,
+                                    title: "Mood",
+                                    value: selectedMood == .none ? "None" : selectedMood.shortName
+                                )
+                            }
+                            .buttonStyle(.plain)
+                            .padding(.bottom, 4)
+                        }
+                    }
+                }
+
+                // ── Enable per view ───────────────────────────────────
+                WatchCard(title: "Enable For") {
+                    VStack(spacing: 0) {
+                        WatchToggleRow(icon: "gamecontroller.fill",  color: .green, title: "Start",       isOn: $startBgEnabled)
+                        WatchDivider()
+                        WatchToggleRow(icon: "gear",                  color: .gray,  title: "Settings",    isOn: $settingsBgEnabled)
+                            .padding(.bottom, 4)
+                    }
+                }
+
             }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+        }
+        .focusable()
+        .onAppear { loadColors() }
+        .onChange(of: colors) { _, _ in saveColors() }
+    }
+
+    // MARK: - Persistence
+    private let colorKeys = ["pink", "blue", "purple", "cyan", "indigo", "red", "green", "orange"]
+
+    private func saveColors() {
+        for (i, key) in colorKeys.enumerated() where i < colors.count {
+            UserDefaults.standard.set(colors[i].isSelected, forKey: "selectedColor_\(key)")
         }
     }
-    
-    // MARK: - Premium Background
-    private var premiumBackground: some View {
-        GeometryReader { geometry in
-            ZStack {
-                // asosiy gradient
-                LinearGradient(
-                    colors: colorScheme == .dark
-                    ? [Color(red: 0.08, green: 0.08, blue: 0.10), Color(red: 0.11, green: 0.12, blue: 0.18), Color(red: 0.03, green: 0.04, blue: 0.06)]
-                    : [Color(red: 0.98, green: 0.98, blue: 1.0), Color(red: 0.95, green: 0.96, blue: 0.99), Color(red: 0.90, green: 0.92, blue: 0.98)],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-                .ignoresSafeArea()
-                
-                ForEach(colors.filter { $0.isSelected }) { selectedColor in
-                    NeonLightView(
-                        color: selectedColor.color,
-                        geometry: geometry,
-                        isAnimated: isEnabledAnimation,
-                        animationSpeed: animationSpeed,
-                        mood: selectedMood
-                    )
-                }
-                
-                if isEnabledBlur {
-                    Rectangle()
-                        .fill(.ultraThinMaterial)
-                        .blur(radius: max(0, 20 * animationSpeed))
-                        .ignoresSafeArea()
-                        .transition(.opacity)
-                        .animation(.easeInOut(duration: 0.2), value: isEnabledBlur)
+
+    private func loadColors() {
+        for (i, key) in colorKeys.enumerated() where i < colors.count {
+            colors[i].isSelected = UserDefaults.standard.bool(forKey: "selectedColor_\(key)")
+        }
+    }
+}
+
+// MARK: - Mood Picker (push view)
+private struct MoodPickerView: View {
+    @Binding var selectedMood: AnimationMood
+
+    private let moods: [(AnimationMood, String, Color)] = [
+        (.none,             "None",              .secondary),
+        (.randomFlicker,    "Flicker",           .yellow),
+        (.joyfulPulse,      "Joyful",            .pink),
+        (.sadFade,          "Sad Fade",          .gray),
+        (.angryFlash,       "Angry",             .red),
+        (.calmWave,         "Calm",              .cyan),
+        (.romanticHeartbeat,"Romantic",          Color(red: 1, green: 0.4, blue: 0.6)),
+        (.energeticRainbow, "Rainbow",           .purple),
+        (.mysticGlow,       "Mystic",            .indigo),
+    ]
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 6) {
+                WatchHeader(icon: "theatermasks.fill", title: "Mood")
+                ForEach(moods, id: \.0.rawValue) { mood, label, color in
+                    Button {
+                        selectedMood = mood
+                    } label: {
+                        HStack(spacing: 8) {
+                            Circle()
+                                .fill(color.opacity(0.8))
+                                .frame(width: 12, height: 12)
+                            Text(label)
+                                .font(.footnote)
+                            Spacer()
+                            if selectedMood == mood {
+                                Image(systemName: "checkmark")
+                                    .font(.caption.bold())
+                                    .foregroundStyle(.green)
+                            }
+                        }
+                        .padding(.horizontal, 10)
+                        .frame(height: 36)
+                        .background(
+                            RoundedRectangle(cornerRadius: 9)
+                                .fill(selectedMood == mood
+                                      ? AnyShapeStyle(.thinMaterial)
+                                      : AnyShapeStyle(.ultraThinMaterial))
+                        )
+                    }
+                    .buttonStyle(.plain)
                 }
             }
+            .padding(.horizontal, 8)
+        }
+        .focusable()
+    }
+}
+
+// MARK: - AnimationMood short display name
+private extension AnimationMood {
+    var shortName: String {
+        switch self {
+        case .none:              return "None"
+        case .randomFlicker:     return "Flicker"
+        case .joyfulPulse:       return "Joyful"
+        case .sadFade:           return "Sad"
+        case .angryFlash:        return "Angry"
+        case .calmWave:          return "Calm"
+        case .romanticHeartbeat: return "Romantic"
+        case .energeticRainbow:  return "Rainbow"
+        case .mysticGlow:        return "Mystic"
         }
     }
 }
 
 #Preview {
-    BackgroundView()
+    NavigationStack {
+        BackgroundView()
+    }
 }

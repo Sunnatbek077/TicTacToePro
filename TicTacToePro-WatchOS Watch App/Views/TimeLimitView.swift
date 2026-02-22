@@ -116,7 +116,9 @@ struct TimeLimitCard: View {
             .overlay(
                 RoundedRectangle(cornerRadius: cornerRadius)
                     .strokeBorder(
-                        isSelected ? timeLimit.selectionGradient : LinearGradient(colors: [.clear], startPoint: .topLeading, endPoint: .bottomTrailing),
+                        isSelected
+                            ? LinearGradient(colors: [timeLimit.color.opacity(0.9), timeLimit.color], startPoint: .topLeading, endPoint: .bottomTrailing)
+                            : LinearGradient(colors: [.clear], startPoint: .topLeading, endPoint: .bottomTrailing),
                         lineWidth: isSelected ? 2 : 0
                     )
             )
