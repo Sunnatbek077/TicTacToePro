@@ -214,6 +214,7 @@
       }
     },
     "%@ turn" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -360,6 +361,7 @@
       }
     },
     "%@’s Turn" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -1142,6 +1144,7 @@
       }
     },
     "AI Difficulty" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -1212,6 +1215,7 @@
       }
     },
     "AI is thinking..." : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -2125,9 +2129,6 @@
           }
         }
       }
-    },
-    "Board Size" : {
-
     },
     "Board square" : {
       "localizations" : {
@@ -4173,6 +4174,7 @@
       }
     },
     "Game Mode" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -4950,6 +4952,7 @@
       }
     },
     "Mode" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -6849,6 +6852,7 @@
       }
     },
     "Select %@ as starting player" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -6919,6 +6923,7 @@
       }
     },
     "Select %@ difficulty" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -6989,6 +6994,7 @@
       }
     },
     "Select %@ game mode" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -7693,6 +7699,7 @@
       }
     },
     "Starting Player" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -7763,6 +7770,7 @@
       }
     },
     "Status" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -8337,9 +8345,6 @@
         }
       }
     },
-    "Time Limit" : {
-
-    },
     "Time limit %@" : {
       "localizations" : {
         "ar" : {
@@ -8549,6 +8554,9 @@
           }
         }
       }
+    },
+    "TURN" : {
+
     },
     "Type message..." : {
       "extractionState" : "stale",

@@ -44,7 +44,13 @@ struct Board {
     
     /// G'alaba uchun kerakli uzunlik
     var winLength: Int {
-        boardSize
+        switch boardSize {
+        case 3: return 3
+        case 4, 5: return 4
+        case 6, 7: return 4
+        case 8, 9: return 5
+        default: return boardSize
+        }
     }
     
     // MARK: - Make a move
@@ -69,43 +75,55 @@ struct Board {
     
     // MARK: - Winning Combinations (Dynamic)
     
-    /// Har qanday o'lchamdagi taxta uchun g'alaba kombinatsiyalarini yaratadi
     func generateWinningCombos() -> [[Int]] {
         let size = boardSize
+        let length = winLength
         var combos: [[Int]] = []
-        
-        // Qatorlar (Rows)
+
+        // Rows
         for row in 0..<size {
-            var combo: [Int] = []
-            for col in 0..<size {
-                combo.append(row * size + col)
+            for startCol in 0...(size - length) {
+                var combo: [Int] = []
+                for i in 0..<length {
+                    combo.append(row * size + (startCol + i))
+                }
+                combos.append(combo)
             }
-            combos.append(combo)
         }
-        
-        // Ustunlar (Columns)
+
+        // Columns
         for col in 0..<size {
-            var combo: [Int] = []
-            for row in 0..<size {
-                combo.append(row * size + col)
+            for startRow in 0...(size - length) {
+                var combo: [Int] = []
+                for i in 0..<length {
+                    combo.append((startRow + i) * size + col)
+                }
+                combos.append(combo)
             }
-            combos.append(combo)
         }
-        
-        // Bosh diagonal (Main diagonal)
-        var mainDiag: [Int] = []
-        for i in 0..<size {
-            mainDiag.append(i * size + i)
+
+        // Main diagonals
+        for row in 0...(size - length) {
+            for col in 0...(size - length) {
+                var combo: [Int] = []
+                for i in 0..<length {
+                    combo.append((row + i) * size + (col + i))
+                }
+                combos.append(combo)
+            }
         }
-        combos.append(mainDiag)
-        
-        // Teskari diagonal (Anti-diagonal)
-        var antiDiag: [Int] = []
-        for i in 0..<size {
-            antiDiag.append(i * size + (size - 1 - i))
+
+        // Anti-diagonals
+        for row in 0...(size - length) {
+            for col in (length-1)..<size {
+                var combo: [Int] = []
+                for i in 0..<length {
+                    combo.append((row + i) * size + (col - i))
+                }
+                combos.append(combo)
+            }
         }
-        combos.append(antiDiag)
-        
+
         return combos
     }
     
@@ -492,12 +510,15 @@ extension Board {
         
         // Check terminal states (win or draw)
         if isWin {
-            let score = (opposite == turn) ? 1000 - maxDepth : -1000 + maxDepth // Reduced scores to prevent overflow
-            return (score, nil)
+            return (-1000 + maxDepth, nil)
         }
-        
+
         if isDraw {
             return (0, nil)
+        }
+
+        if maxDepth == 0 {
+            return (advancedHeuristic(for: turn), nil)
         }
         
         // Check for empty legal moves

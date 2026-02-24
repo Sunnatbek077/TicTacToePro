@@ -19,41 +19,38 @@ extension EnvironmentValues {
 }
 
 // MARK: - Reusable Selection Button Style
-/// Tek bir yerda aniqlangan — PlayerSelection, GameMode, Difficulty hammasi shu komponentdan foydalanadi
 struct SelectionPill: View {
     let label: String
     let isSelected: Bool
-    let accentColors: [Color]
     let action: () -> Void
 
     @Environment(\.colorScheme) private var colorScheme
-
-    // Gradient bir marta hisoblangan, har render da qayta yaratilmaydi
-    private var gradient: LinearGradient {
-        LinearGradient(colors: accentColors, startPoint: .topLeading, endPoint: .bottomTrailing)
-    }
 
     var body: some View {
         Button(action: action) {
             Text(label)
                 .font(.body.bold())
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 8)
-                // Background: gradient vs flat color — shadow yo'q (GPU load kamaytirish uchun)
+                .padding(.vertical, 10)
                 .background(
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
                         .fill(isSelected
-                              ? AnyShapeStyle(gradient)
+                              ? AnyShapeStyle(colorScheme == .dark ? Color(white: 0.88) : Color(white: 0.15))
                               : AnyShapeStyle(colorScheme == .dark ? Color(white: 0.18) : Color(white: 0.93))
                         )
                 )
-                .foregroundStyle(isSelected ? .white : .primary)
-                // Overlay faqat isSelected bo'lganda chiziladi
+                .foregroundStyle(isSelected
+                    ? (colorScheme == .dark ? Color.black : Color.white)
+                    : Color.primary
+                )
                 .overlay(
                     Group {
                         if isSelected {
                             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                .strokeBorder(gradient, lineWidth: 1.5)
+                                .strokeBorder(
+                                    colorScheme == .dark ? Color(white: 0.75) : Color(white: 0.25),
+                                    lineWidth: 1.5
+                                )
                         }
                     }
                 )
@@ -63,17 +60,14 @@ struct SelectionPill: View {
     }
 }
 
-// MARK: - Reusable Grid Card (BoardSize & TimeLimit share this)
+// MARK: - Reusable Grid Card
 struct SelectionGridCard<Item: Identifiable & Hashable>: View {
     let items: [Item]
     let selected: Item
     let title: (Item) -> String
     let subtitle: (Item) -> String
-    let color: (Item) -> Color
     let onSelect: (Item) -> Void
 
-    // LazyVGrid emas, oddiy VGrid — item soni oz (max 9), lazy kerak emas
-    // ScrollView ichida ScrollView muammosini oldini olish uchun static grid
     private let columns = [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)]
 
     var body: some View {
@@ -82,10 +76,8 @@ struct SelectionGridCard<Item: Identifiable & Hashable>: View {
                 GridCardItem(
                     title: title(item),
                     subtitle: subtitle(item),
-                    accentColor: color(item),
                     isSelected: item == selected
                 ) {
-                    // withAnimation ni tashqariga chiqardik — closure ichida withAnimation = extra render
                     onSelect(item)
                     #if os(iOS)
                     UIImpactFeedbackGenerator(style: .light).impactOccurred()
@@ -99,23 +91,34 @@ struct SelectionGridCard<Item: Identifiable & Hashable>: View {
 struct GridCardItem: View {
     let title: String
     let subtitle: String
-    let accentColor: Color
     let isSelected: Bool
     let action: () -> Void
 
     @Environment(\.colorScheme) private var colorScheme
     private let cornerRadius: CGFloat = 14
 
-    // Computed color bir marta — isSelected va colorScheme ga bog'liq
     private var cardFill: Color {
         if isSelected {
-            return colorScheme == .dark ? Color(white: 0.22) : accentColor.opacity(0.09)
+            return colorScheme == .dark ? Color(white: 0.88) : Color(white: 0.15)
         }
         return colorScheme == .dark ? Color(white: 0.14) : .white
     }
 
     private var borderColor: Color {
-        isSelected ? accentColor : Color(white: colorScheme == .dark ? 0.28 : 0.88)
+        if isSelected {
+            return colorScheme == .dark ? Color(white: 0.75) : Color(white: 0.25)
+        }
+        return Color(white: colorScheme == .dark ? 0.28 : 0.88)
+    }
+
+    private var labelColor: Color {
+        isSelected ? (colorScheme == .dark ? .black : .white) : .primary
+    }
+
+    private var subLabelColor: Color {
+        isSelected
+            ? (colorScheme == .dark ? Color(white: 0.25) : Color(white: 0.75))
+            : .secondary
     }
 
     var body: some View {
@@ -125,23 +128,21 @@ struct GridCardItem: View {
             VStack(spacing: 4) {
                 Text(title)
                     .font(.subheadline.bold())
-                    .foregroundStyle(isSelected ? accentColor : .primary)
+                    .foregroundStyle(labelColor)
 
                 Text(subtitle)
                     .font(.caption.weight(.medium))
-                    .foregroundStyle(isSelected ? accentColor.opacity(0.75) : .secondary)
+                    .foregroundStyle(subLabelColor)
                     .lineLimit(1)
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 12)
-            // Yagona background — shadow YO'Q (shadow eng katta GPU yuki)
             .background(cardFill)
             .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                     .strokeBorder(borderColor, lineWidth: isSelected ? 2 : 1)
             )
-            // scaleEffect olib tashlandi — TabView ichida scaleEffect = har frame recompose
         }
         .buttonStyle(.plain)
         .animation(.spring(response: 0.25, dampingFraction: 0.8), value: isSelected)
@@ -169,16 +170,14 @@ struct GameSettingsPage: View {
     @Binding var selectedDifficulty: DifficultyOption
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            // Starting Player
-            VStack(alignment: .leading, spacing: 5) {
+        VStack(alignment: .leading, spacing: tvOSSpacing) {
+            VStack(alignment: .leading, spacing: 6) {
                 SectionLabel(title: "Starting Player")
                 HStack(spacing: 10) {
                     ForEach(PlayerOption.allCases, id: \.self) { player in
                         SelectionPill(
                             label: player.rawValue,
-                            isSelected: selectedPlayer == player,
-                            accentColors: [.pink.opacity(0.9), .purple.opacity(0.9)]
+                            isSelected: selectedPlayer == player
                         ) {
                             withAnimation(.spring(response: 0.28, dampingFraction: 0.75)) {
                                 selectedPlayer = player
@@ -188,15 +187,13 @@ struct GameSettingsPage: View {
                 }
             }
 
-            // Game Mode
-            VStack(alignment: .leading, spacing: 5) {
+            VStack(alignment: .leading, spacing: 6) {
                 SectionLabel(title: "Game Mode")
                 HStack(spacing: 10) {
                     ForEach(GameMode.allCases, id: \.self) { mode in
                         SelectionPill(
                             label: mode.rawValue,
-                            isSelected: selectedGameMode == mode,
-                            accentColors: [.purple.opacity(0.9), .blue.opacity(0.9)]
+                            isSelected: selectedGameMode == mode
                         ) {
                             withAnimation(.spring(response: 0.28, dampingFraction: 0.75)) {
                                 selectedGameMode = mode
@@ -206,16 +203,14 @@ struct GameSettingsPage: View {
                 }
             }
 
-            // AI Difficulty (only when AI mode selected)
             if !selectedGameMode.isPVP {
-                VStack(alignment: .leading, spacing: 5) {
+                VStack(alignment: .leading, spacing: 6) {
                     SectionLabel(title: "AI Difficulty")
                     HStack(spacing: 10) {
                         ForEach(DifficultyOption.allCases, id: \.self) { difficulty in
                             SelectionPill(
                                 label: difficulty.rawValue,
-                                isSelected: selectedDifficulty == difficulty,
-                                accentColors: [.blue.opacity(0.9), .cyan.opacity(0.9)]
+                                isSelected: selectedDifficulty == difficulty
                             ) {
                                 withAnimation(.spring(response: 0.28, dampingFraction: 0.75)) {
                                     selectedDifficulty = difficulty
@@ -229,9 +224,16 @@ struct GameSettingsPage: View {
                     removal: .move(edge: .top).combined(with: .opacity)
                 ))
             }
-
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+    }
+
+    private var tvOSSpacing: CGFloat {
+        #if os(tvOS)
+        return 22
+        #else
+        return 14
+        #endif
     }
 }
 
@@ -247,7 +249,6 @@ struct BoardSizePage: View {
                 selected: selectedSize,
                 title: { $0.title },
                 subtitle: { "\($0.emoji) \($0.description)" },
-                color: { $0.color },
                 onSelect: { selectedSize = $0 }
             )
         }
@@ -266,7 +267,6 @@ struct TimeLimitPage: View {
                 selected: selectedTimeLimit,
                 title: { $0.title },
                 subtitle: { "\($0.emoji) \($0.description)" },
-                color: { $0.color },
                 onSelect: { selectedTimeLimit = $0 }
             )
         }
@@ -307,20 +307,25 @@ struct ConfigurationCard: View {
 
     private let cornerRadius: CGFloat = 22
 
-    // Har page o'z fixed height'iga ega — animation yo'q, layout stable
     private var pageHeight: CGFloat {
+        #if os(tvOS)
+        switch currentPage {
+        case 0: return selectedGameMode.isPVP ? 200 : 310
+        case 1: return 420
+        case 2: return 360
+        default: return 420
+        }
+        #else
         switch currentPage {
         case 0:
             return selectedGameMode.isPVP
                 ? (isCompactHeightPhone ? 148 : 162)
-                : (isCompactHeightPhone ? 218 : 238)
-        case 1:
-            return isCompactHeightPhone ? 290 : 320
-        case 2:
-            return isCompactHeightPhone ? 230 : 258
-        default:
-            return isCompactHeightPhone ? 290 : 320
+                : (isCompactHeightPhone ? 248 : 268)
+        case 1: return isCompactHeightPhone ? 290 : 320
+        case 2: return isCompactHeightPhone ? 230 : 258
+        default: return isCompactHeightPhone ? 290 : 320
         }
+        #endif
     }
 
     private var borderGradient: LinearGradient {
@@ -342,19 +347,30 @@ struct ConfigurationCard: View {
                     selectedGameMode: $selectedGameMode,
                     selectedDifficulty: $selectedDifficulty
                 )
+                #if os(tvOS)
+                .padding(28)
+                #else
                 .padding(isCompactHeightPhone ? 16 : 20)
+                #endif
                 .tag(0)
 
                 BoardSizePage(selectedSize: $selectedBoardSize)
-                    .padding(isCompactHeightPhone ? 12 : 16)
-                    .tag(1)
+                #if os(tvOS)
+                .padding(24)
+                #else
+                .padding(isCompactHeightPhone ? 12 : 16)
+                #endif
+                .tag(1)
 
                 TimeLimitPage(selectedTimeLimit: $selectedTimeLimit)
-                    .padding(isCompactHeightPhone ? 12 : 16)
-                    .tag(2)
+                #if os(tvOS)
+                .padding(24)
+                #else
+                .padding(isCompactHeightPhone ? 12 : 16)
+                #endif
+                .tag(2)
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
-            // pageHeight animatsiyasiz o'zgaradi — cardHeight animation = har frame layout pass
             .frame(height: pageHeight)
 
             PageIndicator(pageCount: 3, currentPage: currentPage)
@@ -385,12 +401,11 @@ struct ConfigurationCard: View {
 // MARK: - Preview
 #Preview("Configuration Card") {
     ZStack {
-#if os(tvOS)
-        // tvOS doesn't have systemGroupedBackground; use a neutral fallback
+        #if os(tvOS)
         Color.black.opacity(0.9).ignoresSafeArea()
-#else
+        #else
         Color(.systemGroupedBackground).ignoresSafeArea()
-#endif
+        #endif
         ConfigurationCard(
             selectedPlayer: .constant(.x),
             selectedGameMode: .constant(.ai),
@@ -405,4 +420,3 @@ struct ConfigurationCard: View {
         .padding(24)
     }
 }
-
