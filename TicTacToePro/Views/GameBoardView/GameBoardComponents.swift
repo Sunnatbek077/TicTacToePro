@@ -183,18 +183,7 @@ extension GameBoardView {
                 .lineLimit(1)
                 .accessibilityAddTraits(.isHeader)
 
-            Spacer(minLength: 4)
-
-            VStack(alignment: .trailing, spacing: 2) {
-                Text(headerSubtitle)
-                    .font(isSESmallScreen ? .caption2 : .caption)
-                    .fontWeight(.medium)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-
-                modeBadge(modeBadgeText, colors: [.purple, .blue])
-                    .font(.system(size: isSESmallScreen ? 9 : 11, weight: .semibold))
-            }
+            Spacer()
         }
         .padding(.horizontal, isSESmallScreen ? 10 : 14)
         .padding(.vertical, isSESmallScreen ? 8 : 11)
