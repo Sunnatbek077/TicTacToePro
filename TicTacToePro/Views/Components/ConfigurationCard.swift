@@ -56,7 +56,7 @@ struct SelectionPill: View {
                 )
         }
         .buttonStyle(.plain)
-        .animation(.spring(response: 0.28, dampingFraction: 0.75), value: isSelected)
+        .animation(.spring(response: 0.15, dampingFraction: 0.7), value: isSelected)
     }
 }
 
@@ -123,7 +123,7 @@ struct GridCardItem: View {
 
     var body: some View {
         Button {
-            withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) { action() }
+            withAnimation(.spring(response: 0.15, dampingFraction: 0.75)) { action() }
         } label: {
             VStack(spacing: 4) {
                 Text(title)
@@ -145,7 +145,7 @@ struct GridCardItem: View {
             )
         }
         .buttonStyle(.plain)
-        .animation(.spring(response: 0.25, dampingFraction: 0.8), value: isSelected)
+        .animation(.spring(response: 0.15, dampingFraction: 0.75), value: isSelected)
     }
 }
 
@@ -179,7 +179,7 @@ struct GameSettingsPage: View {
                             label: player.rawValue,
                             isSelected: selectedPlayer == player
                         ) {
-                            withAnimation(.spring(response: 0.28, dampingFraction: 0.75)) {
+                            withAnimation(.spring(response: 0.15, dampingFraction: 0.7)) {
                                 selectedPlayer = player
                             }
                         }
@@ -195,7 +195,7 @@ struct GameSettingsPage: View {
                             label: mode.rawValue,
                             isSelected: selectedGameMode == mode
                         ) {
-                            withAnimation(.spring(response: 0.28, dampingFraction: 0.75)) {
+                            withAnimation(.spring(response: 0.15, dampingFraction: 0.7)) {
                                 selectedGameMode = mode
                             }
                         }
@@ -212,7 +212,7 @@ struct GameSettingsPage: View {
                                 label: difficulty.rawValue,
                                 isSelected: selectedDifficulty == difficulty
                             ) {
-                                withAnimation(.spring(response: 0.28, dampingFraction: 0.75)) {
+                                withAnimation(.spring(response: 0.15, dampingFraction: 0.7)) {
                                     selectedDifficulty = difficulty
                                 }
                             }
@@ -284,7 +284,7 @@ private struct PageIndicator: View {
                 Capsule()
                     .fill(i == currentPage ? Color.primary : Color.secondary.opacity(0.35))
                     .frame(width: i == currentPage ? 18 : 6, height: 6)
-                    .animation(.spring(response: 0.35, dampingFraction: 0.8), value: currentPage)
+                    .animation(.spring(response: 0.2, dampingFraction: 0.75), value: currentPage)
             }
         }
     }
@@ -387,7 +387,7 @@ struct ConfigurationCard: View {
         .onLongPressGesture(
             minimumDuration: 0.4,
             pressing: { pressing in
-                withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                withAnimation(.spring(response: 0.2, dampingFraction: 0.75)) {
                     isPressed = pressing
                 }
             },
