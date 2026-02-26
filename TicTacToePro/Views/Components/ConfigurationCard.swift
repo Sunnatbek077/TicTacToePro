@@ -35,23 +35,23 @@ struct SelectionPill: View {
                 .background(
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
                         .fill(isSelected
-                              ? AnyShapeStyle(colorScheme == .dark ? Color(white: 0.88) : Color(white: 0.15))
-                              : AnyShapeStyle(colorScheme == .dark ? Color(white: 0.18) : Color(white: 0.93))
+                              ? AnyShapeStyle(colorScheme == .dark ? Color(white: 0.88) : Color(white: 0.12))
+                              : AnyShapeStyle(colorScheme == .dark ? Color(white: 0.18) : Color(white: 0.80))
                         )
                 )
                 .foregroundStyle(isSelected
                     ? (colorScheme == .dark ? Color.black : Color.white)
-                    : Color.primary
+                    : (colorScheme == .dark ? Color.primary : Color(white: 0.15))
                 )
                 .overlay(
                     Group {
-                        if isSelected {
-                            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                .strokeBorder(
-                                    colorScheme == .dark ? Color(white: 0.75) : Color(white: 0.25),
-                                    lineWidth: 1.5
-                                )
-                        }
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .strokeBorder(
+                                isSelected
+                                    ? (colorScheme == .dark ? Color(white: 0.75) : Color(white: 0.18))
+                                    : (colorScheme == .dark ? Color.clear : Color(white: 0.60)),
+                                lineWidth: isSelected ? 1.5 : 1
+                            )
                     }
                 )
         }
@@ -99,26 +99,26 @@ struct GridCardItem: View {
 
     private var cardFill: Color {
         if isSelected {
-            return colorScheme == .dark ? Color(white: 0.88) : Color(white: 0.15)
+            return colorScheme == .dark ? Color(white: 0.88) : Color(white: 0.12)
         }
-        return colorScheme == .dark ? Color(white: 0.14) : .white
+        return colorScheme == .dark ? Color(white: 0.14) : Color(white: 0.80)
     }
 
     private var borderColor: Color {
         if isSelected {
-            return colorScheme == .dark ? Color(white: 0.75) : Color(white: 0.25)
+            return colorScheme == .dark ? Color(white: 0.75) : Color(white: 0.18)
         }
-        return Color(white: colorScheme == .dark ? 0.28 : 0.88)
+        return Color(white: colorScheme == .dark ? 0.28 : 0.60)
     }
 
     private var labelColor: Color {
-        isSelected ? (colorScheme == .dark ? .black : .white) : .primary
+        isSelected ? (colorScheme == .dark ? .black : .white) : (colorScheme == .dark ? .primary : Color(white: 0.12))
     }
 
     private var subLabelColor: Color {
         isSelected
-            ? (colorScheme == .dark ? Color(white: 0.25) : Color(white: 0.75))
-            : .secondary
+            ? (colorScheme == .dark ? Color(white: 0.25) : Color(white: 0.78))
+            : (colorScheme == .dark ? .secondary : Color(white: 0.35))
     }
 
     var body: some View {

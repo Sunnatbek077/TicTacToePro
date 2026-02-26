@@ -190,7 +190,7 @@ struct StartMenuView: View {
     }
     
     private var cardBackground: AnyShapeStyle {
-        AnyShapeStyle(.ultraThinMaterial)
+        AnyShapeStyle(colorScheme == .dark ? AnyShapeStyle(.ultraThinMaterial) : AnyShapeStyle(.regularMaterial))
     }
     
     private var premiumShadow: (Color, CGFloat, CGFloat) {
