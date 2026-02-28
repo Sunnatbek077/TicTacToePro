@@ -21,7 +21,6 @@ struct ConfigurationCard: View {
     @Binding var selectedGameMode: GameMode
     @Binding var selectedDifficulty: DifficultyOption
     @Binding var selectedBoardSize: BoardSize
-    @Binding var selectedTimeLimit: TimeLimitOption
 
     var body: some View {
         ScrollView {
@@ -46,7 +45,6 @@ struct ConfigurationCard: View {
                 BoardSizePicker(selected: $selectedBoardSize)
 
                 Divider().opacity(0.3)
-                TimeLimitPicker(selected: $selectedTimeLimit)
             }
             .padding(.vertical, 6)
             .padding(.horizontal, 4)
@@ -225,68 +223,7 @@ private struct BoardSizeChip: View {
     }
 }
 
-// MARK: - Time Limit Picker  (scrollable horizontal strip)
-private struct TimeLimitPicker: View {
-    @Binding var selected: TimeLimitOption
 
-    var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text("Time")
-                .font(.caption2).fontWeight(.semibold)
-                .foregroundStyle(.secondary)
-                .padding(.horizontal, 2)
-
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 6) {
-                    ForEach(TimeLimitOption.allCases) { option in
-                        TimeLimitChip(option: option, isSelected: selected == option) {
-                            withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
-                                selected = option
-                            }
-                        }
-                    }
-                }
-                .padding(.horizontal, 2)
-            }
-        }
-    }
-}
-
-private struct TimeLimitChip: View {
-    let option: TimeLimitOption
-    let isSelected: Bool
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            VStack(spacing: 2) {
-                Text(option.title)
-                    .font(.system(size: 13, weight: .bold))
-                    .foregroundStyle(isSelected ? option.color : .primary)
-                Text(option.description)
-                    .font(.system(size: 8))
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-            }
-            .frame(width: 44, height: 44)
-            .background(
-                RoundedRectangle(cornerRadius: 9)
-                    .fill(Color(white: isSelected ? 0.22 : 0.14).opacity(0.9))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 9)
-                    .strokeBorder(
-                        isSelected ? LinearGradient(colors: [option.color, option.color.opacity(0.5)], startPoint: .top, endPoint: .bottom)
-                                   : LinearGradient(colors: [.clear], startPoint: .top, endPoint: .bottom),
-                        lineWidth: 1.5
-                    )
-            )
-            .scaleEffect(isSelected ? 1.04 : 1.0)
-            .animation(.spring(response: 0.25, dampingFraction: 0.75), value: isSelected)
-        }
-        .buttonStyle(.plain)
-    }
-}
 
 // MARK: - Reusable chip button
 private struct ChipButton: View {

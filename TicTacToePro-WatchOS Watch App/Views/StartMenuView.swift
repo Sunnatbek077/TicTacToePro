@@ -21,7 +21,6 @@ struct StartMenuView: View {
     @State private var selectedDifficulty: DifficultyOption = .easy
     @State private var selectedGameMode:  GameMode        = .ai
     @State private var selectedBoardSize: BoardSize       = .small
-    @State private var selectedTimeLimit: TimeLimitOption = .tenMinutes
     @State private var showGame          = false
     @State private var animateBackground = false
 
@@ -80,7 +79,6 @@ struct StartMenuView: View {
                             selectedGameMode:  $selectedGameMode,
                             selectedDifficulty: $selectedDifficulty,
                             selectedBoardSize: $selectedBoardSize,
-                            selectedTimeLimit: $selectedTimeLimit
                         )
 
                         // ── Start button ────────────────────────────────
@@ -111,7 +109,6 @@ struct StartMenuView: View {
                                 gameTypeIsPVP:    selectedGameMode.isPVP,
                                 difficulty:       selectedDifficulty.mapped,
                                 startingPlayerIsO: startingPlayerIsO,
-                                timeLimit:        selectedTimeLimit
                             )
                             .onDisappear { appState.isGameOpen = false }
                         }

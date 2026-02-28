@@ -47,9 +47,6 @@ extension GameBoardView {
     var content: some View {
         ScrollView {
             VStack(spacing: 8) {
-                // Compact header
-                headerWatchOS
-                
                 // Score display
                 GameScoreView(
                     xWins: xWins,
@@ -70,46 +67,6 @@ extension GameBoardView {
             .padding(.vertical, 8)
         }
         .focusable() // Enable Digital Crown scrolling
-    }
-    
-    // MARK: - Header (watchOS optimized)
-    var headerWatchOS: some View {
-        VStack(spacing: 4) {
-            Text(headerTitle)
-                .font(.system(.headline, design: .rounded).weight(.bold))
-                .foregroundStyle(LinearGradient(
-                    colors: [.pink, .purple],
-                    startPoint: .leading,
-                    endPoint: .trailing
-                ))
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
-                .accessibilityAddTraits(.isHeader)
-            
-            Text(headerSubtitle)
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-            
-            // Mode badge
-            Text(modeBadgeText)
-                .font(.system(size: 9).weight(.semibold))
-                .padding(.horizontal, 6)
-                .padding(.vertical, 3)
-                .background(.ultraThinMaterial, in: Capsule())
-                .overlay(
-                    Capsule()
-                        .strokeBorder(
-                            LinearGradient(
-                                colors: [.purple.opacity(0.5), .blue.opacity(0.5)],
-                                startPoint: .top,
-                                endPoint: .bottom
-                            ),
-                            lineWidth: 0.5
-                        )
-                )
-        }
-        .padding(.horizontal, 4)
     }
     
     // MARK: - Game Board (watchOS optimized)

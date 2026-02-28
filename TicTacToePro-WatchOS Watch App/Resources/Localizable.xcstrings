@@ -286,6 +286,7 @@
       }
     },
     "%@, %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -7361,6 +7362,7 @@
       }
     },
     "Selected" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -8014,6 +8016,7 @@
       "shouldTranslate" : false
     },
     "Swipe horizontally to see more options" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -8155,6 +8158,7 @@
       }
     },
     "Tap to select" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -8441,9 +8445,6 @@
           }
         }
       }
-    },
-    "Time" : {
-
     },
     "Time limit %@" : {
       "extractionState" : "stale",
