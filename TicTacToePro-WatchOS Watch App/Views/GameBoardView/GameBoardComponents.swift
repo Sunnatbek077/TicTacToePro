@@ -92,7 +92,7 @@ extension GameBoardView {
                             let index = row * ticTacToe.boardSize + column
                             if ticTacToe.squares.indices.contains(index) {
                                 SquareButtonViewWatch(
-                                    dataSource: ticTacToe.squares[index],
+                                    dataSource: ticTacToe.squares[index].squareStatus,
                                     index: index,
                                     size: cellSize,
                                     winningIndices: winning,
@@ -201,26 +201,7 @@ struct SquareButtonViewWatch: View {
         self.action = action
     }
     
-    init(dataSource: Square?, index: Int, size: CGFloat, winningIndices: Set<Int>, isRecentlyPlaced: Bool, action: @escaping () -> Void) {
-        // Map Square? to SquareStatus? if types differ in the project
-        if let ds = dataSource as? SquareStatus { self.dataSource = ds } else {
-            // Fallback mapping based on common case names
-            if let ds = dataSource {
-                switch String(describing: ds) {
-                case "x", "X", "cross": self.dataSource = .x
-                case "o", "O", "nought", "circle": self.dataSource = .o
-                default: self.dataSource = .empty
-                }
-            } else {
-                self.dataSource = nil
-            }
-        }
-        self.index = index
-        self.size = size
-        self.winningIndices = winningIndices
-        self.isRecentlyPlaced = isRecentlyPlaced
-        self.action = action
-    }
+
     
     @Environment(\.colorScheme) private var colorScheme
     
@@ -256,7 +237,7 @@ struct SquareButtonViewWatch: View {
         .frame(width: size, height: size)
         .contentShape(Rectangle()) // Make entire frame tappable
         .buttonStyle(.plain)
-        .allowsHitTesting(dataSource == nil || dataSource == .empty)
+        .allowsHitTesting(dataSource == nil || dataSource == .empty || dataSource == .some(.empty))
     }
     
     @ViewBuilder
