@@ -2470,6 +2470,7 @@
       }
     },
     "Choose Time Limit" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -2750,6 +2751,7 @@
       }
     },
     "Confirm" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -2889,6 +2891,9 @@
           }
         }
       }
+    },
+    "Create Game" : {
+
     },
     "Create New Game" : {
       "localizations" : {
@@ -4291,6 +4296,7 @@
       }
     },
     "Give your game a unique name" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -7094,6 +7100,7 @@
       }
     },
     "Select the duration for your game" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -7303,6 +7310,9 @@
           }
         }
       }
+    },
+    "Set up your game preferences" : {
+
     },
     "Settings" : {
       "localizations" : {

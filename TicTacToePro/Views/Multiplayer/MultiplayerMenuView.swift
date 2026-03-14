@@ -24,17 +24,19 @@ struct MultiplayerMenuView: View {
     @StateObject private var viewModel = ViewModel()
     @StateObject private var ticTacToeModel = GameViewModel()
     
+    // Game config state
     @State private var selectedBoardSize: BoardSize = .small
     @State private var selectedTimeLimit: TimeLimitOption = .tenMinutes
+    @State private var selectedGameMode: GameMode = .pvp
+    @State private var selectedPlayer: PlayerOption = .x
+    @State private var selectedDifficulty: DifficultyOption = .medium
+
     @State private var gameName: String = ""
     @State private var isPrivateGame: Bool = false
     @State private var roomCodeInput: String = ""
     
     // Sheet states
     @State private var showCreateGameSheet = false
-    @State private var showGameNameSheet = false
-    @State private var showBoardSizeSelector = false
-    @State private var showTimeLimitSelector = false
     @State private var showJoinByCodeSheet = false
     @State private var showGame = false
     @State private var animateBackground = false
@@ -194,40 +196,32 @@ struct MultiplayerMenuView: View {
                     Text("Are you sure you want to delete this game? This action cannot be undone.")
                 }
             }
-            .sheet(isPresented: $showGameNameSheet) {
-                GameNameInputSheet(
+
+            // MARK: - Unified Create Game Sheet
+            .sheet(isPresented: $showCreateGameSheet) {
+                CreateGameSheet(
                     gameName: $gameName,
                     isPrivate: $isPrivateGame,
-                    onNext: {
-                        showGameNameSheet = false
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                            showBoardSizeSelector = true
-                        }
-                    },
-                    onCancel: {
-                        showGameNameSheet = false
-                    }
-                )
-            }
-            
-            .sheet(isPresented: $showTimeLimitSelector) {
-                TimeLimitSelectorView(
+                    selectedPlayer: $selectedPlayer,
+                    selectedGameMode: $selectedGameMode,
+                    selectedDifficulty: $selectedDifficulty,
+                    selectedBoardSize: $selectedBoardSize,
                     selectedTimeLimit: $selectedTimeLimit,
+                    isCompactHeightPhone: isCompactHeightPhone,
                     onConfirm: {
-                        showTimeLimitSelector = false
-                        Task {
-                            await createGame()
-                        }
+                        showCreateGameSheet = false
+                        Task { await createGame() }
                     },
                     onCancel: {
-                        showTimeLimitSelector = false
+                        showCreateGameSheet = false
                     }
                 )
-                #if os(iOS)
-                .presentationDetents([.medium, .large])
+#if os(iOS)
+                .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
-                #endif
+#endif
             }
+
             .sheet(isPresented: $showJoinByCodeSheet) {
                 JoinByCodeSheet(
                     roomCode: $roomCodeInput,
@@ -329,7 +323,7 @@ struct MultiplayerMenuView: View {
             // Create Game Button
             Button {
                 triggerHaptic()
-                showGameNameSheet = true
+                showCreateGameSheet = true
             } label: {
                 HStack {
                     Image(systemName: "plus.circle.fill")
@@ -543,6 +537,205 @@ struct MultiplayerMenuView: View {
 #endif
 }
 
+// MARK: - Create Game Sheet (Unified Configuration)
+struct CreateGameSheet: View {
+    @Binding var gameName: String
+    @Binding var isPrivate: Bool
+    @Binding var selectedPlayer: PlayerOption
+    @Binding var selectedGameMode: GameMode
+    @Binding var selectedDifficulty: DifficultyOption
+    @Binding var selectedBoardSize: BoardSize
+    @Binding var selectedTimeLimit: TimeLimitOption
+    var isCompactHeightPhone: Bool
+    let onConfirm: () -> Void
+    let onCancel: () -> Void
+
+    @Environment(\.colorScheme) private var colorScheme
+    @FocusState private var isFocused: Bool
+
+    private let accentGradient = LinearGradient(
+        colors: [.pink.opacity(0.9), .purple.opacity(0.9), .blue.opacity(0.9)],
+        startPoint: .topLeading,
+        endPoint: .bottomTrailing
+    )
+
+    private var hPad: CGFloat { isCompactHeightPhone ? 16 : 20 }
+    private var sectionSpacing: CGFloat { isCompactHeightPhone ? 16 : 20 }
+
+    @ViewBuilder
+    private func configSection<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .textCase(.uppercase)
+                .tracking(0.5)
+            content()
+        }
+    }
+
+    var body: some View {
+        NavigationStack {
+            ZStack(alignment: .bottom) {
+                // Background
+                LinearGradient(
+                    colors: colorScheme == .dark
+                        ? [Color(red: 0.08, green: 0.08, blue: 0.10), Color(red: 0.11, green: 0.12, blue: 0.18)]
+                        : [Color(red: 0.95, green: 0.96, blue: 0.99), Color(red: 0.90, green: 0.92, blue: 0.98)],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                .ignoresSafeArea()
+
+                // Scrollable content
+                ScrollView(showsIndicators: false) {
+                    VStack(alignment: .leading, spacing: sectionSpacing) {
+
+                        // Header
+                        VStack(spacing: 6) {
+                            Text("Create New Game")
+                                .font(.title2.bold())
+                                .foregroundStyle(accentGradient)
+                            Text("Set up your game preferences")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.top, isCompactHeightPhone ? 12 : 20)
+
+                        // ── 1. Game Name ──────────────────────────────────
+                        configSection(title: "Game Name") {
+                            TextField("e.g., Epic Battle", text: $gameName)
+                                .textFieldStyle(.plain)
+                                .padding(.horizontal, 14)
+                                .padding(.vertical, 10)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .fill(colorScheme == .dark ? Color(white: 0.15) : Color.white)
+                                )
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .stroke(isFocused ? Color.purple : Color.gray.opacity(0.3), lineWidth: 1.5)
+                                )
+                                .focused($isFocused)
+                        }
+
+                        // ── 2. Privacy ────────────────────────────────────
+                        configSection(title: "Visibility") {
+                            Toggle(isOn: $isPrivate) {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Private Game")
+                                        .font(.subheadline.bold())
+                                    Text("Only players with room code can join")
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                }
+                            }
+                            .tint(.purple)
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 10)
+                            .background(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(colorScheme == .dark ? Color(white: 0.15) : Color.white)
+                            )
+                        }
+
+                        // ── 3. Starting Player ────────────────────────────
+                        configSection(title: "Starting Player") {
+                            HStack(spacing: 10) {
+                                ForEach(PlayerOption.allCases, id: \.self) { player in
+                                    SelectionPill(
+                                        label: player.rawValue,
+                                        isSelected: selectedPlayer == player
+                                    ) {
+                                        withAnimation(.spring(response: 0.15, dampingFraction: 0.7)) {
+                                            selectedPlayer = player
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // ── 4. Board Size ─────────────────────────────────
+                        configSection(title: "Board Size") {
+                            SelectionGridCard(
+                                items: BoardSize.allCases,
+                                selected: selectedBoardSize,
+                                title: { $0.title },
+                                subtitle: { "\($0.emoji) \($0.description)" },
+                                onSelect: { selectedBoardSize = $0 }
+                            )
+                        }
+
+                        // ── 5. Time Limit ─────────────────────────────────
+                        configSection(title: "Time Limit") {
+                            SelectionGridCard(
+                                items: TimeLimitOption.allCases,
+                                selected: selectedTimeLimit,
+                                title: { $0.title },
+                                subtitle: { "\($0.emoji) \($0.description)" },
+                                onSelect: { selectedTimeLimit = $0 }
+                            )
+                        }
+
+                        // Bottom padding for fixed button bar
+                        Color.clear.frame(height: 90)
+                    }
+                    .padding(.horizontal, hPad)
+                }
+
+                // Fixed bottom action bar
+                VStack(spacing: 0) {
+                    // Subtle fade separator
+                    LinearGradient(
+                        colors: [.clear, colorScheme == .dark
+                            ? Color(red: 0.08, green: 0.08, blue: 0.10).opacity(0.95)
+                            : Color(red: 0.95, green: 0.96, blue: 0.99).opacity(0.95)],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                    .frame(height: 24)
+
+                    HStack(spacing: 12) {
+                        Button(action: onCancel) {
+                            Text("Cancel")
+                                .font(.headline)
+                                .foregroundColor(.secondary)
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                                .background(
+                                    RoundedRectangle(cornerRadius: 16)
+                                        .fill(Color.gray.opacity(0.2))
+                                )
+                        }
+
+                        Button(action: onConfirm) {
+                            HStack {
+                                Text("Create Game")
+                                    .font(.headline.bold())
+                                Image(systemName: "arrow.right.circle.fill")
+                            }
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(accentGradient)
+                            .clipShape(RoundedRectangle(cornerRadius: 16))
+                            .shadow(color: .purple.opacity(0.4), radius: 12, x: 0, y: 6)
+                        }
+                        .disabled(gameName.isEmpty)
+                        .opacity(gameName.isEmpty ? 0.5 : 1.0)
+                    }
+                    .padding(.horizontal, isCompactHeightPhone ? 16 : 20)
+                    .padding(.bottom, 20)
+                }
+            }
+            .onAppear {
+                isFocused = true
+            }
+        }
+    }
+}
+
 // MARK: - Supporting Views
 
 struct GameLobbyCard: View {
@@ -683,138 +876,6 @@ struct LoadingOverlay: View {
     }
 }
 
-struct GameNameInputSheet: View {
-    @Binding var gameName: String
-    @Binding var isPrivate: Bool
-    let onNext: () -> Void
-    let onCancel: () -> Void
-    
-    @Environment(\.colorScheme) private var colorScheme
-    @FocusState private var isFocused: Bool
-    
-    var body: some View {
-        NavigationStack {
-            ZStack {
-                // Background
-                LinearGradient(
-                    colors: colorScheme == .dark
-                    ? [Color(red: 0.08, green: 0.08, blue: 0.10), Color(red: 0.11, green: 0.12, blue: 0.18)]
-                    : [Color(red: 0.95, green: 0.96, blue: 0.99), Color(red: 0.90, green: 0.92, blue: 0.98)],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-                .ignoresSafeArea()
-                
-                VStack(spacing: 24) {
-                    // Header
-                    VStack(spacing: 8) {
-                        Text("Create New Game")
-                            .font(.title2.bold())
-                            .foregroundStyle(
-                                LinearGradient(
-                                    colors: [.pink, .purple, .blue],
-                                    startPoint: .leading,
-                                    endPoint: .trailing
-                                )
-                            )
-                        
-                        Text("Give your game a unique name")
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-                    }
-                    .padding(.top, 20)
-                    
-                    // Game Name Input
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Game Name")
-                            .font(.headline)
-                            .foregroundColor(.primary)
-                        
-                        TextField("e.g., Epic Battle", text: $gameName)
-                            .textFieldStyle(.plain)
-                            .padding()
-                            .background(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .fill(colorScheme == .dark ? Color(white: 0.15) : Color.white)
-                            )
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .stroke(isFocused ? Color.purple : Color.gray.opacity(0.3), lineWidth: 2)
-                            )
-                            .focused($isFocused)
-                    }
-                    .padding(.horizontal)
-                    
-                    // Privacy Toggle
-                    VStack(alignment: .leading, spacing: 12) {
-                        Toggle(isOn: $isPrivate) {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("Private Game")
-                                    .font(.headline)
-                                
-                                Text("Only players with room code can join")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                            }
-                        }
-                        .tint(.purple)
-                    }
-                    .padding()
-                    .background(
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(colorScheme == .dark ? Color(white: 0.15) : Color.white)
-                    )
-                    .padding(.horizontal)
-                    
-                    Spacer()
-                    
-                    // Action Buttons
-                    HStack(spacing: 12) {
-                        Button(action: onCancel) {
-                            Text("Cancel")
-                                .font(.headline)
-                                .foregroundColor(.secondary)
-                                .frame(maxWidth: .infinity)
-                                .padding()
-                                .background(
-                                    RoundedRectangle(cornerRadius: 16)
-                                        .fill(Color.gray.opacity(0.2))
-                                )
-                        }
-                        
-                        Button(action: onNext) {
-                            HStack {
-                                Text("Next")
-                                    .font(.headline.bold())
-                                Image(systemName: "arrow.right")
-                            }
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(
-                                LinearGradient(
-                                    colors: [.pink, .purple, .blue],
-                                    startPoint: .leading,
-                                    endPoint: .trailing
-                                )
-                            )
-                            .clipShape(RoundedRectangle(cornerRadius: 16))
-                            .shadow(color: .purple.opacity(0.4), radius: 12, x: 0, y: 6)
-                        }
-                        .disabled(gameName.isEmpty)
-                        .opacity(gameName.isEmpty ? 0.5 : 1.0)
-                    }
-                    .padding(.horizontal)
-                    .padding(.bottom, 20)
-                }
-            }
-            .onAppear {
-                isFocused = true
-            }
-        }
-    }
-}
-
 struct JoinByCodeSheet: View {
     @Binding var roomCode: String
     let onJoin: () -> Void
@@ -927,93 +988,6 @@ struct JoinByCodeSheet: View {
             .onAppear {
                 isFocused = true
             }
-        }
-    }
-}
-
-// MARK: - Time Limit Selector View
-struct TimeLimitSelectorView: View {
-    @Binding var selectedTimeLimit: TimeLimitOption
-    let onConfirm: () -> Void
-    let onCancel: () -> Void
-    
-    @Environment(\.colorScheme) private var colorScheme
-    @State private var animateIn = false
-    
-    var body: some View {
-        ZStack {
-            // Premium background
-            LinearGradient(
-                colors: colorScheme == .dark
-                ? [Color(red: 0.08, green: 0.08, blue: 0.10), Color(red: 0.11, green: 0.12, blue: 0.18)]
-                : [Color(red: 0.95, green: 0.96, blue: 0.99), Color(red: 0.90, green: 0.92, blue: 0.98)],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            .ignoresSafeArea()
-            
-            VStack(spacing: 24) {
-                // Header
-                VStack(spacing: 8) {
-                    Text("Choose Time Limit")
-                        .font(.title2.bold())
-                        .foregroundStyle(
-                            LinearGradient(
-                                colors: [.pink, .purple, .blue],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
-                        )
-                    
-                    Text("Select the duration for your game")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                }
-                .padding(.top, 20)
-                
-                // Time Limit Options
-                TimeLimitView(selectedTimeLimit: $selectedTimeLimit)
-                
-                // Action Buttons
-                HStack(spacing: 12) {
-                    Button(action: onCancel) {
-                        Text("Cancel")
-                            .font(.headline)
-                            .foregroundColor(.secondary)
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(
-                                RoundedRectangle(cornerRadius: 16)
-                                    .fill(Color.gray.opacity(0.2))
-                            )
-                    }
-                    
-                    Button(action: onConfirm) {
-                        HStack {
-                            Text("Confirm")
-                                .font(.headline.bold())
-                            Image(systemName: "arrow.right")
-                        }
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(
-                            LinearGradient(
-                                colors: [.pink, .purple, .blue],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
-                        )
-                        .clipShape(RoundedRectangle(cornerRadius: 16))
-                        .shadow(color: .purple.opacity(0.4), radius: 12, x: 0, y: 6)
-                    }
-                }
-                .padding(.horizontal)
-                .padding(.bottom, 20)
-            }
-        }
-        .onAppear {
-            animateIn = true
         }
     }
 }
