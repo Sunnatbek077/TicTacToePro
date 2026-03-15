@@ -39,35 +39,16 @@ enum GameMode: String, CaseIterable {
 enum BoardSize: Int, CaseIterable, Identifiable {
     case small   = 3
     case medium  = 4
-    case large   = 5
-    case xlarge  = 6
-    case xxlarge = 7
-    case huge    = 8
-    case massive = 9
+    
 
     var id: Int { rawValue }
 
     var title: String { "\(rawValue)×\(rawValue)" }
 
-    var difficulty: String {
-        switch self {
-        case .small:           return "Easy"
-        case .medium:          return "Med"
-        case .large:           return "Hard"
-        case .xlarge, .xxlarge: return "V.Hard"
-        case .huge, .massive:  return "Extreme"
-        }
-    }
-
     var color: Color {
         switch self {
         case .small:   return .green
         case .medium:  return .blue
-        case .large:   return .purple
-        case .xlarge:  return .orange
-        case .xxlarge: return .red
-        case .huge:    return .pink
-        case .massive: return .indigo
         }
     }
 }

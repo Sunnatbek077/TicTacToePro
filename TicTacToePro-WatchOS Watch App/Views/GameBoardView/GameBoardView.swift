@@ -15,7 +15,6 @@ struct GameBoardView: View {
     
     @Environment(\.colorScheme) var colorScheme
     
-    @ObservedObject var viewModel: ViewModel
     @ObservedObject var ticTacToe: GameViewModel
     
     let gameTypeIsPVP: Bool

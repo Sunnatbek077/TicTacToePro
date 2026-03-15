@@ -2,7 +2,6 @@
 //  GameBoardLogic.swift
 //  TicTacToePro watchOS
 //
-//  Refactored for watchOS by Claude
 //  Original by Sunnatbek on 04/10/25
 //
 
@@ -43,8 +42,6 @@ extension GameBoardView {
     func resetGameState() {
         ticTacToe.resetGame()
         ticTacToe.playerToMove = startingPlayerIsO ? .o : .x
-        viewModel.gameOver = false
-        viewModel.winner = .empty
         showConfetti = false
         aiThinking = false
         animateWinningGlow = false

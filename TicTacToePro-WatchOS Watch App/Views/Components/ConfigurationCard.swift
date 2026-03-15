@@ -2,15 +2,7 @@
 //  ConfigurationCard.swift
 //  TicTacToePro watchOS
 //
-//  Refactored for watchOS by Claude
 //  Original by Sunnatbek on 20/09/25.
-//
-//  watchOS Design principles applied:
-//  - Base font: .footnote / .caption2 (never exceed .headline inside cards)
-//  - Touch targets: min 44×44 pt (even on 40 mm watch)
-//  - Spacing: tight but breathable – 4-8 pt between siblings
-//  - Avoid LazyVGrid where HStack suffices (less layout overhead)
-//  - Digital Crown scrolling via .focusable() on outer ScrollView
 //
 
 import SwiftUI
@@ -194,16 +186,10 @@ private struct BoardSizeChip: View {
         Button(action: action) {
             VStack(spacing: 2) {
                 Text(size.title)
-                    .font(.system(size: 12, weight: .bold))
+                    .font(.system(size: 15, weight: .bold))
                     .foregroundStyle(isSelected ? size.color : .primary)
-                Text(size.difficulty)
-                    .font(.system(size: 8, weight: .medium))
-                    .foregroundStyle(size.color)
-                    .padding(.horizontal, 4)
-                    .padding(.vertical, 1)
-                    .background(Capsule().fill(size.color.opacity(0.18)))
             }
-            .frame(width: 44, height: 44)
+            .frame(width: 85, height: 44)
             .background(
                 RoundedRectangle(cornerRadius: 9)
                     .fill(Color(white: isSelected ? 0.22 : 0.14).opacity(0.9))
@@ -216,6 +202,7 @@ private struct BoardSizeChip: View {
                         lineWidth: 1.5
                     )
             )
+            .padding(.vertical, 4)
             .scaleEffect(isSelected ? 1.04 : 1.0)
             .animation(.spring(response: 0.25, dampingFraction: 0.75), value: isSelected)
         }
@@ -263,4 +250,8 @@ private struct ChipButton: View {
         }
         .buttonStyle(.plain)
     }
+}
+
+#Preview {
+    StartMenuView()
 }

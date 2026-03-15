@@ -104,7 +104,6 @@ struct StartMenuView: View {
                         .navigationDestination(isPresented: $showGame) {
                             GameBoardView(
                                 onExit:           { showGame = false },
-                                viewModel:        viewModel,
                                 ticTacToe:        ticTacToeModel,
                                 gameTypeIsPVP:    selectedGameMode.isPVP,
                                 difficulty:       selectedDifficulty.mapped,
