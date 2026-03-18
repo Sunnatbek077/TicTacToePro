@@ -248,16 +248,40 @@ class MultiplayerViewModel: ObservableObject {
         isLoading = false
     }
     
-    /// Make a move in current game
+    /// Make a move in current game (optimistic UI update)
     func makeMove(index: Int) async {
         guard let gameId = currentGameId,
-              let player = currentPlayer else { return }
-        
+              let player = currentPlayer,
+              var game = currentGame else { return }
+
+        // ── 1. Validate locally before touching server ──────────────────
+        guard game.status == .active else { return }
+        guard game.boardState.indices.contains(index) else { return }
+        guard game.boardState[index] == .empty else { return }
+
+        let myTurn = (game.currentTurn == game.player1.symbol)
+            ? game.player1
+            : game.player2
+        guard myTurn?.id == player.id else { return }   // not your turn
+
+        // ── 2. Apply move locally → instant UI response (0 ms) ──────────
+        let previousGame = game                          // snapshot for rollback
+        game.boardState[index] = game.currentTurn
+
+        // Switch turn locally so UI feels responsive
+        let nextTurn: SquareStatus = game.currentTurn == .x ? .o : .x
+        game.currentTurn = nextTurn
+        currentGame = game
+
+        // ── 3. Send to Firestore in background ───────────────────────────
         do {
             try await firebaseManager.makeMove(gameId: gameId, playerId: player.id, index: index)
-            // Game will be updated via listener
+            // Real snapshot from listener will arrive shortly and replace our local state
         } catch {
-            showErrorMessage("Failed to make move: \(error.localizedDescription)")
+            // ── 4. Rollback on failure ────────────────────────────────────
+            currentGame = previousGame
+            print("[Multiplayer] Move rejected by server — rolled back. Index: \(index), Error: \(error.localizedDescription)")
+            showErrorMessage("Move failed: \(error.localizedDescription)")
         }
     }
     
@@ -484,4 +508,3 @@ extension MultiplayerViewModel {
         return vm
     }
 }
-

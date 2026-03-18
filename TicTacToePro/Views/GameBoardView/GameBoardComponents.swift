@@ -2,11 +2,6 @@
 //  GameBoardComponents.swift
 //  TicTacToePro
 //
-//  Fixes:
-//  1. Board celllar vertikal cho'zilgan → portraitLayout GeometryReader bilan aniq boardSide hisoblaydi
-//  2. Board va banner orasida bo'shliq → footer board bilan bevosita VStack ichida
-//  3. Tab bar hisobga olinmagan → geo.size SwiftUI safe area ni hisoblab beradi (NavigationStack ichida)
-//
 
 import SwiftUI
 
@@ -16,11 +11,10 @@ private enum Layout {
     static func vPad(_ se: Bool, _ compact: Bool) -> CGFloat { se ? 4 : (compact ? 6 : 10) }
     static func gap(_ se: Bool, _ compact: Bool) -> CGFloat  { se ? 6 : (compact ? 7 : 10) }
 
-    // Fixed element balandliklari — taxminiy, lekin kichik tomon
-    // (haqiqiy o'lcham kichik bo'lsa board katta bo'ladi, katta bo'lsa board kichik — xavfsiz)
-    static func headerH(_ se: Bool) -> CGFloat  { se ? 44 : 52 }
-    static func stripH(_ se: Bool) -> CGFloat   { se ? 40 : 48 }
-    static func bannerH(_ se: Bool) -> CGFloat  { se ? 36 : 46 }
+    static func headerH(_ se: Bool) -> CGFloat       { se ? 44 : 52 }
+    static func unifiedHeaderH(_ se: Bool) -> CGFloat { se ? 64 : 76 }
+    static func stripH(_ se: Bool) -> CGFloat        { se ? 40 : 48 }
+    static func bannerH(_ se: Bool) -> CGFloat       { se ? 36 : 46 }
 }
 
 extension GameBoardView {
@@ -68,72 +62,243 @@ extension GameBoardView {
     var content: some View {
         Group {
             if isWide {
-                // Landscape / iPad
-                HStack(spacing: 24) {
-                    board
-                    rightPanel.frame(minWidth: 220, maxWidth: 320)
+                if topOverlay != nil {
+                    multiplayerIPadLayout
+                } else {
+                    HStack(spacing: 24) {
+                        board
+                        rightPanel.frame(minWidth: 220, maxWidth: 320)
+                    }
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 16)
                 }
-                .padding(.horizontal, 24)
-                .padding(.vertical, 16)
             } else {
                 portraitLayout
             }
         }
     }
 
+    // MARK: - Multiplayer iPad Layout
+    // Layout: HStack [ PlayerPanel | CenterColumn | PlayerPanel ]
+    // Type-check muammosini oldini olish uchun har bir qism alohida funksiya
+    private var multiplayerIPadLayout: some View {
+        GeometryReader { geo in
+            self.iPadBody(W: geo.size.width, H: geo.size.height)
+        }
+    }
+
+    private func iPadBody(W: CGFloat, H: CGFloat) -> some View {
+        let hPad:    CGFloat = 20
+        let vPad:    CGFloat = 20
+        let spacing: CGFloat = 16
+        let panelW:  CGFloat = min(160, W * 0.17)
+        let midW:    CGFloat = W - hPad * 2 - panelW * 2 - spacing * 2
+        let innerH:  CGFloat = H - vPad * 2
+        // Board: innerH - title(34) - strip(46) - banner(38) - 3*gap(10)
+        let boardSide: CGFloat = min(midW, innerH - 34 - 46 - 38 - 30)
+
+        return HStack(spacing: spacing) {
+            iPadPlayerPanel(isLeft: true)
+                .frame(width: panelW, height: innerH)
+
+            iPadCenterColumn(midW: midW, innerH: innerH, boardSide: boardSide)
+
+            iPadPlayerPanel(isLeft: false)
+                .frame(width: panelW, height: innerH)
+        }
+        .frame(width: W - hPad * 2, height: innerH)
+        .frame(width: W, height: H)
+    }
+
+    private func iPadCenterColumn(midW: CGFloat, innerH: CGFloat, boardSide: CGFloat) -> some View {
+        VStack(spacing: 10) {
+            Spacer(minLength: 0)
+            iPadTitle
+            scoreStrip
+            boardGrid(side: boardSide)
+                .frame(width: boardSide, height: boardSide)
+            turnBanner
+            Spacer(minLength: 0)
+        }
+        .frame(width: midW, height: innerH)
+    }
+
+    private var iPadTitle: some View {
+        Text(headerTitle)
+            .font(.system(.title2, design: .rounded).weight(.black))
+            .foregroundStyle(
+                LinearGradient(
+                    colors: [.pink, .purple, .blue],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+            )
+            .lineLimit(1)
+            .frame(maxWidth: .infinity)
+    }
+
+    // MARK: - iPad Player Side Panel
+    private func iPadPlayerPanel(isLeft: Bool) -> some View {
+        let symbolColor: Color = isLeft ? .pink : .blue
+        let symbol      = isLeft ? "X" : "O"
+        let score       = isLeft ? xWins : oWins
+        let isActive    = currentPlayer == symbol
+        let icon        = isLeft ? "xmark" : "circle"
+
+        return iPadPanelContent(
+            symbolColor: symbolColor,
+            symbol: symbol,
+            score: score,
+            isActive: isActive,
+            icon: icon
+        )
+    }
+
+    private func iPadPanelContent(
+        symbolColor: Color,
+        symbol: String,
+        score: Int,
+        isActive: Bool,
+        icon: String
+    ) -> some View {
+        VStack(spacing: 16) {
+            Spacer(minLength: 0)
+
+            ZStack {
+                Circle()
+                    .fill(symbolColor.opacity(isActive ? 0.18 : 0.06))
+                    .frame(width: 68, height: 68)
+                    .overlay(
+                        Circle().strokeBorder(
+                            symbolColor.opacity(isActive ? 0.85 : 0.15),
+                            lineWidth: isActive ? 2.5 : 1
+                        )
+                    )
+                    .shadow(
+                        color: isActive ? symbolColor.opacity(0.5) : .clear,
+                        radius: 16, x: 0, y: 0
+                    )
+                Image(systemName: icon)
+                    .font(.system(size: 26, weight: .black))
+                    .foregroundStyle(symbolColor.opacity(isActive ? 1 : 0.3))
+            }
+            .animation(.easeInOut(duration: 0.3), value: isActive)
+
+            VStack(spacing: 4) {
+                Text(symbol)
+                    .font(.system(size: 10, weight: .bold, design: .rounded))
+                    .foregroundStyle(symbolColor.opacity(0.6))
+                    .tracking(2)
+                Text(isActive ? "Your Turn" : "Waiting...")
+                    .font(.system(size: 13,
+                                  weight: isActive ? .semibold : .regular,
+                                  design: .rounded))
+                    .foregroundStyle(isActive ? Color.primary : Color.secondary)
+            }
+            .animation(.easeInOut(duration: 0.25), value: isActive)
+
+            VStack(spacing: 2) {
+                Text("\(score)")
+                    .font(.system(size: 52, weight: .black, design: .rounded))
+                    .foregroundStyle(
+                        isActive
+                            ? AnyShapeStyle(symbolColor)
+                            : AnyShapeStyle(Color.secondary.opacity(0.4))
+                    )
+                    .contentTransition(.numericText())
+                    .animation(.spring(response: 0.4), value: score)
+                Text("wins")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(.tertiary)
+            }
+
+            RoundedRectangle(cornerRadius: 2)
+                .fill(symbolColor.opacity(isActive ? 0.8 : 0.1))
+                .frame(height: 3)
+                .animation(.easeInOut(duration: 0.3), value: isActive)
+
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 18)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(
+            .ultraThinMaterial,
+            in: RoundedRectangle(cornerRadius: 22, style: .continuous)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .strokeBorder(
+                    LinearGradient(
+                        colors: isActive
+                            ? [symbolColor.opacity(0.7), symbolColor.opacity(0.15)]
+                            : [Color.white.opacity(0.1), Color.white.opacity(0.03)],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    ),
+                    lineWidth: isActive ? 1.5 : 1
+                )
+        )
+        .shadow(
+            color: isActive ? symbolColor.opacity(0.2) : .clear,
+            radius: 20, x: 0, y: 4
+        )
+        .animation(.spring(response: 0.4, dampingFraction: 0.8), value: isActive)
+    }
+
     // MARK: - Portrait layout
-    // Muammo: board GeometryReader ichida proxy.size.height ni to'liq mavjud bo'shliq
-    // sifatida qabul qilmoqda, holbuki header + strip + banner ham joy olmoqda.
-    // Yechim: barcha fixed elementlar balandligini ayirib, qolganini boardga beramiz.
-    // boardSide = min(availableWidth, availableHeight) → kvadrat kafolatlangan.
     private var portraitLayout: some View {
         GeometryReader { geo in
-            let hPad   = Layout.hPad(isSESmallScreen, isCompactHeight)
-            let vPad   = Layout.vPad(isSESmallScreen, isCompactHeight)
-            let gap    = Layout.gap(isSESmallScreen, isCompactHeight)
+            let hPad = Layout.hPad(isSESmallScreen, isCompactHeight)
+            let vPad = Layout.vPad(isSESmallScreen, isCompactHeight)
+            let gap  = Layout.gap(isSESmallScreen, isCompactHeight)
 
-            // Fixed elementlar umumiy balandligi:
-            // header + strip + banner + 3 gap (ular orasida) + 2 vPad (yuqori/past)
-            let fixedV = Layout.headerH(isSESmallScreen)
+            let headerH = topOverlay != nil
+                ? Layout.unifiedHeaderH(isSESmallScreen)
+                : Layout.headerH(isSESmallScreen)
+            let bannerExtra = topOverlay == nil
+                ? Layout.bannerH(isSESmallScreen) + gap
+                : 0
+            let fixedV = headerH
                        + Layout.stripH(isSESmallScreen)
-                       + Layout.bannerH(isSESmallScreen)
-                       + gap * 3
+                       + bannerExtra
+                       + gap * 2
                        + vPad * 2
 
-            // Board uchun qolgan joy
             let availH = max(0, geo.size.height - fixedV)
             let availW = max(0, geo.size.width  - hPad * 2)
-
-            // Kvadrat: kichigini ol
-            let side = min(availW, availH)
+            let side   = min(availW, availH)
 
             VStack(spacing: 0) {
+                if let topOverlay {
+                    unifiedHeader(playersBar: topOverlay)
+                        .padding(.horizontal, hPad)
+                        .padding(.bottom, gap)
+                } else {
+                    header
+                        .padding(.horizontal, hPad)
+                        .padding(.bottom, gap)
+                }
 
-                // ① Header — kompakt, ~52pt
-                header
-                    .padding(.horizontal, hPad)
-                    .padding(.bottom, gap)
-
-                // ② Score strip — yupqa, ~48pt
                 scoreStrip
                     .padding(.horizontal, hPad)
                     .padding(.bottom, gap)
 
-                // ③ Board — kvadrat, ekranning dominant qismi
                 boardGrid(side: side)
                     .frame(width: side, height: side)
                     .frame(maxWidth: .infinity)
                     .padding(.bottom, gap)
 
-                // ④ Turn banner — board bilan bog'liq, pastda
-                footer
-                    .frame(maxWidth: .infinity)
+                if topOverlay == nil {
+                    footer
+                        .frame(maxWidth: .infinity)
+                }
             }
             .padding(.vertical, vPad)
         }
     }
 
-    // MARK: - Right panel (landscape / iPad)
+    // MARK: - Right panel (solo landscape / iPad)
     var rightPanel: some View {
         VStack(alignment: .leading, spacing: 12) {
             header
@@ -145,7 +310,7 @@ extension GameBoardView {
         .frame(maxHeight: .infinity, alignment: .top)
     }
 
-    // MARK: - Status card (faqat landscape/iPad)
+    // MARK: - Status card
     var statusCard: some View {
         VStack(alignment: .leading, spacing: 8) {
             gradientLabel("Status", colors: [.pink, .purple])
@@ -168,9 +333,7 @@ extension GameBoardView {
         )
     }
 
-    // MARK: - Header
-    // HStack bir qatorda: title chap, subtitle+badge o'ng.
-    // Balandlik: SE ~44pt, normal ~52pt.
+    // MARK: - Header (solo)
     var header: some View {
         HStack(spacing: 10) {
             Text(headerTitle)
@@ -182,7 +345,6 @@ extension GameBoardView {
                 .minimumScaleFactor(0.6)
                 .lineLimit(1)
                 .accessibilityAddTraits(.isHeader)
-
             Spacer()
         }
         .padding(.horizontal, isSESmallScreen ? 10 : 14)
@@ -200,9 +362,41 @@ extension GameBoardView {
         return .system(.title2, design: .rounded).weight(.black)
     }
 
+    // MARK: - Unified Header (portrait multiplayer)
+    func unifiedHeader(playersBar: AnyView) -> some View {
+        VStack(alignment: .leading, spacing: isSESmallScreen ? 5 : 7) {
+            Text(headerTitle)
+                .font(headerTitleFont)
+                .foregroundStyle(
+                    LinearGradient(colors: [.pink, .purple, .blue],
+                                   startPoint: .leading, endPoint: .trailing)
+                )
+                .minimumScaleFactor(0.6)
+                .lineLimit(1)
+                .accessibilityAddTraits(.isHeader)
+
+            Rectangle()
+                .fill(Color.white.opacity(0.08))
+                .frame(height: 1)
+
+            playersBar
+        }
+        .padding(.horizontal, isSESmallScreen ? 10 : 14)
+        .padding(.vertical, isSESmallScreen ? 8 : 11)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .strokeBorder(
+                    LinearGradient(
+                        colors: [Color.pink.opacity(0.25), Color.purple.opacity(0.2), Color.blue.opacity(0.25)],
+                        startPoint: .topLeading, endPoint: .bottomTrailing
+                    ),
+                    lineWidth: 1
+                )
+        )
+    }
+
     // MARK: - Score strip
-    // Yupqa HStack: X | TIE | O | TURN.
-    // Balandlik: SE ~40pt, normal ~48pt.
     var scoreStrip: some View {
         HStack(spacing: 0) {
             scoreStripItem(label: "X",   value: xWins, labelColor: .pink,
@@ -214,7 +408,6 @@ extension GameBoardView {
             scoreStripItem(label: "O",   value: oWins, labelColor: .blue,
                            isActive: currentPlayer == "O" && !ticTacToe.gameOver)
             stripDivider
-
             HStack(spacing: 5) {
                 Text("TURN")
                     .font(.system(size: isSESmallScreen ? 9 : 10, weight: .semibold))
@@ -239,7 +432,6 @@ extension GameBoardView {
                 .font(.system(size: isSESmallScreen ? 10 : 11, weight: .bold))
                 .foregroundStyle(isActive ? labelColor : labelColor.opacity(0.4))
                 .animation(.easeInOut(duration: 0.2), value: isActive)
-
             Text("\(value)")
                 .font(.system(size: isSESmallScreen ? 17 : 21, weight: .black, design: .rounded))
                 .foregroundStyle(isActive ? Color.primary : Color.secondary)
@@ -267,7 +459,7 @@ extension GameBoardView {
             .animation(.spring(response: 0.3, dampingFraction: 0.7), value: currentPlayer)
     }
 
-    // MARK: - Board (landscape/iPad uchun GeometryReader versiyasi)
+    // MARK: - Board (landscape/iPad)
     var board: some View {
         GeometryReader { proxy in
             let winning = detectWinningIndices()
@@ -281,7 +473,6 @@ extension GameBoardView {
         }
     }
 
-    // Portrait uchun: aniq side tashqaridan beriladi → kvadrat kafolatlangan
     func boardGrid(side: CGFloat) -> some View {
         let winning = detectWinningIndices()
         return boardGridContent(side: side, winning: winning)
@@ -332,7 +523,7 @@ extension GameBoardView {
         turnBanner
     }
 
-    // MARK: - Footer buttons (landscape/iPad)
+    // MARK: - Footer buttons (solo landscape/iPad)
     var footerButtonsOnly: some View {
         VStack(alignment: .leading, spacing: 10) {
             Button(action: resetForNextRound) {

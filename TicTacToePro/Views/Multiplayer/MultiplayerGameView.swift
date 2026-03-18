@@ -33,12 +33,6 @@ struct MultiplayerGameView: View {
         ZStack {
             // Main game board view
             mainGameBoard
-                .overlay(alignment: .top) {
-                    // Multiplayer overlay
-                    if let game = multiplayerVM.currentGame {
-                        multiplayerOverlay(game: game)
-                    }
-                }
                 .overlay {
                     // Waiting for opponent overlay
                     if let game = multiplayerVM.currentGame, game.status == .waiting {
@@ -51,7 +45,7 @@ struct MultiplayerGameView: View {
                         gameResultOverlay(game: game)
                     }
                 }
-                .overlay(alignment: .trailing) {
+                .overlay(alignment: .bottomTrailing) {
                     // Chat button
                     if let game = multiplayerVM.currentGame, game.settings.allowChat {
                         chatButton
@@ -126,6 +120,9 @@ struct MultiplayerGameView: View {
                 Task {
                     await multiplayerVM.makeMove(index: index)
                 }
+            },
+            topOverlay: multiplayerVM.currentGame.map { game in
+                AnyView(multiplayerPlayerBar(game: game))
             }
         )
         .overlay(alignment: .bottomLeading) {
@@ -196,54 +193,54 @@ struct MultiplayerGameView: View {
         return TimeLimitOption(rawValue: minutes) ?? .tenMinutes
     }
     
-    // MARK: - Multiplayer Overlay
+    // MARK: - Multiplayer Player Bar
+    // Bu view unifiedHeader() ichiga kiradi — background/border u yerda
     @ViewBuilder
-    private func multiplayerOverlay(game: MultiplayerGame) -> some View {
-        VStack(spacing: 8) {
-            // Players info bar
-            HStack(spacing: 12) {
-                // Player 1
-                playerInfoCompact(
-                    username: game.player1.username,
-                    symbol: game.player1.symbol,
-                    isCurrentTurn: game.currentTurn == game.player1.symbol,
-                    isYou: multiplayerVM.currentPlayer?.id == game.player1.id
-                )
-                
-                // VS
-                Text("VS")
-                    .font(.caption.bold())
-                    .foregroundColor(.secondary)
-                
-                // Player 2
-                if let player2 = game.player2 {
-                    playerInfoCompact(
-                        username: player2.username,
-                        symbol: player2.symbol,
-                        isCurrentTurn: game.currentTurn == player2.symbol,
-                        isYou: multiplayerVM.currentPlayer?.id == player2.id
-                    )
-                } else {
-                    Text("Waiting...")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
-                        .background(
-                            Capsule()
-                                .fill(colorScheme == .dark ? Color(white: 0.15) : Color.white.opacity(0.8))
-                        )
-                }
-            }
-            .padding()
-            .background(
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(.ultraThinMaterial)
+    private func multiplayerPlayerBar(game: MultiplayerGame) -> some View {
+        HStack(spacing: 0) {
+            // Player 1
+            playerInfoCompact(
+                username: game.player1.username,
+                symbol: game.player1.symbol,
+                isCurrentTurn: game.currentTurn == game.player1.symbol,
+                isYou: multiplayerVM.currentPlayer?.id == game.player1.id
             )
-            .padding(.horizontal)
-            .padding(.top, 8)
+
+            Spacer()
+
+            // VS separator
+            Text("VS")
+                .font(.system(size: 10, weight: .bold, design: .rounded))
+                .foregroundStyle(.tertiary)
+                .padding(.horizontal, 8)
+
+            Spacer()
+
+            // Player 2
+            if let player2 = game.player2 {
+                playerInfoCompact(
+                    username: player2.username,
+                    symbol: player2.symbol,
+                    isCurrentTurn: game.currentTurn == player2.symbol,
+                    isYou: multiplayerVM.currentPlayer?.id == player2.id
+                )
+            } else {
+                HStack(spacing: 5) {
+                    ProgressView()
+                        .scaleEffect(0.6)
+                        .tint(.secondary)
+                    Text("Waiting...")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 5)
+                .background(.ultraThinMaterial, in: Capsule())
+            }
         }
     }
+
+
     
     // MARK: - Player Info Compact
     @ViewBuilder
@@ -253,37 +250,43 @@ struct MultiplayerGameView: View {
         isCurrentTurn: Bool,
         isYou: Bool
     ) -> some View {
-        let backgroundColor: Color = {
-            if isCurrentTurn {
-                return colorScheme == .dark ? Color.green.opacity(0.2) : Color.green.opacity(0.15)
-            } else {
-                return colorScheme == .dark ? Color(white: 0.15) : Color.white.opacity(0.8)
-            }
-        }()
-        
-        let strokeColor: Color = isCurrentTurn ? Color.green.opacity(0.5) : Color.clear
-        
-        HStack(spacing: 6) {
-            // Turn indicator
+        let symbolColor: Color = symbol == .x ? .pink : .blue
+        let activeBg: Color = symbolColor.opacity(0.18)
+        let inactiveBg: Color = colorScheme == .dark
+            ? Color(white: 0.12) : Color(white: 0.88)
+
+        HStack(spacing: 5) {
+            // Active turn pulse dot
             Circle()
-                .fill(isCurrentTurn ? Color.green : Color.gray.opacity(0.3))
-                .frame(width: 8, height: 8)
-            
-            // Symbol
+                .fill(isCurrentTurn ? symbolColor : Color.gray.opacity(0.3))
+                .frame(width: 7, height: 7)
+                .shadow(color: isCurrentTurn ? symbolColor.opacity(0.7) : .clear,
+                        radius: 4, x: 0, y: 0)
+                .animation(.easeInOut(duration: 0.3), value: isCurrentTurn)
+
+            // Symbol badge
             Text(symbol == .x ? "X" : "O")
-                .font(.caption.bold())
-                .foregroundColor(symbol == .x ? .blue : .red)
-            
+                .font(.system(size: 11, weight: .black, design: .rounded))
+                .foregroundStyle(symbolColor)
+
             // Username
             Text(isYou ? "You" : username)
-                .font(.caption)
-                .foregroundColor(.primary)
+                .font(.system(size: 12, weight: isYou ? .semibold : .regular))
+                .foregroundStyle(isCurrentTurn ? Color.primary : Color.secondary)
                 .lineLimit(1)
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 6)
-        .background(Capsule().fill(backgroundColor))
-        .overlay(Capsule().stroke(strokeColor, lineWidth: 1))
+        .padding(.horizontal, 10)
+        .padding(.vertical, 5)
+        .background(
+            Capsule().fill(isCurrentTurn ? activeBg : inactiveBg)
+        )
+        .overlay(
+            Capsule().strokeBorder(
+                isCurrentTurn ? symbolColor.opacity(0.5) : Color.clear,
+                lineWidth: 1
+            )
+        )
+        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isCurrentTurn)
     }
     
     // MARK: - Waiting Overlay

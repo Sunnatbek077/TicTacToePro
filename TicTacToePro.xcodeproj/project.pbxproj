@@ -43,13 +43,6 @@
 			);
 			target = 6E7467D72E7F17FE00A3ABD9 /* TicTacToePro */;
 		};
-		6EA7765C2F67586D007DCFEF /* Exceptions for "TicTacToePro-WatchOS Watch App" folder in "TicTacToePro" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Views/GameBoardView/GameBoardHelpers.swift,
-			);
-			target = 6E7467D72E7F17FE00A3ABD9 /* TicTacToePro */;
-		};
 		6EA7765E2F6758A3007DCFEF /* Exceptions for "TicTacToePro" folder in "TicTacToePro-WatchOS Watch App" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -94,9 +87,6 @@
 		};
 		6EE631DF2F3F24FA00B68E3A /* TicTacToePro-WatchOS Watch App */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				6EA7765C2F67586D007DCFEF /* Exceptions for "TicTacToePro-WatchOS Watch App" folder in "TicTacToePro" target */,
-			);
 			path = "TicTacToePro-WatchOS Watch App";
 			sourceTree = "<group>";
 		};
