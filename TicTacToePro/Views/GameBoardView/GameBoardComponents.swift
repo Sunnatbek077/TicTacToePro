@@ -15,6 +15,9 @@ private enum Layout {
     static func unifiedHeaderH(_ se: Bool) -> CGFloat { se ? 64 : 76 }
     static func stripH(_ se: Bool) -> CGFloat        { se ? 40 : 48 }
     static func bannerH(_ se: Bool) -> CGFloat       { se ? 36 : 46 }
+
+    // Portrait iPad multiplayer uchun pastki player bar balandligi
+    static let portraitPlayerBarH: CGFloat = 88
 }
 
 extension GameBoardView {
@@ -63,6 +66,7 @@ extension GameBoardView {
         Group {
             if isWide {
                 if topOverlay != nil {
+                    // isWide = landscape (W > H) — yon panelli layout
                     multiplayerIPadLayout
                 } else {
                     HStack(spacing: 24) {
@@ -73,28 +77,34 @@ extension GameBoardView {
                     .padding(.vertical, 16)
                 }
             } else {
+                // Portrait — multiplayer bo'lsa ham, bo'lmasa ham
                 portraitLayout
             }
         }
     }
 
-    // MARK: - Multiplayer iPad Layout
-    // Layout: HStack [ PlayerPanel | CenterColumn | PlayerPanel ]
-    // Type-check muammosini oldini olish uchun har bir qism alohida funksiya
+    // MARK: - Multiplayer iPad Layout (landscape va portrait ni o'zi aniqlaydi)
     private var multiplayerIPadLayout: some View {
         GeometryReader { geo in
-            self.iPadBody(W: geo.size.width, H: geo.size.height)
+            let W = geo.size.width
+            let H = geo.size.height
+            if W >= H {
+                // Haqiqiy landscape: yon panellar bilan
+                self.iPadLandscapeBody(W: W, H: H)
+            } else {
+                // Haqiqiy portrait: pastki player bar bilan
+                self.portraitBody(W: W, H: H)
+            }
         }
     }
 
-    private func iPadBody(W: CGFloat, H: CGFloat) -> some View {
+    private func iPadLandscapeBody(W: CGFloat, H: CGFloat) -> some View {
         let hPad:    CGFloat = 20
         let vPad:    CGFloat = 20
         let spacing: CGFloat = 16
         let panelW:  CGFloat = min(160, W * 0.17)
         let midW:    CGFloat = W - hPad * 2 - panelW * 2 - spacing * 2
         let innerH:  CGFloat = H - vPad * 2
-        // Board: innerH - title(34) - strip(46) - banner(38) - 3*gap(10)
         let boardSide: CGFloat = min(midW, innerH - 34 - 46 - 38 - 30)
 
         return HStack(spacing: spacing) {
@@ -137,7 +147,7 @@ extension GameBoardView {
             .frame(maxWidth: .infinity)
     }
 
-    // MARK: - iPad Player Side Panel
+    // MARK: - iPad Player Side Panel (landscape uchun)
     private func iPadPlayerPanel(isLeft: Bool) -> some View {
         let symbolColor: Color = isLeft ? .pink : .blue
         let symbol      = isLeft ? "X" : "O"
@@ -246,154 +256,248 @@ extension GameBoardView {
         .animation(.spring(response: 0.4, dampingFraction: 0.8), value: isActive)
     }
 
-    // MARK: - Portrait layout
+    // MARK: - Portrait layout (iPhone + iPad portrait, multiplayer + solo)
     private var portraitLayout: some View {
         GeometryReader { geo in
-            let hPad = Layout.hPad(isSESmallScreen, isCompactHeight)
-            let vPad = Layout.vPad(isSESmallScreen, isCompactHeight)
-            let gap  = Layout.gap(isSESmallScreen, isCompactHeight)
+            self.portraitBody(W: geo.size.width, H: geo.size.height)
+        }
+    }
 
-            let headerH = topOverlay != nil
-                ? Layout.unifiedHeaderH(isSESmallScreen)
-                : Layout.headerH(isSESmallScreen)
-            let bannerExtra = topOverlay == nil
-                ? Layout.bannerH(isSESmallScreen) + gap
-                : 0
-            let fixedV = headerH
-                       + Layout.stripH(isSESmallScreen)
-                       + bannerExtra
-                       + gap * 2
-                       + vPad * 2
+    private func portraitBody(W: CGFloat, H: CGFloat) -> some View {
+        let hPad = Layout.hPad(isSESmallScreen, isCompactHeight)
+        let vPad = Layout.vPad(isSESmallScreen, isCompactHeight)
+        let gap  = Layout.gap(isSESmallScreen, isCompactHeight)
 
-            let availH = max(0, geo.size.height - fixedV)
-            let availW = max(0, geo.size.width  - hPad * 2)
-            let side   = min(availW, availH)
+        // iPad portrait multiplayer: katta ekran, pastda alohida player bar
+        // iPhone portrait multiplayer: kichik ekran, yuqorida unifiedHeader
+        let isIPad = W > 700
+        let isMultiplayerPortraitIPad = topOverlay != nil && isIPad
 
-            VStack(spacing: 0) {
-                if let topOverlay {
-                    unifiedHeader(playersBar: topOverlay)
-                        .padding(.horizontal, hPad)
-                        .padding(.bottom, gap)
-                } else {
-                    header
-                        .padding(.horizontal, hPad)
-                        .padding(.bottom, gap)
-                }
+        let headerH: CGFloat
+        let bannerExtra: CGFloat
+        let playerBarExtra: CGFloat
 
-                scoreStrip
+        if isMultiplayerPortraitIPad {
+            // iPad portrait multiplayer: kichik title + pastda player bar
+            headerH        = 44
+            bannerExtra    = Layout.bannerH(isSESmallScreen) + gap
+            playerBarExtra = Layout.portraitPlayerBarH + gap
+        } else if topOverlay != nil {
+            // iPhone portrait multiplayer: title + player bar birlashgan (unifiedHeader)
+            headerH        = Layout.unifiedHeaderH(isSESmallScreen)
+            bannerExtra    = 0
+            playerBarExtra = 0
+        } else {
+            // Solo rejim
+            headerH        = Layout.headerH(isSESmallScreen)
+            bannerExtra    = Layout.bannerH(isSESmallScreen) + gap
+            playerBarExtra = 0
+        }
+
+        let fixedV = headerH
+                   + Layout.stripH(isSESmallScreen)
+                   + bannerExtra
+                   + playerBarExtra
+                   + gap * 2
+                   + vPad * 2
+
+        let side = min(
+            max(0, W - hPad * 2),
+            max(0, H - fixedV)
+        )
+
+        return portraitContent(
+            hPad: hPad,
+            vPad: vPad,
+            gap: gap,
+            side: side,
+            isMultiplayerPortraitIPad: isMultiplayerPortraitIPad
+        )
+    }
+
+    @ViewBuilder
+    private func portraitContent(
+        hPad: CGFloat,
+        vPad: CGFloat,
+        gap: CGFloat,
+        side: CGFloat,
+        isMultiplayerPortraitIPad: Bool
+    ) -> some View {
+        VStack(spacing: 0) {
+            if isMultiplayerPortraitIPad {
+                Text(headerTitle)
+                    .font(.system(.title2, design: .rounded).weight(.black))
+                    .foregroundStyle(
+                        LinearGradient(colors: [.pink, .purple, .blue],
+                                       startPoint: .leading, endPoint: .trailing)
+                    )
+                    .frame(maxWidth: .infinity, alignment: .center)
                     .padding(.horizontal, hPad)
                     .padding(.bottom, gap)
-
-                boardGrid(side: side)
-                    .frame(width: side, height: side)
-                    .frame(maxWidth: .infinity)
+            } else if let topOverlay {
+                unifiedHeader(playersBar: topOverlay)
+                    .padding(.horizontal, hPad)
                     .padding(.bottom, gap)
-
-                if topOverlay == nil {
-                    footer
-                        .frame(maxWidth: .infinity)
-                }
+            } else {
+                header
+                    .padding(.horizontal, hPad)
+                    .padding(.bottom, gap)
             }
-            .padding(.vertical, vPad)
+
+            scoreStrip
+                .padding(.horizontal, hPad)
+                .padding(.bottom, gap)
+
+            boardGrid(side: side)
+                .frame(width: side, height: side)
+                .frame(maxWidth: .infinity)
+                .padding(.bottom, gap)
+
+            if topOverlay == nil || isMultiplayerPortraitIPad {
+                turnBanner
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .padding(.bottom, isMultiplayerPortraitIPad ? gap : 0)
+            }
+
+            if isMultiplayerPortraitIPad {
+                portraitIPadPlayerBar
+                    .padding(.horizontal, hPad)
+            }
         }
+        .padding(.vertical, vPad)
     }
 
-    // MARK: - Right panel (solo landscape / iPad)
-    var rightPanel: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            header
-            GameScoreView(xWins: xWins, oWins: oWins, ties: ties, currentTurn: currentPlayer)
-            statusCard
-            footerButtonsOnly
-            Spacer(minLength: 0)
+    // MARK: - Portrait iPad Multiplayer: pastki player bar
+    // Ikki o'yinchi horizontal joylashgan, to'liq kenglikda
+    private var portraitIPadPlayerBar: some View {
+        HStack(spacing: 12) {
+            portraitIPadPlayerCard(isLeft: true)
+            portraitIPadVsDivider
+            portraitIPadPlayerCard(isLeft: false)
         }
-        .frame(maxHeight: .infinity, alignment: .top)
-    }
-
-    // MARK: - Status card
-    var statusCard: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            gradientLabel("Status", colors: [.pink, .purple])
-            Text(headerSubtitle)
-                .font(.title3.weight(.semibold))
-                .foregroundStyle(.secondary)
-            Divider()
-            gradientLabel("Mode", colors: [.purple, .blue])
-            modeBadge(modeBadgeText, colors: [.purple, .blue])
-        }
-        .padding(16)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .strokeBorder(
-                    LinearGradient(colors: [.pink.opacity(0.3), .purple.opacity(0.3)],
-                                   startPoint: .top, endPoint: .bottom),
-                    lineWidth: 1
-                )
+        .padding(.horizontal, 20)
+        .padding(.vertical, 14)
+        .frame(maxWidth: .infinity)
+        .frame(height: Layout.portraitPlayerBarH)
+        .background(
+            .ultraThinMaterial,
+            in: RoundedRectangle(cornerRadius: 22, style: .continuous)
         )
-    }
-
-    // MARK: - Header (solo)
-    var header: some View {
-        HStack(spacing: 10) {
-            Text(headerTitle)
-                .font(headerTitleFont)
-                .foregroundStyle(
-                    LinearGradient(colors: [.pink, .purple, .blue],
-                                   startPoint: .leading, endPoint: .trailing)
-                )
-                .minimumScaleFactor(0.6)
-                .lineLimit(1)
-                .accessibilityAddTraits(.isHeader)
-            Spacer()
-        }
-        .padding(.horizontal, isSESmallScreen ? 10 : 14)
-        .padding(.vertical, isSESmallScreen ? 8 : 11)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .strokeBorder(Color.white.opacity(0.08), lineWidth: 1)
-        )
-    }
-
-    private var headerTitleFont: Font {
-        if isSESmallScreen { return .system(.headline, design: .rounded).weight(.black) }
-        if isCompactHeight  { return .system(.title3,   design: .rounded).weight(.black) }
-        return .system(.title2, design: .rounded).weight(.black)
-    }
-
-    // MARK: - Unified Header (portrait multiplayer)
-    func unifiedHeader(playersBar: AnyView) -> some View {
-        VStack(alignment: .leading, spacing: isSESmallScreen ? 5 : 7) {
-            Text(headerTitle)
-                .font(headerTitleFont)
-                .foregroundStyle(
-                    LinearGradient(colors: [.pink, .purple, .blue],
-                                   startPoint: .leading, endPoint: .trailing)
-                )
-                .minimumScaleFactor(0.6)
-                .lineLimit(1)
-                .accessibilityAddTraits(.isHeader)
-
-            Rectangle()
-                .fill(Color.white.opacity(0.08))
-                .frame(height: 1)
-
-            playersBar
-        }
-        .padding(.horizontal, isSESmallScreen ? 10 : 14)
-        .padding(.vertical, isSESmallScreen ? 8 : 11)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
                 .strokeBorder(
                     LinearGradient(
-                        colors: [Color.pink.opacity(0.25), Color.purple.opacity(0.2), Color.blue.opacity(0.25)],
-                        startPoint: .topLeading, endPoint: .bottomTrailing
+                        colors: [
+                            Color.pink.opacity(0.30),
+                            Color.purple.opacity(0.20),
+                            Color.blue.opacity(0.30)
+                        ],
+                        startPoint: .leading,
+                        endPoint: .trailing
                     ),
                     lineWidth: 1
                 )
         )
+    }
+
+    // "VS" ajratuvchi — markazda, ingichka vertikal chiziq bilan
+    private var portraitIPadVsDivider: some View {
+        VStack(spacing: 4) {
+            Rectangle()
+                .fill(Color.white.opacity(0.10))
+                .frame(width: 1, height: 14)
+            Text("VS")
+                .font(.system(size: 11, weight: .black, design: .rounded))
+                .foregroundStyle(.tertiary)
+                .tracking(1)
+            Rectangle()
+                .fill(Color.white.opacity(0.10))
+                .frame(width: 1, height: 14)
+        }
+        .padding(.horizontal, 4)
+    }
+
+    // Har bir o'yinchi kartasi: symbol doirasi + status + score
+    // isLeft=true  → doira chap, matn o'ng (leading alignment)
+    // isLeft=false → matn chap, doira o'ng (trailing alignment, mirror yo'q)
+    private func portraitIPadPlayerCard(isLeft: Bool) -> some View {
+        let symbolColor: Color = isLeft ? .pink : .blue
+        let score       = isLeft ? xWins : oWins
+        let isActive    = currentPlayer == (isLeft ? "X" : "O")
+        let icon        = isLeft ? "xmark" : "circle"
+
+        let symbolCircle = ZStack {
+            Circle()
+                .fill(symbolColor.opacity(isActive ? 0.20 : 0.06))
+                .frame(width: 52, height: 52)
+                .overlay(
+                    Circle().strokeBorder(
+                        symbolColor.opacity(isActive ? 0.90 : 0.15),
+                        lineWidth: isActive ? 2 : 1
+                    )
+                )
+                .shadow(
+                    color: isActive ? symbolColor.opacity(0.55) : .clear,
+                    radius: 14, x: 0, y: 0
+                )
+            Image(systemName: icon)
+                .font(.system(size: 20, weight: .black))
+                .foregroundStyle(symbolColor.opacity(isActive ? 1 : 0.30))
+        }
+        .animation(.spring(response: 0.35, dampingFraction: 0.75), value: isActive)
+
+        let info = VStack(alignment: isLeft ? .leading : .trailing, spacing: 3) {
+            HStack(spacing: 5) {
+                if !isLeft { Spacer(minLength: 0) }
+                Circle()
+                    .fill(isActive ? symbolColor : Color.gray.opacity(0.30))
+                    .frame(width: 6, height: 6)
+                    .shadow(color: isActive ? symbolColor.opacity(0.8) : .clear,
+                            radius: 4, x: 0, y: 0)
+                    .animation(.easeInOut(duration: 0.3), value: isActive)
+                Text(isActive ? "Your Turn" : "Waiting...")
+                    .font(.system(size: 13,
+                                  weight: isActive ? .semibold : .regular,
+                                  design: .rounded))
+                    .foregroundStyle(isActive ? Color.primary : Color.secondary)
+                if isLeft { Spacer(minLength: 0) }
+            }
+            .animation(.easeInOut(duration: 0.25), value: isActive)
+
+            HStack(alignment: .lastTextBaseline, spacing: 4) {
+                if !isLeft { Spacer(minLength: 0) }
+                Text("\(score)")
+                    .font(.system(size: 28, weight: .black, design: .rounded))
+                    .foregroundStyle(
+                        isActive
+                            ? AnyShapeStyle(symbolColor)
+                            : AnyShapeStyle(Color.secondary.opacity(0.40))
+                    )
+                    .contentTransition(.numericText())
+                    .animation(.spring(response: 0.4), value: score)
+                Text("wins")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(.tertiary)
+                    .padding(.bottom, 2)
+                if isLeft { Spacer(minLength: 0) }
+            }
+        }
+
+        return Group {
+            if isLeft {
+                HStack(spacing: 14) {
+                    symbolCircle
+                    info
+                }
+            } else {
+                HStack(spacing: 14) {
+                    info
+                    symbolCircle
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: isLeft ? .leading : .trailing)
+        .animation(.spring(response: 0.4, dampingFraction: 0.8), value: isActive)
     }
 
     // MARK: - Score strip
@@ -564,6 +668,104 @@ extension GameBoardView {
                 lineWidth: 1
             ))
             .accessibilityLabel(text)
+    }
+
+    // MARK: - Right panel (solo landscape / iPad)
+    var rightPanel: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            header
+            GameScoreView(xWins: xWins, oWins: oWins, ties: ties, currentTurn: currentPlayer)
+            statusCard
+            footerButtonsOnly
+            Spacer(minLength: 0)
+        }
+        .frame(maxHeight: .infinity, alignment: .top)
+    }
+
+    // MARK: - Status card
+    var statusCard: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            gradientLabel("Status", colors: [.pink, .purple])
+            Text(headerSubtitle)
+                .font(.title3.weight(.semibold))
+                .foregroundStyle(.secondary)
+            Divider()
+            gradientLabel("Mode", colors: [.purple, .blue])
+            modeBadge(modeBadgeText, colors: [.purple, .blue])
+        }
+        .padding(16)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .strokeBorder(
+                    LinearGradient(colors: [.pink.opacity(0.3), .purple.opacity(0.3)],
+                                   startPoint: .top, endPoint: .bottom),
+                    lineWidth: 1
+                )
+        )
+    }
+
+    // MARK: - Header (solo)
+    var header: some View {
+        HStack(spacing: 10) {
+            Text(headerTitle)
+                .font(headerTitleFont)
+                .foregroundStyle(
+                    LinearGradient(colors: [.pink, .purple, .blue],
+                                   startPoint: .leading, endPoint: .trailing)
+                )
+                .minimumScaleFactor(0.6)
+                .lineLimit(1)
+                .accessibilityAddTraits(.isHeader)
+            Spacer()
+        }
+        .padding(.horizontal, isSESmallScreen ? 10 : 14)
+        .padding(.vertical, isSESmallScreen ? 8 : 11)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .strokeBorder(Color.white.opacity(0.08), lineWidth: 1)
+        )
+    }
+
+    private var headerTitleFont: Font {
+        if isSESmallScreen { return .system(.headline, design: .rounded).weight(.black) }
+        if isCompactHeight  { return .system(.title3,   design: .rounded).weight(.black) }
+        return .system(.title2, design: .rounded).weight(.black)
+    }
+
+    // MARK: - Unified Header (iPhone portrait multiplayer)
+    func unifiedHeader(playersBar: AnyView) -> some View {
+        VStack(alignment: .leading, spacing: isSESmallScreen ? 5 : 7) {
+            Text(headerTitle)
+                .font(headerTitleFont)
+                .foregroundStyle(
+                    LinearGradient(colors: [.pink, .purple, .blue],
+                                   startPoint: .leading, endPoint: .trailing)
+                )
+                .minimumScaleFactor(0.6)
+                .lineLimit(1)
+                .accessibilityAddTraits(.isHeader)
+
+            Rectangle()
+                .fill(Color.white.opacity(0.08))
+                .frame(height: 1)
+
+            playersBar
+        }
+        .padding(.horizontal, isSESmallScreen ? 10 : 14)
+        .padding(.vertical, isSESmallScreen ? 8 : 11)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .strokeBorder(
+                    LinearGradient(
+                        colors: [Color.pink.opacity(0.25), Color.purple.opacity(0.2), Color.blue.opacity(0.25)],
+                        startPoint: .topLeading, endPoint: .bottomTrailing
+                    ),
+                    lineWidth: 1
+                )
+        )
     }
 
     // MARK: - Shared helpers
