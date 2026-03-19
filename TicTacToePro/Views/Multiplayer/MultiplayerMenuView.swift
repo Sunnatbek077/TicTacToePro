@@ -576,17 +576,7 @@ struct CreateGameSheet: View {
 
     var body: some View {
         NavigationStack {
-            ZStack(alignment: .bottom) {
-                // Background
-                LinearGradient(
-                    colors: colorScheme == .dark
-                        ? [Color(red: 0.08, green: 0.08, blue: 0.10), Color(red: 0.11, green: 0.12, blue: 0.18)]
-                        : [Color(red: 0.95, green: 0.96, blue: 0.99), Color(red: 0.90, green: 0.92, blue: 0.98)],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-                .ignoresSafeArea()
-
+            VStack(spacing: 0) {  // ← ZStack o'rniga VStack
                 // Scrollable content
                 ScrollView(showsIndicators: false) {
                     VStack(alignment: .leading, spacing: sectionSpacing) {
@@ -603,7 +593,7 @@ struct CreateGameSheet: View {
                         .frame(maxWidth: .infinity)
                         .padding(.top, isCompactHeightPhone ? 12 : 20)
 
-                        // ── 1. Game Name ──────────────────────────────────
+                        // ── 1. Game Name ──
                         configSection(title: "Game Name") {
                             TextField("e.g., Epic Battle", text: $gameName)
                                 .textFieldStyle(.plain)
@@ -620,7 +610,7 @@ struct CreateGameSheet: View {
                                 .focused($isFocused)
                         }
 
-                        // ── 2. Privacy ────────────────────────────────────
+                        // ── 2. Privacy ──
                         configSection(title: "Visibility") {
                             Toggle(isOn: $isPrivate) {
                                 VStack(alignment: .leading, spacing: 2) {
@@ -640,7 +630,7 @@ struct CreateGameSheet: View {
                             )
                         }
 
-                        // ── 3. Starting Player ────────────────────────────
+                        // ── 3. Starting Player ──
                         configSection(title: "Starting Player") {
                             HStack(spacing: 10) {
                                 ForEach(PlayerOption.allCases, id: \.self) { player in
@@ -656,7 +646,7 @@ struct CreateGameSheet: View {
                             }
                         }
 
-                        // ── 4. Board Size ─────────────────────────────────
+                        // ── 4. Board Size ──
                         configSection(title: "Board Size") {
                             SelectionGridCard(
                                 items: BoardSize.allCases,
@@ -667,7 +657,7 @@ struct CreateGameSheet: View {
                             )
                         }
 
-                        // ── 5. Time Limit ─────────────────────────────────
+                        // ── 5. Time Limit ──
                         configSection(title: "Time Limit") {
                             SelectionGridCard(
                                 items: TimeLimitOption.allCases,
@@ -677,25 +667,16 @@ struct CreateGameSheet: View {
                                 onSelect: { selectedTimeLimit = $0 }
                             )
                         }
-
-                        // Bottom padding for fixed button bar
-                        Color.clear.frame(height: 90)
                     }
                     .padding(.horizontal, hPad)
+                    .padding(.bottom, 16)  // ← Minimal padding, bottom bar o'z joyida
                 }
 
-                // Fixed bottom action bar
+                // ── Fixed Bottom Action Bar ──────────────────────────────
                 VStack(spacing: 0) {
-                    // Subtle fade separator
-                    LinearGradient(
-                        colors: [.clear, colorScheme == .dark
-                            ? Color(red: 0.08, green: 0.08, blue: 0.10).opacity(0.95)
-                            : Color(red: 0.95, green: 0.96, blue: 0.99).opacity(0.95)],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                    .frame(height: 24)
-
+                    Divider()
+                        .opacity(0.3)
+                    
                     HStack(spacing: 12) {
                         Button(action: onCancel) {
                             Text("Cancel")
@@ -726,9 +707,27 @@ struct CreateGameSheet: View {
                         .opacity(gameName.isEmpty ? 0.5 : 1.0)
                     }
                     .padding(.horizontal, isCompactHeightPhone ? 16 : 20)
-                    .padding(.bottom, 20)
+                    .padding(.vertical, 16)
+                    .padding(.bottom, 4)
                 }
+                // ← Opaque background, shaffof emas!
+                .background(
+                    colorScheme == .dark
+                        ? Color(red: 0.11, green: 0.12, blue: 0.18)
+                        : Color(red: 0.90, green: 0.92, blue: 0.98)
+                )
             }
+            // Background butun view uchun
+            .background(
+                LinearGradient(
+                    colors: colorScheme == .dark
+                        ? [Color(red: 0.08, green: 0.08, blue: 0.10), Color(red: 0.11, green: 0.12, blue: 0.18)]
+                        : [Color(red: 0.95, green: 0.96, blue: 0.99), Color(red: 0.90, green: 0.92, blue: 0.98)],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                .ignoresSafeArea()
+            )
             .onAppear {
                 isFocused = true
             }
