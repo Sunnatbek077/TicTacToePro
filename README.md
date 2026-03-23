@@ -7,10 +7,10 @@ Tic Tac Pro is a modern take on the classic Tic-Tac-Toe game, designed with a cl
 ## 📸 Screenshots
 
 <p align="center">
-  <img src="TicTacToePro/Media/Screenshot1.png" width="22%" alt="Screenshot 1" />
-  <img src="TicTacToePro/Media/Screenshot2.png" width="22%" alt="Screenshot 2" />
-  <img src="TicTacToePro/Media/Screenshot3.png" width="22%" alt="Screenshot 3" />
-  <img src="TicTacToePro/Media/Screenshot4.png" width="22%" alt="Screenshot 4" />
+  <img src="Media/Screenshot1.png" width="22%" alt="Screenshot 1" />
+  <img src="Media/Screenshot2.png" width="22%" alt="Screenshot 2" />
+  <img src="Media/Screenshot3.png" width="22%" alt="Screenshot 3" />
+  <img src="Media/Screenshot4.png" width="22%" alt="Screenshot 4" />
 </p>
 
 ---
