@@ -32,6 +32,7 @@
 		6E4DCB8A2F3F227F005C9326 /* TicTacToePro-VisionOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "TicTacToePro-VisionOS.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		6E4DCB8D2F3F227F005C9326 /* RealityKitContent */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = RealityKitContent; sourceTree = "<group>"; };
 		6E64DFC12F71826600736751 /* Screenshot1.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Screenshot1.png; sourceTree = "<group>"; };
+		6E64DFC22F7182B400736751 /* Screenshot2.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Screenshot2.png; sourceTree = "<group>"; };
 		6E7467D82E7F17FE00A3ABD9 /* TicTacToePro.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TicTacToePro.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		6EE631DB2F3F24FA00B68E3A /* TicTacToePro-WatchOS Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "TicTacToePro-WatchOS Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -135,6 +136,7 @@
 		6E64DFC02F71822800736751 /* Media */ = {
 			isa = PBXGroup;
 			children = (
+				6E64DFC22F7182B400736751 /* Screenshot2.png */,
 				6E64DFC12F71826600736751 /* Screenshot1.png */,
 			);
 			path = Media;
