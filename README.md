@@ -1,6 +1,17 @@
 # 🎮 Tic Tac Pro
 
-**Tic Tac Pro** is a modern take on the classic Tic-Tac-Toe game, designed with a clean UI, rich customization options, AI opponents, and multiplayer support. Built with Swift and SwiftUI, the app focuses on performance, accessibility, and scalability.
+Tic Tac Pro is a modern take on the classic Tic-Tac-Toe game, designed with a clean UI, rich customization options, AI opponents, and multiplayer support. Built with Swift and SwiftUI, the app focuses on performance, accessibility, and scalability.
+
+---
+
+## 📸 Screenshots
+
+<p align="center">
+  <img src="TicTacToePro/Media/Screenshot1.png" width="22%" alt="Screenshot 1" />
+  <img src="TicTacToePro/Media/Screenshot2.png" width="22%" alt="Screenshot 2" />
+  <img src="TicTacToePro/Media/Screenshot3.png" width="22%" alt="Screenshot 3" />
+  <img src="TicTacToePro/Media/Screenshot4.png" width="22%" alt="Screenshot 4" />
+</p>
 
 ---
 
@@ -13,14 +24,15 @@
 - 🌗 **Theme Support** — Light, Dark, and System
 - 🧩 **Custom Board Sizes** — flexible grid configurations
 - ⏱ **Time Limits** — optional timed gameplay
-- 🌐 **Full Localization (10+ languages)**
+- 🌐 **Full Localization** (10+ languages)
   - English (Base)
   - Arabic (RTL supported)
   - French
   - German
   - Russian
-  - and more  
-  > *Note: AI-generated messages are not localized*
+  - and more
+
+> **Note:** AI-generated messages are not localized
 
 ---
 
@@ -28,15 +40,17 @@
 
 - iOS
 - Built with **Swift** and **SwiftUI**
-- Uses **Localizable.xcstrings** for localization
+- Uses `Localizable.xcstrings` for localization
 
 ---
 
 ## 🎮 Game Modes
 
-- 👤 **Single Player** (vs AI)
-- 👥 **Local Multiplayer**
-- 🌍 **Online Multiplayer** (invite via room code)
+| Mode | Description |
+|------|-------------|
+| 👤 Single Player | Play against AI with multiple difficulty levels |
+| 👥 Local Multiplayer | Play with a friend on the same device |
+| 🌍 Online Multiplayer | Invite friends via room code |
 
 ---
 
@@ -53,10 +67,8 @@ The app uses `Localizable.xcstrings` and supports:
 
 ## 🛠 Technical Overview
 
-- SwiftUI
-- State-driven architecture
-- Modular UI components
-- `.xcstrings`-based localization
-- Clean and maintainable codebase
-
-
+- **SwiftUI** — declarative UI framework
+- **State-driven architecture** — reactive and predictable state management
+- **Modular UI components** — reusable and maintainable
+- **`.xcstrings`-based localization** — modern string catalog format
+- **Clean and maintainable codebase**
