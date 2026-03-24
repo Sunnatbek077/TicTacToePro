@@ -12,7 +12,11 @@ struct ConfettiView: View {
     
     init(isSELikeSmallScreen: Bool) {
         self.isSELikeSmallScreen = isSELikeSmallScreen
+        #if os(tvOS)
+        self._particles = State(initialValue: (0..<80).map { _ in ConfettiParticle.random() })
+        #else
         self._particles = State(initialValue: (0..<(isSELikeSmallScreen ? 20 : 40)).map { _ in ConfettiParticle.random() })
+        #endif
     }
     
     var body: some View {
@@ -47,13 +51,24 @@ struct ConfettiParticle {
     var color: Color
     
     static func random() -> ConfettiParticle {
-        ConfettiParticle(
+        #if os(tvOS)
+        let sizeRange: ClosedRange<CGFloat> = 14...36
+        let dxMultiplier: Double = 600
+        let dyMultiplier: Double = 600
+        let gravityRange: ClosedRange<Double> = 200...700
+        #else
+        let sizeRange: ClosedRange<CGFloat> = 8...20
+        let dxMultiplier: Double = 400
+        let dyMultiplier: Double = 400
+        let gravityRange: ClosedRange<Double> = 150...500
+        #endif
+        return ConfettiParticle(
             startX: Double.random(in: 0.1...0.9),
             startY: Double.random(in: -0.1...0.2),
-            dx: Double.random(in: -0.8...0.8) * 400,
-            dy: Double.random(in: 0.3...1.2) * 400,
-            gravity: Double.random(in: 150...500),
-            size: CGFloat.random(in: 8...20),
+            dx: Double.random(in: -0.8...0.8) * dxMultiplier,
+            dy: Double.random(in: 0.3...1.2) * dyMultiplier,
+            gravity: Double.random(in: gravityRange),
+            size: CGFloat.random(in: sizeRange),
             color: [Color.red, Color.green, Color.blue, Color.yellow, Color.purple, Color.orange, Color.pink, Color.cyan].randomElement() ?? Color.red
         )
     }

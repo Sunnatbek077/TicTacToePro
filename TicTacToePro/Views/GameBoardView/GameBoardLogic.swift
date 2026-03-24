@@ -25,7 +25,7 @@ extension GameBoardView {
         bannerShowTemporarily()
     }
     
-    func resetForNextRound() {
+    func resetForNextRound(){
         resetGameState()
         performInitialAIMoveIfNeeded()
         bannerShowTemporarily()
@@ -45,6 +45,7 @@ extension GameBoardView {
         aiThinking = false
         animateWinningGlow = false
         recentlyPlacedIndex = nil
+        boardResetID = UUID()   // ← shu qatorni qo'shing
     }
     
     func performInitialAIMoveIfNeeded() {
@@ -119,4 +120,3 @@ extension GameBoardView {
         return []
     }
 }
-

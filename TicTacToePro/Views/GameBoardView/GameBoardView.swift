@@ -47,6 +47,7 @@ struct GameBoardView: View {
     @State var animateWinningGlow: Bool = false
     @State var recentlyPlacedIndex: Int? = nil
     @State var animateBoardEntrance: Bool = false
+    @State var boardResetID = UUID()
 
     // Time limit state
     @State private var totalSeconds: Int = 0
@@ -139,7 +140,9 @@ struct GameBoardView: View {
                 .ignoresSafeArea()
             
             content
+                #if !os(tvOS)
                 .toolbar { toolbarContent }
+                #endif
                 .onAppear {
                     withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
                         animateBoardEntrance = true
@@ -159,22 +162,65 @@ struct GameBoardView: View {
                     Button("Leave", action: exitToMenu)
                 }
             
+            #if os(tvOS)
+            // tvOS: yuqori chap burchakda vaqt va emoji
+            VStack {
+                HStack(alignment: .top) {
+                    // Chap tomonda — vaqt ko'rsatkichi
+                    if hasTimeLimit {
+                        HStack(spacing: 10) {
+                            if let timeLimit {
+                                Text(timeLimit.title)
+                                    .font(.system(size: 28, weight: .semibold))
+                                    .foregroundStyle(timeLimit.color)
+                            }
+                            Text(formattedRemaining)
+                                .font(.system(size: 32, weight: .bold, design: .monospaced))
+                                .foregroundStyle(timeProgress < 0.2 ? .red : .primary)
+                        }
+                        .padding(.horizontal, 28)
+                        .padding(.vertical, 14)
+                        .background(.ultraThinMaterial, in: Capsule())
+                    }
+
+                    Spacer()
+
+                    // O'ng tomonda — emoji reaksiyalar
+                    HStack(spacing: 8) {
+                        ForEach(headerReactions, id: \.self) { emoji in
+                            Text(emoji)
+                                .font(.system(size: 40))
+                                .transition(.scale.combined(with: .opacity))
+                        }
+                    }
+                    .animation(.spring(response: 0.4, dampingFraction: 0.7), value: headerReactions)
+                }
+                .padding(.horizontal, 60)
+                .padding(.top, 32)
+                Spacer()
+            }
+            .allowsHitTesting(false)
+            .zIndex(1)
+            #endif
+
             if showConfetti {
                 ConfettiView(isSELikeSmallScreen: isSESmallScreen)
                     .transition(.opacity)
                     .zIndex(3)
             }
             
-            if showTurnBanner {
+            if showTurnBanner && !isTVOS {
                 turnBanner
                     .transition(.move(edge: .top).combined(with: .opacity))
                     .zIndex(2)
             }
-
-           
         }
+        #if os(tvOS)
+        .navigationBarHidden(true)
+        #endif
     }
     
+    #if !os(tvOS)
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
         ToolbarItem(placement: .topBarLeading) {
@@ -203,6 +249,7 @@ struct GameBoardView: View {
             .animation(.spring(response: 0.4, dampingFraction: 0.7), value: headerReactions)
         }
     }
+    #endif
 
     // MARK: - Time Limit Handling
     private func startTimerIfNeeded() {

@@ -49,24 +49,27 @@ extension GameBoardView {
     }
 
     private var bokehLayer: some View {
-        ZStack {
-            Circle().fill(colorScheme == .dark ? Color.pink : Color.pink.opacity(0.25))
-                .frame(width: 200).blur(radius: 55).offset(x: -120, y: -160)
-            Circle().fill(colorScheme == .dark ? Color.blue : Color.blue.opacity(0.22))
-                .frame(width: 240).blur(radius: 65).offset(x: 140, y: -100)
-            Circle().fill(colorScheme == .dark ? Color.purple : Color.purple.opacity(0.24))
-                .frame(width: 260).blur(radius: 75).offset(x: 100, y: 200)
-            Circle().fill(colorScheme == .dark ? Color.cyan.opacity(0.7) : Color.cyan.opacity(0.18))
-                .frame(width: 140).blur(radius: 45).offset(x: -70, y: 160)
+        let scale: CGFloat = isTVOS ? 2.5 : 1.0
+        return ZStack {
+            Circle().fill(colorScheme == .dark ? Color.pink.opacity(0.6) : Color.pink.opacity(0.25))
+                .frame(width: 200 * scale).blur(radius: 55 * scale).offset(x: -120 * scale, y: -160 * scale)
+            Circle().fill(colorScheme == .dark ? Color.blue.opacity(0.5) : Color.blue.opacity(0.22))
+                .frame(width: 240 * scale).blur(radius: 65 * scale).offset(x: 140 * scale, y: -100 * scale)
+            Circle().fill(colorScheme == .dark ? Color.purple.opacity(0.5) : Color.purple.opacity(0.24))
+                .frame(width: 260 * scale).blur(radius: 75 * scale).offset(x: 100 * scale, y: 200 * scale)
+            Circle().fill(colorScheme == .dark ? Color.cyan.opacity(0.4) : Color.cyan.opacity(0.18))
+                .frame(width: 140 * scale).blur(radius: 45 * scale).offset(x: -70 * scale, y: 160 * scale)
         }
     }
 
     // MARK: - Content
     var content: some View {
         Group {
+#if os(tvOS)
+            tvLayout
+#else
             if isWide {
                 if topOverlay != nil {
-                    // isWide = landscape (W > H) — yon panelli layout
                     multiplayerIPadLayout
                 } else {
                     HStack(spacing: 24) {
@@ -77,10 +80,77 @@ extension GameBoardView {
                     .padding(.vertical, 16)
                 }
             } else {
-                // Portrait — multiplayer bo'lsa ham, bo'lmasa ham
                 portraitLayout
             }
+#endif
         }
+    }
+
+    // MARK: - tvOS Layout
+    private var tvLayout: some View {
+        GeometryReader { geo in
+            let W = geo.size.width
+            let H = geo.size.height
+            let safeH = H - 80 // yuqori overlay uchun joy
+            let panelW: CGFloat = min(440, W * 0.30)
+            let boardSide: CGFloat = min(safeH * 0.88, W - panelW - 160)
+
+            HStack(alignment: .center, spacing: 60) {
+                // Board — chap tomonda
+                tvBoardGrid(side: boardSide)
+                    .frame(width: boardSide, height: boardSide)
+
+                // O'ng panel
+                tvRightPanel
+                    .frame(width: panelW)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .padding(.horizontal, 60)
+            .padding(.top, 40)
+        }
+    }
+
+    // MARK: - tvOS Board Grid (focus boshqaruvi bilan)
+    private func tvBoardGrid(side: CGFloat) -> some View {
+        let winning = detectWinningIndices()
+        let n = CGFloat(ticTacToe.boardSize)
+        let spacing: CGFloat = 16
+        let cellSize = max(80, (side - spacing * (n - 1)) / n)
+
+        return VStack(spacing: spacing) {
+            ForEach(0..<ticTacToe.boardSize, id: \.self) { row in
+                HStack(spacing: spacing) {
+                    ForEach(0..<ticTacToe.boardSize, id: \.self) { col in
+                        let idx = row * ticTacToe.boardSize + col
+                        if ticTacToe.squares.indices.contains(idx) {
+                            Button {
+                                if let handler = onCellTap { handler(idx) }
+                                else { makeMove(at: idx); recentlyPlacedIndex = idx }
+                            } label: {
+                                SquareButtonView(
+                                    dataSource: ticTacToe.squares[idx],
+                                    size: cellSize,
+                                    winningIndices: winning,
+                                    isRecentlyPlaced: recentlyPlacedIndex == idx,
+                                    isSELikeSmallScreen: false,
+                                    action: { }
+                                )
+                                .frame(width: cellSize, height: cellSize)
+                            }
+#if os(tvOS)
+                            .buttonStyle(TVGameCellButtonStyle(cellSize: cellSize))
+#endif
+                        } else {
+                            Color.clear.frame(width: cellSize, height: cellSize)
+                        }
+                    }
+                }
+            }
+        }
+        .id(boardResetID)
+        .scaleEffect(animateBoardEntrance ? 1.0 : 0.92)
+        .opacity(animateBoardEntrance ? 1.0 : 0.0)
+        .animation(.spring(response: 0.5, dampingFraction: 0.82), value: animateBoardEntrance)
     }
 
     // MARK: - Multiplayer iPad Layout (landscape va portrait ni o'zi aniqlaydi)
@@ -589,9 +659,9 @@ extension GameBoardView {
     private func boardGridContent(side: CGFloat, winning: [Int]) -> some View {
         let n = CGFloat(ticTacToe.boardSize)
         let isLarge = ticTacToe.boardSize >= 8
-        let baseSpacing: CGFloat = isSESmallScreen ? 5 : isCompactHeight ? 6 : 8
+        let baseSpacing: CGFloat = isTVOS ? 12 : (isSESmallScreen ? 5 : isCompactHeight ? 6 : 8)
         let spacing = isLarge ? max(3, baseSpacing * 0.55) : baseSpacing
-        let minCell: CGFloat = isLarge ? 28 : 40
+        let minCell: CGFloat = isTVOS ? 60 : (isLarge ? 28 : 40)
         let cellSize = max(minCell, (side - spacing * (n - 1)) / n)
 
         VStack(spacing: spacing) {
@@ -618,6 +688,7 @@ extension GameBoardView {
                 }
             }
         }
+        .id(boardResetID)
         .drawingGroup(opaque: false, colorMode: .extendedLinear)
         .transaction { txn in if isLarge { txn.disablesAnimations = true } }
     }
@@ -629,26 +700,72 @@ extension GameBoardView {
 
     // MARK: - Footer buttons (solo landscape/iPad)
     var footerButtonsOnly: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Button(action: resetForNextRound) {
-                Label("Restart", systemImage: "arrow.counterclockwise.circle.fill")
-                    .font(.headline)
-                    .padding(.vertical, 10)
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.borderedProminent)
-            .tint(.purple)
+        VStack(alignment: .leading, spacing: isSESmallScreen ? 8 : 10) {
+            premiumButton(
+                title: "Restart",
+                icon: "arrow.counterclockwise",
+                gradientColors: [.purple, .pink],
+                isPrimary: true,
+                action: resetForNextRound
+            )
 
-            Button(role: .destructive, action: exitToMenu) {
-                Label("Exit", systemImage: "xmark.circle.fill")
-                    .font(.headline)
-                    .padding(.vertical, 10)
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.bordered)
-            .tint(.red)
+            premiumButton(
+                title: "Exit",
+                icon: "rectangle.portrait.and.arrow.right",
+                gradientColors: [.red.opacity(0.7), .orange.opacity(0.6)],
+                isPrimary: false,
+                action: exitToMenu
+            )
         }
         .padding(.top, 6)
+    }
+
+    @ViewBuilder
+    private func premiumButton(
+        title: String,
+        icon: String,
+        gradientColors: [Color],
+        isPrimary: Bool,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            HStack(spacing: isSESmallScreen ? 6 : 8) {
+                Image(systemName: icon)
+                    .font(.system(size: isSESmallScreen ? 13 : 15, weight: .semibold))
+                    .foregroundStyle(
+                        LinearGradient(colors: gradientColors,
+                                       startPoint: .topLeading, endPoint: .bottomTrailing)
+                    )
+                    .frame(width: isSESmallScreen ? 28 : 32, height: isSESmallScreen ? 28 : 32)
+                    .background(gradientColors[0].opacity(0.12), in: Circle())
+                    .overlay(Circle().strokeBorder(gradientColors[0].opacity(0.25), lineWidth: 1))
+
+                Text(title)
+                    .font(.system(isSESmallScreen ? .subheadline : .headline, design: .rounded).weight(.semibold))
+                    .foregroundStyle(isPrimary ? .primary : .secondary)
+            }
+            .frame(maxWidth: .infinity, alignment: .center)
+            .padding(.vertical, isSESmallScreen ? 10 : 12)
+            .padding(.horizontal, 16)
+            .background(
+                .ultraThinMaterial,
+                in: RoundedRectangle(cornerRadius: 14, style: .continuous)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .strokeBorder(
+                        LinearGradient(
+                            colors: isPrimary
+                                ? [gradientColors[0].opacity(0.5), gradientColors[1].opacity(0.25)]
+                                : [Color.white.opacity(0.1), Color.white.opacity(0.04)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 1
+                    )
+            )
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: - Turn banner
@@ -659,13 +776,13 @@ extension GameBoardView {
         let colors: [Color] = isAITurn ? [.purple, .blue] : [.pink, .purple]
 
         return Label(text, systemImage: icon)
-            .font(.system(isSESmallScreen ? .caption2 : .subheadline, design: .rounded).weight(.semibold))
-            .padding(.vertical, isSESmallScreen ? 6 : 9)
-            .padding(.horizontal, isSESmallScreen ? 10 : 16)
+            .font(.system(isTVOS ? .title3 : (isSESmallScreen ? .caption2 : .subheadline), design: .rounded).weight(.semibold))
+            .padding(.vertical, isTVOS ? 14 : (isSESmallScreen ? 6 : 9))
+            .padding(.horizontal, isTVOS ? 24 : (isSESmallScreen ? 10 : 16))
             .background(.ultraThinMaterial, in: Capsule())
             .overlay(Capsule().strokeBorder(
                 LinearGradient(colors: colors, startPoint: .leading, endPoint: .trailing),
-                lineWidth: 1
+                lineWidth: isTVOS ? 2 : 1
             ))
             .accessibilityLabel(text)
     }
@@ -680,6 +797,203 @@ extension GameBoardView {
             Spacer(minLength: 0)
         }
         .frame(maxHeight: .infinity, alignment: .top)
+    }
+
+    // MARK: - tvOS Right Panel (kattalashtrilgan)
+    private var tvRightPanel: some View {
+        VStack(alignment: .leading, spacing: 24) {
+            // Sarlavha
+            tvHeader
+
+            // Score strip (tvOS uchun kattaroq)
+            tvScoreStrip
+
+            // Status + Mode karta
+            tvStatusCard
+
+            // Tugmalar
+            tvFooterButtons
+
+            Spacer(minLength: 0)
+        }
+        .frame(maxHeight: .infinity, alignment: .top)
+    }
+
+    private var tvHeader: some View {
+        HStack(spacing: 14) {
+            Text(headerTitle)
+                .font(.system(size: 42, weight: .black, design: .rounded))
+                .foregroundStyle(
+                    LinearGradient(colors: [.pink, .purple, .blue],
+                                   startPoint: .leading, endPoint: .trailing)
+                )
+                .lineLimit(1)
+                .accessibilityAddTraits(.isHeader)
+            Spacer()
+        }
+        .padding(.horizontal, 24)
+        .padding(.vertical, 18)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .strokeBorder(Color.white.opacity(0.1), lineWidth: 1)
+        )
+    }
+
+    private var tvScoreStrip: some View {
+        HStack(spacing: 0) {
+            tvScoreStripItem(label: "X", value: xWins, labelColor: .pink,
+                             isActive: currentPlayer == "X" && !ticTacToe.gameOver)
+            tvStripDivider
+            tvScoreStripItem(label: "TIE", value: ties, labelColor: Color(.secondaryLabel),
+                             isActive: false)
+            tvStripDivider
+            tvScoreStripItem(label: "O", value: oWins, labelColor: .blue,
+                             isActive: currentPlayer == "O" && !ticTacToe.gameOver)
+        }
+        .padding(.vertical, 20)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .strokeBorder(Color.white.opacity(0.1), lineWidth: 1)
+        )
+    }
+
+    @ViewBuilder
+    private func tvScoreStripItem(label: String, value: Int,
+                                   labelColor: Color, isActive: Bool) -> some View {
+        VStack(spacing: 6) {
+            Text(label)
+                .font(.system(size: 20, weight: .bold, design: .rounded))
+                .foregroundStyle(isActive ? labelColor : labelColor.opacity(0.4))
+            Text("\(value)")
+                .font(.system(size: 38, weight: .black, design: .rounded))
+                .foregroundStyle(isActive ? Color.primary : Color.secondary)
+                .contentTransition(.numericText())
+                .animation(.spring(response: 0.3), value: value)
+            // Aktiv indikator chiziq
+            RoundedRectangle(cornerRadius: 2)
+                .fill(isActive ? labelColor : .clear)
+                .frame(width: 40, height: 4)
+        }
+        .frame(maxWidth: .infinity)
+        .animation(.easeInOut(duration: 0.2), value: isActive)
+    }
+
+    private var tvStripDivider: some View {
+        Rectangle()
+            .fill(Color.white.opacity(0.12))
+            .frame(width: 1, height: 50)
+    }
+
+    private var tvStatusCard: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            // Turn indicator
+            HStack(spacing: 12) {
+                let isX = currentPlayer == "X"
+                let turnColor: Color = isX ? .pink : .blue
+                let turnIcon = isX ? "xmark" : "circle"
+                Image(systemName: turnIcon)
+                    .font(.system(size: 28, weight: .black))
+                    .foregroundStyle(turnColor)
+                    .frame(width: 48, height: 48)
+                    .background(turnColor.opacity(0.15), in: Circle())
+                    .overlay(Circle().strokeBorder(turnColor.opacity(0.5), lineWidth: 2))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(headerSubtitle)
+                        .font(.system(size: 28, weight: .bold, design: .rounded))
+                        .foregroundStyle(.primary)
+                    Text(modeBadgeText)
+                        .font(.system(size: 18, weight: .medium, design: .rounded))
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+            }
+            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: currentPlayer)
+        }
+        .padding(24)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .strokeBorder(
+                    LinearGradient(colors: [.pink.opacity(0.3), .purple.opacity(0.3)],
+                                   startPoint: .top, endPoint: .bottom),
+                    lineWidth: 1
+                )
+        )
+    }
+
+    private var tvFooterButtons: some View {
+        VStack(spacing: 20) {
+            tvPremiumButton(
+                title: "Restart",
+                icon: "arrow.counterclockwise",
+                gradientColors: [.purple, .pink],
+                isPrimary: true,
+                action: resetForNextRound
+            )
+
+            tvPremiumButton(
+                title: "Exit",
+                icon: "rectangle.portrait.and.arrow.right",
+                gradientColors: [.red.opacity(0.7), .orange.opacity(0.6)],
+                isPrimary: false,
+                action: exitToMenu
+            )
+        }
+    }
+
+    private func tvPremiumButton(
+        title: String,
+        icon: String,
+        gradientColors: [Color],
+        isPrimary: Bool,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            HStack(spacing: 14) {
+                Image(systemName: icon)
+                    .font(.system(size: 22, weight: .semibold))
+                    .foregroundStyle(
+                        LinearGradient(colors: gradientColors,
+                                       startPoint: .topLeading, endPoint: .bottomTrailing)
+                    )
+                    .frame(width: 44, height: 44)
+                    .background(gradientColors[0].opacity(0.12), in: Circle())
+                    .overlay(Circle().strokeBorder(gradientColors[0].opacity(0.25), lineWidth: 1.5))
+
+                Text(title)
+                    .font(.system(size: 24, weight: .semibold, design: .rounded))
+                    .foregroundStyle(isPrimary ? .primary : .secondary)
+
+                Spacer()
+            }
+            .padding(.vertical, 18)
+            .padding(.horizontal, 24)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                .ultraThinMaterial,
+                in: RoundedRectangle(cornerRadius: 18, style: .continuous)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .strokeBorder(
+                        LinearGradient(
+                            colors: isPrimary
+                                ? [gradientColors[0].opacity(0.5), gradientColors[1].opacity(0.25)]
+                                : [Color.white.opacity(0.1), Color.white.opacity(0.04)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 1.5
+                    )
+            )
+        }
+        #if os(tvOS)
+        .buttonStyle(TVPremiumButtonStyle(gradientColors: gradientColors))
+        #else
+        .buttonStyle(.plain)
+        #endif
     }
 
     // MARK: - Status card
@@ -789,3 +1103,71 @@ extension GameBoardView {
             .foregroundStyle(.primary)
     }
 }
+
+// MARK: - tvOS Game Cell Button Style
+#if os(tvOS)
+/// tvOS'da standart oq "lift card" effektini to'liq o'chiradi
+/// va o'rniga gradient border + scale + glow effekt beradi.
+struct TVGameCellButtonStyle: ButtonStyle {
+    let cellSize: CGFloat
+    @Environment(\.isFocused) var isFocused
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .frame(width: cellSize, height: cellSize)
+            .clipShape(RoundedRectangle(cornerRadius: cellSize * 0.16, style: .continuous))
+            .scaleEffect(isFocused ? 1.05 : (configuration.isPressed ? 0.96 : 1.0))
+            .overlay(
+                RoundedRectangle(cornerRadius: cellSize * 0.16, style: .continuous)
+                    .strokeBorder(
+                        LinearGradient(
+                            colors: isFocused
+                                ? [.pink, .purple, .blue]
+                                : [.clear, .clear],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: isFocused ? 4 : 0
+                    )
+            )
+            .shadow(
+                color: isFocused ? Color.purple.opacity(0.7) : .clear,
+                radius: isFocused ? 16 : 0
+            )
+            .brightness(isFocused ? 0.08 : 0)
+            .animation(.spring(response: 0.25, dampingFraction: 0.75), value: isFocused)
+            .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
+    }
+}
+
+/// tvOS premium button style — glassmorphic focus effekt
+struct TVPremiumButtonStyle: ButtonStyle {
+    let gradientColors: [Color]
+    @Environment(\.isFocused) var isFocused
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(isFocused ? 1.04 : (configuration.isPressed ? 0.97 : 1.0))
+            .overlay(
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .strokeBorder(
+                        LinearGradient(
+                            colors: isFocused
+                                ? gradientColors.map { $0.opacity(0.8) }
+                                : [.clear, .clear],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: isFocused ? 3 : 0
+                    )
+            )
+            .shadow(
+                color: isFocused ? gradientColors[0].opacity(0.5) : .clear,
+                radius: isFocused ? 20 : 0
+            )
+            .brightness(isFocused ? 0.06 : 0)
+            .animation(.spring(response: 0.3, dampingFraction: 0.75), value: isFocused)
+            .animation(.easeOut(duration: 0.1), value: configuration.isPressed)
+    }
+}
+#endif

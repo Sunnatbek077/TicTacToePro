@@ -42,6 +42,14 @@ extension GameBoardView {
 #endif
     }
     
+    var isTVOS: Bool {
+#if os(tvOS)
+        return true
+#else
+        return false
+#endif
+    }
+    
     var isSESmallScreen: Bool {
 #if os(iOS)
         return isCompactHeight && hSizeClass == .compact && UIScreen.main.bounds.height <= 667 && UIScreen.main.bounds.width <= 375
@@ -51,7 +59,7 @@ extension GameBoardView {
     }
     
     var isWide: Bool {
-#if os(macOS) || os(visionOS)
+#if os(macOS) || os(visionOS) || os(tvOS)
         return true
 #else
         return hSizeClass == .regular
@@ -73,7 +81,10 @@ extension GameBoardView {
     }
     
     func preferredBoardSide(for size: CGSize) -> CGFloat {
-#if os(macOS)
+#if os(tvOS)
+        // TV ekranida board kattaroq va markazlashtirilgan bo'lishi kerak
+        return min(800, max(560, min(size.width * 0.55, size.height * 0.85)))
+#elseif os(macOS)
         return min(640, max(420, min(size.width, size.height) * 0.8))
 #elseif os(visionOS)
         return min(720, max(480, min(size.width, size.height) * 0.85))
