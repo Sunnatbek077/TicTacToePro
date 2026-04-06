@@ -240,14 +240,16 @@ struct MultiplayerMenuView: View {
                 )
             }
             .fullScreenCover(isPresented: $showGame) {
-                MultiplayerGameView(
-                    game: multiplayerVM.currentGame!,
-                    multiplayerVM: multiplayerVM,
-                    onExit: {
-                        multiplayerVM.leaveGame()
-                        showGame = false
-                    }
-                )
+                if let currentGame = multiplayerVM.currentGame {
+                    MultiplayerGameView(
+                        game: currentGame,
+                        multiplayerVM: multiplayerVM,
+                        onExit: {
+                            multiplayerVM.leaveGame()
+                            showGame = false
+                        }
+                    )
+                }
             }
         }
         .task {

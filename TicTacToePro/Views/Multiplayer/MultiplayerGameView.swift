@@ -108,7 +108,7 @@ struct MultiplayerGameView: View {
             ticTacToe: gameViewModel,
             gameTypeIsPVP: true,
             difficulty: .easy,
-            startingPlayerIsO: game.player2?.symbol == .o,
+            startingPlayerIsO: multiplayerVM.currentGame?.player2?.symbol == .o,
             timeLimit: timeLimitOption,
             onCellTap: { index in
                 // Only allow if it's my turn and the cell is empty
@@ -133,30 +133,6 @@ struct MultiplayerGameView: View {
                     .padding()
             }
         }
-    }
-    
-    // MARK: - Yoki boshqa variant - minimal dizayn
-    private var forfeitButtonMinimal: some View {
-        Button {
-            
-        } label: {
-            ZStack {
-                Circle()
-                    .fill(.ultraThinMaterial)
-                    .frame(width: 56, height: 56)
-                
-                Image(systemName: "flag.fill")
-                    .font(.title3)
-                    .foregroundStyle(
-                        LinearGradient(
-                            colors: [.red, .orange],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-            }
-        }
-        .shadow(color: .black.opacity(0.2), radius: 8, x: 0, y: 4)
     }
     
     // MARK: - Forfeit Button
@@ -186,7 +162,7 @@ struct MultiplayerGameView: View {
     }
     
     private var timeLimitOption: TimeLimitOption {
-        guard let turnTime = game.settings.turnTimeLimit else {
+        guard let turnTime = multiplayerVM.currentGame?.settings.turnTimeLimit else {
             return .unlimited
         }
         let minutes = Int(turnTime / 60)
@@ -588,7 +564,7 @@ struct MultiplayerGameView: View {
     
     private func syncGameState() {
         guard let game = multiplayerVM.currentGame else { return }
-        
+
         // Sync board state
         gameViewModel.setBoardSize(game.settings.boardSize)
         for (index, status) in game.boardState.enumerated() {
@@ -596,17 +572,23 @@ struct MultiplayerGameView: View {
                 gameViewModel.squares[index].squareStatus = status
             }
         }
-        
+
         // Sync turn
         gameViewModel.playerToMove = game.currentTurn
-        
-        // Check if it's local player's turn
-        let _ = multiplayerVM.currentPlayer?.symbol == game.currentTurn
-        
+
         // Sync game over state
         if game.status == .finished {
             gameViewModel.gameOver = true
-            gameViewModel.winner = game.result == .draw ? .empty : game.currentTurn
+            // Determine winner from game result, not currentTurn
+            // (currentTurn switches after each move, so it points to the wrong player)
+            switch game.result {
+            case .player1Won, .timeoutPlayer2, .forfeitPlayer2:
+                gameViewModel.winner = game.player1.symbol
+            case .player2Won, .timeoutPlayer1, .forfeitPlayer1:
+                gameViewModel.winner = game.player2?.symbol ?? .empty
+            case .draw, .none:
+                gameViewModel.winner = .empty
+            }
         }
     }
     
@@ -638,8 +620,7 @@ struct MultiplayerGameView: View {
         // Create, connect and subscribe to the timer
         timerCancellable = Timer.publish(every: 5.0, on: .main, in: .common)
             .autoconnect()
-            .sink { [weak multiplayerVM] _ in
-                guard let multiplayerVM = multiplayerVM else { return }
+            .sink { [multiplayerVM] _ in
                 Task { @MainActor in
                     await multiplayerVM.refreshCurrentGame()
                 }
