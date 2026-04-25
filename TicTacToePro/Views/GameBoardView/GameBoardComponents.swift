@@ -173,18 +173,24 @@ extension GameBoardView {
         let vPad:    CGFloat = 20
         let spacing: CGFloat = 16
         let panelW:  CGFloat = min(160, W * 0.17)
-        let midW:    CGFloat = W - hPad * 2 - panelW * 2 - spacing * 2
+        // Multiplayer rejimida yon panellar yo'q — board kengroq bo'ladi
+        let sidePanelTotal: CGFloat = isMultiplayer ? 0 : (panelW * 2 + spacing * 2)
+        let midW:    CGFloat = W - hPad * 2 - sidePanelTotal
         let innerH:  CGFloat = H - vPad * 2
         let boardSide: CGFloat = min(midW, innerH - 34 - 46 - 38 - 30)
 
         return HStack(spacing: spacing) {
-            iPadPlayerPanel(isLeft: true)
-                .frame(width: panelW, height: innerH)
+            if !isMultiplayer {
+                iPadPlayerPanel(isLeft: true)
+                    .frame(width: panelW, height: innerH)
+            }
 
             iPadCenterColumn(midW: midW, innerH: innerH, boardSide: boardSide)
 
-            iPadPlayerPanel(isLeft: false)
-                .frame(width: panelW, height: innerH)
+            if !isMultiplayer {
+                iPadPlayerPanel(isLeft: false)
+                    .frame(width: panelW, height: innerH)
+            }
         }
         .frame(width: W - hPad * 2, height: innerH)
         .frame(width: W, height: H)
@@ -194,7 +200,13 @@ extension GameBoardView {
         VStack(spacing: 10) {
             Spacer(minLength: 0)
             iPadTitle
-            scoreStrip
+            // Multiplayer rejimida: scoreStrip o'rniga topOverlay (VS bar)
+            // Solo rejimda: oddiy scoreStrip
+            if isMultiplayer, let topOverlay {
+                topOverlay
+            } else {
+                scoreStrip
+            }
             boardGrid(side: boardSide)
                 .frame(width: boardSide, height: boardSide)
             turnBanner
@@ -395,6 +407,7 @@ extension GameBoardView {
     ) -> some View {
         VStack(spacing: 0) {
             if isMultiplayerPortraitIPad {
+                // Tepa: title
                 Text(headerTitle)
                     .font(.system(.title2, design: .rounded).weight(.black))
                     .foregroundStyle(
@@ -402,6 +415,11 @@ extension GameBoardView {
                                        startPoint: .leading, endPoint: .trailing)
                     )
                     .frame(maxWidth: .infinity, alignment: .center)
+                    .padding(.horizontal, hPad)
+                    .padding(.bottom, gap)
+
+                // Tepa: player bar (scoreStrip o'rnida)
+                portraitIPadPlayerBar
                     .padding(.horizontal, hPad)
                     .padding(.bottom, gap)
             } else if let topOverlay {
@@ -412,26 +430,21 @@ extension GameBoardView {
                 header
                     .padding(.horizontal, hPad)
                     .padding(.bottom, gap)
-            }
 
-            scoreStrip
-                .padding(.horizontal, hPad)
-                .padding(.bottom, gap)
+                scoreStrip
+                    .padding(.horizontal, hPad)
+                    .padding(.bottom, gap)
+            }
 
             boardGrid(side: side)
                 .frame(width: side, height: side)
                 .frame(maxWidth: .infinity)
                 .padding(.bottom, gap)
 
-            if topOverlay == nil || isMultiplayerPortraitIPad {
+            // turnBanner faqat solo rejimda
+            if topOverlay == nil {
                 turnBanner
                     .frame(maxWidth: .infinity, alignment: .center)
-                    .padding(.bottom, isMultiplayerPortraitIPad ? gap : 0)
-            }
-
-            if isMultiplayerPortraitIPad {
-                portraitIPadPlayerBar
-                    .padding(.horizontal, hPad)
             }
         }
         .padding(.vertical, vPad)

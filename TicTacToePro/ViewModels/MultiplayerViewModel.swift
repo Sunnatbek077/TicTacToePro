@@ -35,6 +35,7 @@ class MultiplayerViewModel: ObservableObject {
     private let firebaseManager = FirebaseManager.shared
     private var cancellables = Set<AnyCancellable>()
     private var currentGameId: String?
+    private var isMakingMove: Bool = false  // double-tap race condition guard
     
     // MARK: - Initialization
     init() {
@@ -250,6 +251,7 @@ class MultiplayerViewModel: ObservableObject {
     
     /// Make a move in current game (optimistic UI update)
     func makeMove(index: Int) async {
+        guard !isMakingMove else { return }  // double-tap guard
         guard let gameId = currentGameId,
               let player = currentPlayer,
               var game = currentGame else { return }
@@ -274,6 +276,8 @@ class MultiplayerViewModel: ObservableObject {
         currentGame = game
 
         // ── 3. Send to Firestore in background ───────────────────────────
+        isMakingMove = true
+        defer { isMakingMove = false }
         do {
             try await firebaseManager.makeMove(gameId: gameId, playerId: player.id, index: index)
             // Real snapshot from listener will arrive shortly and replace our local state

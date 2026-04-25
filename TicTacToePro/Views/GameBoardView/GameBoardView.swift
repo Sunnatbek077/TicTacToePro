@@ -33,6 +33,11 @@ struct GameBoardView: View {
 
     // Optional view injected above the score strip (e.g., multiplayer players bar)
     var topOverlay: AnyView? = nil
+
+    // Multiplayer rejimida GameBoardView'ning ichki game-over alert va
+    // local score tracking'ini o'chiradi. Result MultiplayerGameView tomonidan
+    // alohida ko'rsatiladi.
+    var isMultiplayer: Bool = false
     
     // Local (session-only) scoreboard
     @State var xWins: Int = 0
@@ -157,7 +162,10 @@ struct GameBoardView: View {
                 .onChange(of: ticTacToe.playerToMove) {
                     handlePlayerToMoveChanged()
                 }
-                .alert(Text(gameOverAlertTitle), isPresented: $ticTacToe.gameOver) {
+                .alert(Text(gameOverAlertTitle), isPresented: Binding(
+                    get: { ticTacToe.gameOver && !isMultiplayer },
+                    set: { ticTacToe.gameOver = $0 }
+                )) {
                     Button("Play Again", action: resetForNextRound)
                     Button("Leave", action: exitToMenu)
                 }

@@ -17,6 +17,7 @@ struct MultiplayerGameView: View {
     @StateObject private var viewModel = ViewModel()
     
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.horizontalSizeClass) private var hSizeClass
     @EnvironmentObject private var appState: AppState
     
     @State private var showChat = false
@@ -123,7 +124,8 @@ struct MultiplayerGameView: View {
             },
             topOverlay: multiplayerVM.currentGame.map { game in
                 AnyView(multiplayerPlayerBar(game: game))
-            }
+            },
+            isMultiplayer: true
         )
         .overlay(alignment: .bottomLeading) {
             // Forfeit button - o'yinni yakunlash
@@ -169,10 +171,179 @@ struct MultiplayerGameView: View {
         return TimeLimitOption(rawValue: minutes) ?? .tenMinutes
     }
     
-    // MARK: - Multiplayer Player Bar
-    // Bu view unifiedHeader() ichiga kiradi — background/border u yerda
+    // MARK: - Multiplayer Player Bar (adaptive)
+    // iPad landscape → premium full-width bar
+    // iPhone portrait → compact capsule bar (unifiedHeader ichida)
     @ViewBuilder
     private func multiplayerPlayerBar(game: MultiplayerGame) -> some View {
+        if hSizeClass == .regular {
+            multiplayerIPadBar(game: game)
+        } else {
+            multiplayerCompactBar(game: game)
+        }
+    }
+
+    // MARK: - iPad Premium Player Bar
+    @ViewBuilder
+    private func multiplayerIPadBar(game: MultiplayerGame) -> some View {
+        let p1 = game.player1
+        let p2 = game.player2
+        let p1Color: Color = p1.symbol == .x ? .pink : .blue
+        let p2Color: Color = (p2?.symbol ?? .o) == .o ? .blue : .pink
+        let p1Active = game.currentTurn == p1.symbol
+        let p2Active = p2.map { game.currentTurn == $0.symbol } ?? false
+        let isYouP1 = multiplayerVM.currentPlayer?.id == p1.id
+        let isYouP2 = multiplayerVM.currentPlayer?.id == p2?.id
+
+        HStack(spacing: 0) {
+            // Player 1 card
+            iPadPlayerCard(
+                username: p1.username,
+                symbol: p1.symbol,
+                color: p1Color,
+                isActive: p1Active,
+                isYou: isYouP1,
+                isLeft: true
+            )
+
+            // Center divider
+            VStack(spacing: 6) {
+                Rectangle()
+                    .fill(Color.white.opacity(0.10))
+                    .frame(width: 1, height: 16)
+                Text("VS")
+                    .font(.system(size: 11, weight: .black, design: .rounded))
+                    .foregroundStyle(.tertiary)
+                    .tracking(1)
+                Rectangle()
+                    .fill(Color.white.opacity(0.10))
+                    .frame(width: 1, height: 16)
+            }
+            .frame(width: 44)
+
+            // Player 2 card
+            if let p2 {
+                iPadPlayerCard(
+                    username: p2.username,
+                    symbol: p2.symbol,
+                    color: p2Color,
+                    isActive: p2Active,
+                    isYou: isYouP2,
+                    isLeft: false
+                )
+            } else {
+                HStack(spacing: 8) {
+                    ProgressView().scaleEffect(0.7).tint(.secondary)
+                    Text("Waiting for opponent...")
+                        .font(.system(size: 14, weight: .medium, design: .rounded))
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity)
+            }
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 14)
+        .frame(maxWidth: .infinity)
+        .background(
+            .ultraThinMaterial,
+            in: RoundedRectangle(cornerRadius: 18, style: .continuous)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .strokeBorder(
+                    LinearGradient(
+                        colors: [.pink.opacity(0.35), .purple.opacity(0.20), .blue.opacity(0.35)],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    ),
+                    lineWidth: 1
+                )
+        )
+    }
+
+    @ViewBuilder
+    private func iPadPlayerCard(
+        username: String,
+        symbol: SquareStatus,
+        color: Color,
+        isActive: Bool,
+        isYou: Bool,
+        isLeft: Bool
+    ) -> some View {
+        let displayName = isYou ? "You" : username
+
+        HStack(spacing: 14) {
+            if isLeft {
+                iPadSymbolCircle(color: color, symbol: symbol, isActive: isActive)
+                iPadPlayerText(name: displayName, isYou: isYou, isActive: isActive, color: color, align: .leading)
+                Spacer(minLength: 0)
+            } else {
+                Spacer(minLength: 0)
+                iPadPlayerText(name: displayName, isYou: isYou, isActive: isActive, color: color, align: .trailing)
+                iPadSymbolCircle(color: color, symbol: symbol, isActive: isActive)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .animation(.spring(response: 0.35, dampingFraction: 0.75), value: isActive)
+    }
+
+    @ViewBuilder
+    private func iPadSymbolCircle(color: Color, symbol: SquareStatus, isActive: Bool) -> some View {
+        ZStack {
+            Circle()
+                .fill(color.opacity(isActive ? 0.20 : 0.06))
+                .frame(width: 50, height: 50)
+                .overlay(
+                    Circle().strokeBorder(
+                        color.opacity(isActive ? 0.90 : 0.20),
+                        lineWidth: isActive ? 2 : 1
+                    )
+                )
+                .shadow(color: isActive ? color.opacity(0.50) : .clear,
+                        radius: 12, x: 0, y: 0)
+
+            Image(systemName: symbol == .x ? "xmark" : "circle")
+                .font(.system(size: 20, weight: .black))
+                .foregroundStyle(color.opacity(isActive ? 1.0 : 0.30))
+        }
+        .animation(.easeInOut(duration: 0.28), value: isActive)
+    }
+
+    @ViewBuilder
+    private func iPadPlayerText(name: String, isYou: Bool, isActive: Bool, color: Color, align: HorizontalAlignment) -> some View {
+        let statusText: String = {
+            if isActive { return isYou ? "Your Turn" : "Their Turn" }
+            return "Waiting..."
+        }()
+
+        VStack(alignment: align, spacing: 3) {
+            Text(name)
+                .font(.system(size: 15, weight: isYou ? .bold : .semibold, design: .rounded))
+                .foregroundStyle(isActive ? Color.primary : Color.secondary)
+                .lineLimit(1)
+
+            HStack(spacing: 5) {
+                Circle()
+                    .fill(isActive ? color : Color.gray.opacity(0.30))
+                    .frame(width: 6, height: 6)
+                    .shadow(color: isActive ? color.opacity(0.8) : .clear,
+                            radius: 4, x: 0, y: 0)
+                    .animation(.easeInOut(duration: 0.3), value: isActive)
+
+                Text(statusText)
+                    .font(.system(size: 12,
+                                  weight: isActive ? .semibold : .regular,
+                                  design: .rounded))
+                    .foregroundStyle(isActive ? color : Color.secondary)
+            }
+        }
+        .animation(.easeInOut(duration: 0.25), value: isActive)
+    }
+
+    // MARK: - Compact Bar (iPhone portrait)
+    // Bu view unifiedHeader() ichiga kiradi — background/border u yerda
+    @ViewBuilder
+    private func multiplayerCompactBar(game: MultiplayerGame) -> some View {
         HStack(spacing: 0) {
             // Player 1
             playerInfoCompact(
@@ -577,10 +748,10 @@ struct MultiplayerGameView: View {
         gameViewModel.playerToMove = game.currentTurn
 
         // Sync game over state
+        // NOTE: gameViewModel.gameOver ni set qilmaymiz — bu GameBoardView'ning
+        // ichki alertini trigger qiladi. Multiplayer result faqat gameResultOverlay
+        // orqali ko'rsatiladi (MultiplayerGameView ichida).
         if game.status == .finished {
-            gameViewModel.gameOver = true
-            // Determine winner from game result, not currentTurn
-            // (currentTurn switches after each move, so it points to the wrong player)
             switch game.result {
             case .player1Won, .timeoutPlayer2, .forfeitPlayer2:
                 gameViewModel.winner = game.player1.symbol
