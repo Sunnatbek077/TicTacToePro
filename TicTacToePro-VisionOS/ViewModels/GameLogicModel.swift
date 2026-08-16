@@ -47,9 +47,10 @@ struct Board {
         switch boardSize {
         case 3: return 3
         case 4, 5: return 4
-        case 6, 7: return 4
-        case 8, 9: return 5
-        default: return boardSize
+        case 6, 7, 8, 9: return 5
+        // Never exceed the board: a length greater than `boardSize` makes the
+        // combo generator's `0...(size - length)` range invalid and traps.
+        default: return min(5, boardSize)
         }
     }
     
