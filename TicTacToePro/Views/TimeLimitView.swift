@@ -79,30 +79,23 @@ struct TimeLimitCard: View {
                 // Icon
                 ZStack {
                     Circle()
-                        .fill(
-                            LinearGradient(
-                                colors: isSelected
-                                    ? [timeLimit.color.opacity(0.8), timeLimit.color]
-                                    : [Color.gray.opacity(0.3), Color.gray.opacity(0.2)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
+                        .fill(iconGradient)
                         .frame(width: 50, height: 50)
                         .shadow(color: isSelected ? timeLimit.color.opacity(0.5) : .clear,
                                 radius: 8)
                     
-                    Text(timeLimit.emoji)
-                        .font(.system(size: 24))
+                    Image(systemName: timeLimit.systemImage)
+                        .font(.system(size: 22, weight: .semibold))
+                        .foregroundStyle(isSelected ? Color.white : Color.secondary)
                 }
-                
+
                 // Title
                 Text(timeLimit.title)
                     .font(.body.bold())
                     .foregroundColor(isSelected ? timeLimit.color : .primary)
-                
+
                 // Description
-                Text(timeLimit.description)
+                Text(timeLimit.pace)
                     .font(.caption2)
                     .foregroundColor(.secondary)
             }
@@ -115,10 +108,7 @@ struct TimeLimitCard: View {
             )
             .overlay(
                 RoundedRectangle(cornerRadius: cornerRadius)
-                    .strokeBorder(
-                        isSelected ? timeLimit.selectionGradient : LinearGradient(colors: [.clear], startPoint: .topLeading, endPoint: .bottomTrailing),
-                        lineWidth: isSelected ? 2 : 0
-                    )
+                    .strokeBorder(borderStyle, lineWidth: isSelected ? 2 : 0)
             )
             .scaleEffect(isSelected ? 1.05 : 1.0)
             .animation(.spring(duration: 0.3, bounce: 0.4), value: isSelected)
@@ -126,11 +116,26 @@ struct TimeLimitCard: View {
         .padding(.vertical)
         .buttonStyle(.plain)
         .contentShape(Rectangle())               // larger tap area
-        .accessibilityLabel("\(timeLimit.title), \(timeLimit.description)")
+        .accessibilityLabel("\(timeLimit.title), \(timeLimit.pace)")
         .accessibilityHint(isSelected ? "Selected" : "Tap to select")
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
     
+    // Hoisted out of `body`: a ternary building a colour array inside a
+    // LinearGradient inside a modifier chain made the type-checker time out.
+    private var iconGradient: LinearGradient {
+        let colors: [Color] = isSelected
+            ? [timeLimit.color.opacity(0.8), timeLimit.color]
+            : [Color.gray.opacity(0.3), Color.gray.opacity(0.2)]
+        return LinearGradient(colors: colors, startPoint: .topLeading, endPoint: .bottomTrailing)
+    }
+
+    private var borderStyle: LinearGradient {
+        isSelected
+            ? timeLimit.selectionGradient
+            : LinearGradient(colors: [.clear], startPoint: .topLeading, endPoint: .bottomTrailing)
+    }
+
     private var backgroundColor: Color {
         colorScheme == .dark ? Color(white: 0.15) : .white
     }

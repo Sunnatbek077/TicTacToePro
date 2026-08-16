@@ -26,7 +26,8 @@ struct MultiplayerMenuView: View {
     
     // Game config state
     @State private var selectedBoardSize: BoardSize = .small
-    @State private var selectedTimeLimit: TimeLimitOption = .tenMinutes
+    // Board-derived, matching the single-player menu.
+    @State private var selectedTimeLimit: TimeLimitOption = BoardSize.small.recommendedTimeLimit
     @State private var selectedGameMode: GameMode = .pvp
     @State private var selectedPlayer: PlayerOption = .x
     @State private var selectedDifficulty: DifficultyOption = .medium
@@ -654,21 +655,30 @@ struct CreateGameSheet: View {
                                 items: BoardSize.allCases,
                                 selected: selectedBoardSize,
                                 title: { $0.title },
-                                subtitle: { "\($0.emoji) \($0.description)" },
+                                subtitle: { $0.winConditionText },
                                 onSelect: { selectedBoardSize = $0 }
                             )
                         }
 
                         // ── 5. Time Limit ──
+                        // Scaled to the board, same as the single-player menu.
                         configSection(title: "Time Limit") {
                             SelectionGridCard(
-                                items: TimeLimitOption.allCases,
+                                items: selectedBoardSize.timeLimitOptions,
                                 selected: selectedTimeLimit,
                                 title: { $0.title },
-                                subtitle: { "\($0.emoji) \($0.description)" },
+                                subtitle: { [size = selectedBoardSize] in
+                                    $0 == size.recommendedTimeLimit ? "Recommended" : $0.pace
+                                },
+                                systemImage: { [size = selectedBoardSize] in
+                                    $0 == size.recommendedTimeLimit ? "hand.thumbsup.fill" : $0.systemImage
+                                },
                                 onSelect: { selectedTimeLimit = $0 }
                             )
                         }
+                    }
+                    .onChange(of: selectedBoardSize) { _, newSize in
+                        selectedTimeLimit = newSize.resolvedTimeLimit(from: selectedTimeLimit)
                     }
                     .padding(.horizontal, hPad)
                     .padding(.bottom, 16)  // ← Minimal padding, bottom bar o'z joyida

@@ -8,68 +8,8 @@ import SwiftUI
 import CoreHaptics
 #endif
 
-// MARK: - Board Size Options
-enum BoardSize: Int, CaseIterable, Identifiable {
-    case small = 3
-    case medium = 4
-    case large = 5
-    case xlarge = 6
-    case xxlarge = 7
-    case huge = 8
-    case massive = 9
-    
-    var id: Int { rawValue }
-    
-    var title: String {
-        "\(rawValue)×\(rawValue)"
-    }
-    
-    var description: String {
-        switch self {
-        case .small: return "Classic"
-        case .medium: return "Challenging"
-        case .large: return "Strategic"
-        case .xlarge: return "Expert"
-        case .xxlarge: return "Master"
-        case .huge: return "Extreme"
-        case .massive: return "Legendary"
-        }
-    }
-    
-    var emoji: String {
-        switch self {
-        case .small: return "🎯"
-        case .medium: return "🎮"
-        case .large: return "🧩"
-        case .xlarge: return "🎲"
-        case .xxlarge: return "🏆"
-        case .huge: return "⭐️"
-        case .massive: return "👑"
-        }
-    }
-    
-    var difficulty: String {
-        switch self {
-        case .small: return "Easy"
-        case .medium: return "Medium"
-        case .large: return "Hard"
-        case .xlarge, .xxlarge: return "Very Hard"
-        case .huge, .massive: return "Extreme"
-        }
-    }
-    
-    var color: Color {
-        switch self {
-        case .small: return .green
-        case .medium: return .blue
-        case .large: return .purple
-        case .xlarge: return .orange
-        case .xxlarge: return .red
-        case .huge: return .pink
-        case .massive: return .indigo
-        }
-    }
-}
+// NOTE: `BoardSize` moved to Views/Components/GameConfigOptions.swift, next to
+// the other configuration enums — it is a model, not a view.
 
 struct StartMenuView: View {
     // MARK: - Premium Styling
@@ -118,11 +58,10 @@ struct StartMenuView: View {
     @State private var selectedGameMode: GameMode = .ai
     @State private var showGame = false
     
-    // NEW: Board size selection
-    @State private var showBoardSizeSelector = false
     @State private var selectedBoardSize: BoardSize = .small
-    @State private var selectedTimeLimit: TimeLimitOption = .tenMinutes
-    @State private var showTimeLimitSelector = false
+    // Default follows the board rather than being a fixed 10 minutes, which was
+    // roughly twenty times the length of an actual 3×3 game.
+    @State private var selectedTimeLimit: TimeLimitOption = BoardSize.small.recommendedTimeLimit
     @State private var currentPage: Int = 0
     
     @StateObject private var viewModel = ViewModel()
@@ -132,11 +71,25 @@ struct StartMenuView: View {
 #endif
     
     private var startingPlayerIsO: Bool { selectedPlayer == .o }
-    
+
+    /// Reads as a sentence about the match, and now covers all three pages —
+    /// the old summary silently omitted the time limit, so one of the three
+    /// things you configure never appeared in the "current setup" chip.
     private var configurationSummary: String {
-        selectedGameMode.isPVP
-        ? "PvP • \(selectedPlayer.rawValue) starts • \(selectedBoardSize.title)"
-        : "AI: \(startingPlayerIsO ? "X" : "O") • \(selectedDifficulty.rawValue) • \(selectedBoardSize.title)"
+        let board = "\(selectedBoardSize.title) · \(selectedBoardSize.winConditionText)"
+        let clock = selectedTimeLimit.isUnlimited ? "No clock" : selectedTimeLimit.title
+
+        if selectedGameMode.isPVP {
+            return "Local match • \(selectedPlayer.rawValue) first • \(board) • \(clock)"
+        }
+        let opponentMark = startingPlayerIsO ? "X" : "O"
+        return "You: \(selectedPlayer.rawValue) vs AI: \(opponentMark) • \(selectedDifficulty.rawValue) • \(board) • \(clock)"
+    }
+
+    /// Names the destination rather than saying a bare "Next", so the secondary
+    /// button explains what page it is about to open.
+    private var nextButtonTitle: String {
+        currentPage == 0 ? "Board Size" : "Time Limit"
     }
     
     // MARK: - Layout Helpers
@@ -237,30 +190,57 @@ struct StartMenuView: View {
                         .frame(maxWidth: contentMaxWidth)
                         .shadow(color: premiumShadow.0, radius: premiumShadow.1, x: 0, y: premiumShadow.2)
                         
-                        // Start/Next Button
-                        StartButton(
-                            isCompactHeightPhone: isCompactHeightPhone,
-                            action: {
-                                triggerHaptic()
-                                if currentPage < 2 {
-                                    withAnimation {
-                                        currentPage += 1
-                                    }
-                                } else {
+                        // Every setting has a default, so there is never a reason
+                        // to force someone through all three pages first. Start
+                        // is always available; Next stays as a quiet secondary
+                        // for anyone who does want to walk the pages.
+                        VStack(spacing: 10) {
+                            StartButton(
+                                isCompactHeightPhone: isCompactHeightPhone,
+                                action: {
+                                    triggerHaptic()
                                     startGame()
-                                }
-                            },
-                            buttonName: currentPage < 2 ? "Next" : "Start Game",
-                            showGameBinding: $showGame
-                        )
+                                },
+                                buttonName: "Start Game",
+                                systemImage: "play.fill",
+                                role: .primary,
+                                showGameBinding: $showGame
+                            )
+
+                            if currentPage < ConfigurationCard.pageCount - 1 {
+                                StartButton(
+                                    isCompactHeightPhone: isCompactHeightPhone,
+                                    action: {
+                                        triggerHaptic()
+                                        withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) {
+                                            currentPage += 1
+                                        }
+                                    },
+                                    buttonName: nextButtonTitle,
+                                    systemImage: "chevron.forward",
+                                    role: .secondary
+                                )
+                                .transition(.opacity.combined(with: .move(edge: .bottom)))
+                            }
+                        }
                         .frame(maxWidth: contentMaxWidth)
                         .padding(.horizontal, isCompactHeightPhone ? 8 : 12)
+                        .animation(.spring(response: 0.3, dampingFraction: 0.85), value: currentPage)
                         .sensoryFeedback(.success, trigger: showGame)
                     }
                     .padding(.horizontal, isCompactHeightPhone ? 12 : 16)
                     .padding(.vertical, verticalPadding)
-                    .padding(.top, layoutCategory == "tall" ? 48 : 32)
+                    // Was an extra 48pt on top of `verticalPadding`'s own 48,
+                    // leaving ~96pt of dead space under the Dynamic Island while
+                    // the board-size card ran off the bottom of the screen.
+                    .padding(.top, layoutCategory == "tall" ? 12 : 4)
                     .animation(.spring(duration: 0.8, bounce: 0.2), value: selectedGameMode)
+                    // Time options depend on the board, so a selection that no
+                    // longer exists (30 min after switching down to 3×3) has to
+                    // fall back instead of silently staying out of range.
+                    .onChange(of: selectedBoardSize) { _, newSize in
+                        selectedTimeLimit = newSize.resolvedTimeLimit(from: selectedTimeLimit)
+                    }
                     .navigationDestination(isPresented: $showGame) {
                         GameBoardView(
                             onExit: { showGame = false },
