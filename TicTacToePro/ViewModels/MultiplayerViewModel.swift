@@ -46,11 +46,16 @@ class MultiplayerViewModel: ObservableObject {
     }
     
     deinit {
-        // Call cleanup directly if already on MainActor
-        // Or use unstructured task without capturing self strongly
-        Task { [weak self] in
-            await self?.cleanup()
+        // `self` is already deallocating here, so a `[weak self]` capture would
+        // always resolve to nil and the listener would leak. Capture the plain
+        // values the teardown needs instead and detach them from `self`.
+        if let gameId = currentGameId {
+            let manager = firebaseManager
+            Task { @MainActor in
+                manager.stopListeningToGame(gameId: gameId)
+            }
         }
+        cancellables.removeAll()
     }
     
     // MARK: - Setup
